@@ -1,26 +1,294 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-app-sans);
   --font-mono: var(--font-geist-mono);
-}
+  --font-heading: var(--font-app-heading);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  /* Culinary Modernist brand tokens */
+  --color-berry: var(--berry);
+  --color-berry-bright: var(--berry-bright);
+  --color-berry-soft: var(--berry-soft);
+  --color-berry-soft-foreground: var(--berry-soft-foreground);
+  --color-zest: var(--zest);
+  --color-zest-foreground: var(--zest-foreground);
+  --color-zest-soft: var(--zest-soft);
+  --color-zest-soft-foreground: var(--zest-soft-foreground);
+  --color-surface-dim: var(--surface-dim);
+  --color-surface-container: var(--surface-container);
+  --color-surface-container-low: var(--surface-container-low);
+  --color-surface-container-high: var(--surface-container-high);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  /* Shadows disabled by request — flat design, separation via borders and tonal layers.
+     Zeroing the whole scale also neutralises shadow-sm/md/lg inside shadcn components.
+     Focus rings are unaffected (they use the ring utilities, not this namespace). */
+  --shadow-soft: 0 0 #0000;
+  --shadow-lifted: 0 0 #0000;
+  --shadow-glow: 0 0 #0000;
+  --shadow-2xs: 0 0 #0000;
+  --shadow-xs: 0 0 #0000;
+  --shadow-sm: 0 0 #0000;
+  --shadow-md: 0 0 #0000;
+  --shadow-lg: 0 0 #0000;
+  --shadow-xl: 0 0 #0000;
+  --shadow-2xl: 0 0 #0000;
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.5);
+  --radius-2xl: calc(var(--radius) * 2);
+  --radius-3xl: calc(var(--radius) * 3);
+  --radius-4xl: calc(var(--radius) * 4);
+  /* one springy easing for every interactive surface — the site feels coherent */
+  --ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-marquee: marquee 38s linear infinite;
+  --animate-fade-up: fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-cart-pop: cart-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  @keyframes marquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(calc(-100% - var(--marquee-gap, 3rem)));
+    }
+  }
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(24px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @keyframes cart-pop {
+    0% {
+      opacity: 0;
+      transform: translateY(100%) scale(0.96);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+:root {
+  /* Paper-white tiered neutrals */
+  --background: #f8f9fa;
+  --foreground: #191c1d;
+  --card: #ffffff;
+  --card-foreground: #191c1d;
+  --popover: #ffffff;
+  --popover-foreground: #191c1d;
+  /* Berry — deep sophisticated red */
+  --primary: #850036;
+  --primary-foreground: #ffffff;
+  --secondary: #edeeef;
+  --secondary-foreground: #191c1d;
+  --muted: #edeeef;
+  --muted-foreground: #594044;
+  --accent: #f3f4f5;
+  --accent-foreground: #191c1d;
+  --destructive: #ba1a1a;
+  --border: #e1e3e4;
+  --input: #e1e3e4;
+  --ring: #b0004a;
+  --chart-1: #b0004a;
+  --chart-2: #fe9800;
+  --chart-3: #594044;
+  --chart-4: #ffb1bf;
+  --chart-5: #8d6f74;
+  --radius: 0.5rem;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #191c1d;
+  --sidebar-primary: #850036;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f9edf0;
+  --sidebar-accent-foreground: #850036;
+  --sidebar-border: #e7e8e9;
+  --sidebar-ring: #b0004a;
+  /* Brand extras */
+  --berry: #850036;
+  --berry-bright: #b0004a;
+  --berry-soft: #ffd9de;
+  --berry-soft-foreground: #90003b;
+  --berry-glow: rgb(133 0 54 / 0.25);
+  --zest: #fe9800;
+  --zest-foreground: #2c1600;
+  --zest-soft: #ffdcbd;
+  --zest-soft-foreground: #693c00;
+  --surface-dim: #d9dadb;
+  --surface-container-low: #f3f4f5;
+  --surface-container: #edeeef;
+  --surface-container-high: #e7e8e9;
+  --success: #1a7f37;
+  --success-foreground: #ffffff;
+}
+
+.dark {
+  --background: #131516;
+  --foreground: #f0f1f2;
+  --card: #1d2021;
+  --card-foreground: #f0f1f2;
+  --popover: #222526;
+  --popover-foreground: #f0f1f2;
+  --primary: #b90f50;
+  --primary-foreground: #ffffff;
+  --secondary: #26292a;
+  --secondary-foreground: #f0f1f2;
+  --muted: #222526;
+  --muted-foreground: #ab999d;
+  --accent: #2a2d2e;
+  --accent-foreground: #f0f1f2;
+  --destructive: #ff5449;
+  --border: rgb(255 255 255 / 0.09);
+  --input: rgb(255 255 255 / 0.13);
+  --ring: #ffb1bf;
+  --chart-1: #ffb1bf;
+  --chart-2: #ffb86f;
+  --chart-3: #d0cece;
+  --chart-4: #b90f50;
+  --chart-5: #8d6f74;
+  --sidebar: #191c1d;
+  --sidebar-foreground: #f0f1f2;
+  --sidebar-primary: #b90f50;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #33202573;
+  --sidebar-accent-foreground: #ffb1bf;
+  --sidebar-border: rgb(255 255 255 / 0.08);
+  --sidebar-ring: #ffb1bf;
+  --berry: #b90f50;
+  --berry-bright: #e0446f;
+  --berry-soft: #3f0016;
+  --berry-soft-foreground: #ffb1bf;
+  --berry-glow: rgb(185 15 80 / 0.35);
+  --zest: #ffb86f;
+  --zest-foreground: #402a00;
+  --zest-soft: #402a0080;
+  --zest-soft-foreground: #ffb86f;
+  --surface-dim: #0e1011;
+  --surface-container-low: #191c1d;
+  --surface-container: #1e2122;
+  --surface-container-high: #26292a;
+  --success: #4cc272;
+  --success-foreground: #05240f;
+}
+
+/* Language-aware font stacks — Epilogue/Manrope (latin), Cairo (arabic) */
+html[lang="en"] {
+  --font-app-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  --font-app-heading: var(--font-epilogue), ui-sans-serif, system-ui, sans-serif;
+}
+
+html[lang="ar"] {
+  --font-app-sans: var(--font-cairo), ui-sans-serif, system-ui, sans-serif;
+  --font-app-heading: var(--font-cairo), ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    -webkit-font-smoothing: antialiased;
+  }
+  html {
+    @apply font-sans scroll-smooth;
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-heading;
+  }
+  ::selection {
+    background: var(--berry);
+    color: var(--primary-foreground);
+  }
+}
+
+@utility container-page {
+  @apply mx-auto w-full max-w-7xl px-4 md:px-8 lg:px-12;
+}
+
+@utility text-display {
+  font-family: var(--font-app-heading);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.12;
+}
+
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@utility label-eyebrow {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  line-height: 1rem;
+  text-transform: uppercase;
+}
+
+html[lang="ar"] .label-eyebrow {
+  letter-spacing: 0.02em;
+}
+
+/* Reduced motion: stop the big decorative movement (marquee, entrance
+   keyframes, smooth scrolling) but keep short hover/focus transitions —
+   zeroing those makes every hover snap harshly, which reads as broken. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+  html {
+    scroll-behavior: auto;
+  }
 }
