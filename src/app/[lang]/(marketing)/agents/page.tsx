@@ -1,13 +1,40 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { AgentsDirectory } from "@/features/marketing/components/agents-directory";
+import {
+  getAgents,
+  getGovernorates,
+  getRegions,
+} from "@/features/marketing/services";
 import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
+import { alternatesFor } from "@/lib/seo/site";
+
+export async function generateMetadata({
+  params,
+}: PageProps<"/[lang]">): Promise<Metadata> {
+  const { lang } = await params;
+  if (!isLocale(lang)) return {};
+  const t = await getDictionary(lang);
+  return {
+    title: t.seo.agentsTitle,
+    description: t.seo.agentsDescription,
+    alternates: alternatesFor(lang, "/agents"),
+  };
+}
 
 export default async function AgentsPage({ params }: PageProps<"/[lang]">) {
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
-  const t = await getDictionary(lang);
+
+  // fetched on the server — the directory ships as crawlable HTML
+  const [t, agents, governorates, regions] = await Promise.all([
+    getDictionary(lang),
+    getAgents(),
+    getGovernorates(),
+    getRegions(),
+  ]);
 
   return (
     <main className="container-page pt-28 pb-20 md:pt-32">
@@ -22,7 +49,11 @@ export default async function AgentsPage({ params }: PageProps<"/[lang]">) {
       </div>
 
       <div className="mt-10">
-        <AgentsDirectory />
+        <AgentsDirectory
+          agents={agents}
+          governorates={governorates}
+          regions={regions}
+        />
       </div>
     </main>
   );

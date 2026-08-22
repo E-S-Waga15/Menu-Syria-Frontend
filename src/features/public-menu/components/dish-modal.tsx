@@ -14,19 +14,21 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { formatPrice } from "@/features/public-menu/lib/format";
+import { formatPrice, type StorefrontCopy } from "@/features/public-menu/lib/format";
 import { useI18n } from "@/i18n/client";
-import type { MenuItem, MenuItemOption } from "@/lib/types";
+import type { CatalogItem, MenuItemOption } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useCartStore } from "@/stores/cart-store";
 
 export function DishModal({
   item,
-  restaurantId,
+  businessId,
+  copy,
   onClose,
 }: {
-  item: MenuItem | null;
-  restaurantId: string;
+  item: CatalogItem | null;
+  businessId: string;
+  copy: StorefrontCopy;
   onClose: () => void;
 }) {
   const { t, lang, dir } = useI18n();
@@ -58,15 +60,15 @@ export function DishModal({
 
   const badgeLabel =
     item.badge === "popular"
-      ? t.menu.popular
+      ? copy.popular
       : item.badge === "new"
-        ? t.menu.new
+        ? copy.new
         : item.badge === "chefSpecial"
-          ? t.menu.chefSpecial
+          ? copy.chefSpecial
           : null;
 
   const addToCart = () => {
-    addItem(restaurantId, item, selected, quantity);
+    addItem(businessId, item, selected, quantity);
     onClose();
   };
 
@@ -127,7 +129,7 @@ export function DishModal({
           {item.ingredients && item.ingredients.length > 0 && (
             <div>
               <h3 className="label-eyebrow text-muted-foreground">
-                {t.menu.ingredients}
+                {copy.ingredients}
               </h3>
               <ul className="mt-2.5 flex flex-wrap gap-2">
                 {item.ingredients.map((ingredient) => (
@@ -145,7 +147,7 @@ export function DishModal({
           {item.options && item.options.length > 0 && (
             <div>
               <h3 className="label-eyebrow text-muted-foreground">
-                {t.menu.options}
+                {copy.options}
               </h3>
               <ul className="mt-2.5 space-y-2">
                 {item.options.map((option) => {
@@ -194,7 +196,7 @@ export function DishModal({
           <div className="flex items-center gap-3 border-t border-border/60 pt-4">
             <div
               className="flex items-center gap-1 rounded-full bg-surface-container p-1"
-              aria-label={t.menu.quantity}
+              aria-label={copy.quantity}
             >
               <Button
                 variant="ghost"
@@ -225,7 +227,7 @@ export function DishModal({
               onClick={addToCart}
               className="flex h-12 flex-1 items-center justify-between gap-2 rounded-full bg-[var(--menu-primary)] px-5 text-sm font-bold transform-gpu text-white transition-transform duration-200 ease-smooth hover:scale-[1.01] active:scale-[0.99] disabled:pointer-events-none disabled:opacity-50"
             >
-              <span>{t.menu.addToCart}</span>
+              <span>{copy.addToCart}</span>
               <span dir="ltr">
                 {formatPrice(unitPrice * quantity, t.common.currency)}
               </span>

@@ -16,9 +16,10 @@ export function SiteFooter({ lang, t }: { lang: Locale; t: Dictionary }) {
 
   const quickLinks = [
     { href: `/${lang}#services`, label: t.nav.services },
-    { href: `/${lang}#restaurants`, label: t.nav.restaurants },
-    { href: `/${lang}#agents`, label: t.nav.agents },
-    { href: `/${lang}/register/restaurant`, label: t.nav.createStore },
+    { href: `/${lang}/restaurants`, label: t.nav.restaurants },
+    { href: `/${lang}/stores`, label: t.nav.stores },
+    { href: `/${lang}/agents`, label: t.nav.agents },
+    { href: `/${lang}#sectors`, label: t.nav.createStore },
   ];
 
   return (

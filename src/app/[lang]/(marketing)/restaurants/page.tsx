@@ -1,13 +1,47 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-import { RestaurantsGrid } from "@/features/marketing/components/restaurants-grid";
+import { RestaurantCard } from "@/features/marketing/components/restaurant-card";
+import {
+  getFeaturedRestaurants,
+  getGovernorates,
+  getRegions,
+} from "@/features/marketing/services";
 import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
+import { alternatesFor } from "@/lib/seo/site";
+
+export async function generateMetadata({
+  params,
+}: PageProps<"/[lang]">): Promise<Metadata> {
+  const { lang } = await params;
+  if (!isLocale(lang)) return {};
+  const t = await getDictionary(lang);
+  return {
+    title: t.seo.restaurantsTitle,
+    description: t.seo.restaurantsDescription,
+    alternates: alternatesFor(lang, "/restaurants"),
+  };
+}
 
 export default async function RestaurantsPage({ params }: PageProps<"/[lang]">) {
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
-  const t = await getDictionary(lang);
+
+  // fetched on the server — the full grid ships as crawlable HTML
+  const [t, restaurants, governorates, regions] = await Promise.all([
+    getDictionary(lang),
+    getFeaturedRestaurants(),
+    getGovernorates(),
+    getRegions(),
+  ]);
+
+  const separator = lang === "ar" ? "، " : ", ";
+  const locationLabel = (governorateId: string, regionId: string) => {
+    const gov = governorates.find((g) => g.id === governorateId)?.name[lang];
+    const region = regions.find((r) => r.id === regionId)?.name[lang];
+    return [gov, region].filter(Boolean).join(separator);
+  };
 
   return (
     <main className="container-page pt-28 pb-20 md:pt-32">
@@ -24,7 +58,24 @@ export default async function RestaurantsPage({ params }: PageProps<"/[lang]">) 
       </div>
 
       <div className="mt-10">
-        <RestaurantsGrid />
+        {restaurants.length === 0 ? (
+          <p className="rounded-2xl border border-dashed border-border p-16 text-center text-muted-foreground">
+            {t.restaurantsPage.empty}
+          </p>
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {restaurants.map((restaurant) => (
+              <RestaurantCard
+                key={restaurant.id}
+                restaurant={restaurant}
+                locationLabel={locationLabel(
+                  restaurant.governorateId,
+                  restaurant.regionId,
+                )}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </main>
   );

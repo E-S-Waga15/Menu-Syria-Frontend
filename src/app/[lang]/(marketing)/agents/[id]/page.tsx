@@ -11,6 +11,7 @@ import {
 import { AgentRestaurants } from "@/features/marketing/components/agent-restaurants";
 import {
   getAgentById,
+  getAgentRestaurants,
   getGovernorates,
   getRegions,
 } from "@/features/marketing/services";
@@ -31,6 +32,8 @@ export default async function AgentDetailsPage({
     getRegions(),
   ]);
   if (!agent) notFound();
+
+  const agentRestaurants = await getAgentRestaurants(agent.id);
 
   const governorateName =
     governorates.find((g) => g.id === agent.governorateId)?.name[lang] ?? "";
@@ -151,8 +154,12 @@ export default async function AgentDetailsPage({
       </div>
 
       <AgentRestaurants
-        agentId={agent.id}
+        restaurants={agentRestaurants}
+        governorates={governorates}
+        regions={regions}
         restaurantsCount={agent.restaurantsCount}
+        lang={lang}
+        t={t}
       />
     </main>
   );

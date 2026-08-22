@@ -1,8 +1,10 @@
 import {
   ChartNoAxesCombined,
+  Handshake,
   LayoutGrid,
   MessageCircle,
   QrCode,
+  ShoppingBag,
 } from "lucide-react";
 
 import type { Dictionary } from "@/i18n/get-dictionary";
@@ -11,19 +13,29 @@ export function Services({ t }: { t: Dictionary }) {
   const services = [
     { icon: QrCode, title: t.home.service1Title, body: t.home.service1Body },
     {
-      icon: MessageCircle,
+      icon: ShoppingBag,
       title: t.home.service2Title,
       body: t.home.service2Body,
     },
     {
-      icon: LayoutGrid,
+      icon: MessageCircle,
       title: t.home.service3Title,
       body: t.home.service3Body,
     },
     {
-      icon: ChartNoAxesCombined,
+      icon: LayoutGrid,
       title: t.home.service4Title,
       body: t.home.service4Body,
+    },
+    {
+      icon: ChartNoAxesCombined,
+      title: t.home.service5Title,
+      body: t.home.service5Body,
+    },
+    {
+      icon: Handshake,
+      title: t.home.service6Title,
+      body: t.home.service6Body,
     },
   ];
 
@@ -42,7 +54,7 @@ export function Services({ t }: { t: Dictionary }) {
           </p>
         </div>
 
-        <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {services.map((service) => (
             <article
               key={service.title}

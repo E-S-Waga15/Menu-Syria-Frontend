@@ -13,7 +13,7 @@ import { MapEmbed } from "@/features/marketing/components/map-embed";
 import { ReviewsSection } from "@/features/marketing/components/reviews-section";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/get-dictionary";
-import type { Restaurant, Review } from "@/lib/types";
+import type { Business, Review } from "@/lib/types";
 
 /**
  * The full details content (identity, contact, menu CTA, map, reviews).
@@ -28,14 +28,17 @@ export function RestaurantDetailsBody({
   lang,
   t,
   showMenuCta = true,
+  menuHref,
 }: {
-  restaurant: Restaurant;
+  restaurant: Business;
   reviews: Review[];
   governorateName: string;
   regionName: string;
   lang: Locale;
   t: Dictionary;
   showMenuCta?: boolean;
+  /** override the CTA destination (e.g. /store/slug) */
+  menuHref?: string;
 }) {
   const separator = lang === "ar" ? "، " : ", ";
 
@@ -154,7 +157,7 @@ export function RestaurantDetailsBody({
           {/* the one action that matters — themed with the restaurant's own color */}
           {showMenuCta && (
             <Link
-              href={`/${lang}/menu/${restaurant.slug}`}
+              href={menuHref ?? `/${lang}/menu/${restaurant.slug}`}
               className="group flex w-full transform-gpu items-center justify-center gap-3 rounded-2xl px-8 py-5 text-lg font-bold text-white transition-transform duration-300 ease-smooth hover:scale-[1.015] md:w-auto md:min-w-96"
               style={{
                 background: `linear-gradient(135deg, ${restaurant.theme.primaryColor}, color-mix(in oklch, ${restaurant.theme.primaryColor}, ${restaurant.theme.secondaryColor} 35%))`,

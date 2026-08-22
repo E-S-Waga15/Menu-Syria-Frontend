@@ -6,16 +6,19 @@ import Link from "next/link";
 import { Heart, MapPin, Star } from "lucide-react";
 
 import { useI18n } from "@/i18n/client";
-import type { Restaurant } from "@/lib/types";
+import type { Business } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useFavoritesStore } from "@/stores/favorites-store";
 
 export function RestaurantCard({
   restaurant,
   locationLabel,
+  href,
 }: {
-  restaurant: Restaurant;
+  restaurant: Business;
   locationLabel: string;
+  /** defaults to the restaurant details page */
+  href?: string;
 }) {
   const { t, lang } = useI18n();
   const isFavorite = useFavoritesStore((s) => s.ids.includes(restaurant.id));
@@ -24,7 +27,7 @@ export function RestaurantCard({
   return (
     <article className="group relative transform-gpu overflow-hidden rounded-2xl border border-border/60 bg-card transition-[translate,scale,border-color] duration-300 ease-smooth hover:-translate-y-1 hover:border-primary/35">
       <Link
-        href={`/${lang}/restaurants/${restaurant.slug}`}
+        href={href ?? `/${lang}/restaurants/${restaurant.slug}`}
         className="block outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
       >
         <div className="relative aspect-[16/10] overflow-hidden">

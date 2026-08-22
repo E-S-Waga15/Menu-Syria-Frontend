@@ -1,5 +1,14 @@
 "use client";
 
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+
+import { FieldError } from "@/components/shared/field-error";
+import {
+  dishFormSchema,
+  type DishFormValues,
+} from "@/features/restaurant-dashboard/schemas";
+
 import Image from "next/image";
 import { useState } from "react";
 
@@ -247,9 +256,17 @@ function DishDialog({
   }) => void;
 }) {
   const { t, lang } = useI18n();
-  const [name, setName] = useState("");
-  const [desc, setDesc] = useState("");
-  const [price, setPrice] = useState("");
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<DishFormValues>({
+    resolver: zodResolver(dishFormSchema(t.validation)),
+    defaultValues: { name: "", desc: "", price: "" },
+    mode: "onTouched",
+  });
 
   // Re-seed the fields whenever a different dish is opened (during render, no effect)
   const [seededFor, setSeededFor] = useState<{
@@ -258,10 +275,19 @@ function DishDialog({
   } | null>(null);
   if (seededFor?.editing !== editing || seededFor?.open !== open) {
     setSeededFor({ editing, open });
-    setName(editing?.name[lang] ?? "");
-    setDesc(editing?.description[lang] ?? "");
-    setPrice(editing ? String(editing.price) : "");
+    reset({
+      name: editing?.name[lang] ?? "",
+      desc: editing?.description[lang] ?? "",
+      price: editing ? String(editing.price) : "",
+    });
   }
+
+  const submit = (values: DishFormValues) =>
+    onSave({
+      nameText: values.name,
+      descText: values.desc,
+      price: Number(values.price) || 0,
+    });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -271,54 +297,43 @@ function DishDialog({
             {editing ? t.common.edit : t.dashboard.addDish}
           </DialogTitle>
         </DialogHeader>
-        <div className="space-y-4 px-4 pb-2">
-          <div className="space-y-1.5">
-            <Label htmlFor="dish-name">{t.dashboard.dishName}</Label>
-            <Input
-              id="dish-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
+        <form onSubmit={handleSubmit(submit)} noValidate>
+          <div className="space-y-4 px-4 pb-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="dish-name">{t.dashboard.dishName}</Label>
+              <Input
+                id="dish-name"
+                aria-invalid={!!errors.name}
+                {...register("name")}
+              />
+              <FieldError message={errors.name?.message} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="dish-price">{t.dashboard.dishPrice}</Label>
+              <Input
+                id="dish-price"
+                inputMode="numeric"
+                dir="ltr"
+                aria-invalid={!!errors.price}
+                {...register("price")}
+              />
+              <FieldError message={errors.price?.message} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="dish-desc">{t.dashboard.dishDesc}</Label>
+              <Textarea id="dish-desc" rows={2} {...register("desc")} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>{t.dashboard.dishImage}</Label>
+              <FileDropzone label={t.dashboard.dishImage} />
+            </div>
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="dish-price">{t.dashboard.dishPrice}</Label>
-            <Input
-              id="dish-price"
-              inputMode="numeric"
-              dir="ltr"
-              value={price}
-              onChange={(e) => setPrice(e.target.value.replace(/\D/g, ""))}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="dish-desc">{t.dashboard.dishDesc}</Label>
-            <Textarea
-              id="dish-desc"
-              rows={2}
-              value={desc}
-              onChange={(e) => setDesc(e.target.value)}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label>{t.dashboard.dishImage}</Label>
-            <FileDropzone label={t.dashboard.dishImage} />
-          </div>
-        </div>
-        <DialogFooter className="px-4 pb-4">
-          <Button
-            className="w-full shadow-glow"
-            disabled={!name.trim()}
-            onClick={() =>
-              onSave({
-                nameText: name,
-                descText: desc,
-                price: Number(price) || 0,
-              })
-            }
-          >
-            {t.common.save}
-          </Button>
-        </DialogFooter>
+          <DialogFooter className="px-4 pb-4">
+            <Button type="submit" className="w-full shadow-glow">
+              {t.common.save}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

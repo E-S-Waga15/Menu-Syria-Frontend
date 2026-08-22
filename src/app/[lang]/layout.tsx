@@ -7,6 +7,7 @@ import { DirectionProvider } from "@base-ui/react/direction-provider";
 import { I18nProvider } from "@/i18n/client";
 import { isLocale, localeDirections, locales } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
+import { alternatesFor, SITE_URL } from "@/lib/seo/site";
 import { AppProviders } from "@/providers/app-providers";
 
 import "../globals.css";
@@ -39,15 +40,31 @@ export async function generateMetadata({
   params,
 }: LayoutProps<"/[lang]">): Promise<Metadata> {
   const { lang } = await params;
-  const isAr = lang === "ar";
+  if (!isLocale(lang)) return {};
+  const t = await getDictionary(lang);
+
   return {
+    metadataBase: new URL(SITE_URL),
     title: {
-      default: isAr ? "منيو سوريا — المنصة الفاخرة للمنيو الرقمي" : "Menu Syria — The Luxury Digital Menu Platform",
-      template: isAr ? "%s | منيو سوريا" : "%s | Menu Syria",
+      default: t.seo.homeTitle,
+      template: `%s | ${t.seo.siteName}`,
     },
-    description: isAr
-      ? "حوّل قائمة طعامك إلى تجربة رقمية ساحرة بألوان هويتك، مع طلبات تصل واتسابك مباشرة."
-      : "Turn your menu into a captivating digital experience in your brand colors, with orders landing straight in your WhatsApp.",
+    description: t.seo.homeDescription,
+    keywords: t.seo.keywords,
+    alternates: alternatesFor(lang, ""),
+    openGraph: {
+      type: "website",
+      siteName: t.seo.siteName,
+      locale: lang === "ar" ? "ar_SY" : "en_US",
+      title: t.seo.homeTitle,
+      description: t.seo.homeDescription,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: t.seo.homeTitle,
+      description: t.seo.homeDescription,
+    },
+    robots: { index: true, follow: true },
   };
 }
 

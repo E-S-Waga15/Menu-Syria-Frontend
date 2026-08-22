@@ -1,12 +1,12 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-import type { MenuItem, MenuItemOption } from "@/lib/types";
+import type { CatalogItem, MenuItemOption } from "@/lib/types";
 
 export interface CartLine {
   /** item id + selected option ids — lines with different options stay separate */
   key: string;
-  item: MenuItem;
+  item: CatalogItem;
   options: MenuItemOption[];
   quantity: number;
 }
@@ -21,12 +21,12 @@ export const lineUnitPrice = (line: CartLine) =>
   line.item.price + line.options.reduce((sum, o) => sum + o.priceDelta, 0);
 
 interface CartState {
-  /** Carts are kept per restaurant so scanning a second QR never mixes orders */
+  /** Carts are kept per business (restaurant or store) so a second QR never mixes orders */
   restaurantId: string | null;
   lines: CartLine[];
   addItem: (
     restaurantId: string,
-    item: MenuItem,
+    item: CatalogItem,
     options?: MenuItemOption[],
     quantity?: number,
   ) => void;

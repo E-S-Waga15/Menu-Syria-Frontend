@@ -1,5 +1,5 @@
-import { AnalyticsView } from "@/features/restaurant-dashboard/components/analytics-view";
+import { AnalyticsViewLazy } from "@/features/restaurant-dashboard/components/analytics-view-lazy";
 
 export default function DashboardAnalyticsPage() {
-  return <AnalyticsView />;
+  return <AnalyticsViewLazy />;
 }

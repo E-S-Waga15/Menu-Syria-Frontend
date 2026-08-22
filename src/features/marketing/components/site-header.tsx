@@ -34,6 +34,7 @@ export function SiteHeader() {
   const links = [
     { href: `/${lang}#services`, label: t.nav.services },
     { href: `/${lang}/restaurants`, label: t.nav.restaurants },
+    { href: `/${lang}/stores`, label: t.nav.stores },
     { href: `/${lang}/agents`, label: t.nav.agents },
     { href: `/${lang}#team`, label: t.nav.team },
   ];
@@ -74,7 +75,7 @@ export function SiteHeader() {
           </Button>
           <Button
             className="hidden shadow-glow md:inline-flex"
-            render={<Link href={`/${lang}/register/restaurant`} />}
+            render={<Link href={`/${lang}#sectors`} />}
           >
             {t.nav.createStore}
           </Button>
@@ -116,7 +117,7 @@ export function SiteHeader() {
                     {t.nav.login}
                   </Button>
                   <Button
-                    render={<Link href={`/${lang}/register/restaurant`} />}
+                    render={<Link href={`/${lang}#sectors`} />}
                     onClick={() => setMobileOpen(false)}
                   >
                     {t.nav.createStore}

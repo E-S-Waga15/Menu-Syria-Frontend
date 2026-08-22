@@ -4,12 +4,12 @@ import Image from "next/image";
 
 import { Plus } from "lucide-react";
 
-import { formatPrice } from "@/features/public-menu/lib/format";
+import { formatPrice, type StorefrontCopy } from "@/features/public-menu/lib/format";
 import { useI18n } from "@/i18n/client";
-import type { MenuItem } from "@/lib/types";
+import type { CatalogItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-const badgeStyles: Record<NonNullable<MenuItem["badge"]>, string> = {
+const badgeStyles: Record<NonNullable<CatalogItem["badge"]>, string> = {
   popular: "bg-zest text-zest-foreground",
   new: "bg-success text-success-foreground",
   chefSpecial: "bg-[var(--menu-primary)] text-white",
@@ -17,22 +17,24 @@ const badgeStyles: Record<NonNullable<MenuItem["badge"]>, string> = {
 
 export function DishCard({
   item,
+  copy,
   onAdd,
   onOpen,
 }: {
-  item: MenuItem;
-  onAdd: (item: MenuItem) => void;
-  onOpen: (item: MenuItem) => void;
+  item: CatalogItem;
+  copy: StorefrontCopy;
+  onAdd: (item: CatalogItem) => void;
+  onOpen: (item: CatalogItem) => void;
 }) {
   const { t, lang } = useI18n();
 
   const badgeLabel =
     item.badge === "popular"
-      ? t.menu.popular
+      ? copy.popular
       : item.badge === "new"
-        ? t.menu.new
+        ? copy.new
         : item.badge === "chefSpecial"
-          ? t.menu.chefSpecial
+          ? copy.chefSpecial
           : null;
 
   return (
@@ -104,7 +106,7 @@ export function DishCard({
               e.stopPropagation();
               onAdd(item);
             }}
-            aria-label={`${t.menu.addToCart} — ${item.name[lang]}`}
+            aria-label={`${copy.addToCart} — ${item.name[lang]}`}
             className="flex size-9 items-center justify-center rounded-full bg-[var(--menu-primary)] transform-gpu text-white transition-transform duration-200 ease-smooth hover:scale-110 active:scale-95 disabled:pointer-events-none"
           >
             <Plus className="size-4.5" />

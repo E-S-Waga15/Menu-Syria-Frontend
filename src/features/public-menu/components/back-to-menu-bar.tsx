@@ -12,7 +12,14 @@ import { useI18n } from "@/i18n/client";
  * Minimal top bar for the in-menu details page — deliberately has no site
  * navigation so QR visitors can only move between the menu and this page.
  */
-export function BackToMenuBar({ menuHref }: { menuHref: string }) {
+export function BackToMenuBar({
+  menuHref,
+  label,
+}: {
+  menuHref: string;
+  /** defaults to the restaurant-menu wording */
+  label?: string;
+}) {
   const { t, dir } = useI18n();
   const BackArrow = dir === "rtl" ? ArrowRight : ArrowLeft;
 
@@ -24,7 +31,7 @@ export function BackToMenuBar({ menuHref }: { menuHref: string }) {
           className="flex items-center gap-2 rounded-full py-2 pe-4 text-sm font-bold text-primary transition-colors duration-200 hover:text-primary/80"
         >
           <BackArrow className="size-4.5" />
-          {t.menu.backToMenu}
+          {label ?? t.menu.backToMenu}
         </Link>
         <div className="ms-auto flex items-center gap-1">
           <ThemeToggle />

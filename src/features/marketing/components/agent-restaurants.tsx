@@ -1,51 +1,41 @@
-"use client";
-
 import Link from "next/link";
 
-import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { RestaurantCard } from "@/features/marketing/components/restaurant-card";
-import {
-  getAgentRestaurants,
-  getGovernorates,
-  getRegions,
-} from "@/features/marketing/services";
-import { fmt, useI18n } from "@/i18n/client";
-import { queryKeys } from "@/lib/api/query-keys";
+import type { Locale } from "@/i18n/config";
+import { fmt } from "@/i18n/fmt";
+import type { Dictionary } from "@/i18n/get-dictionary";
+import type { Governorate, Region, Restaurant } from "@/lib/types";
 
+/**
+ * Server component — the agent's partner restaurants ship as crawlable HTML.
+ * Only the favorite button inside each card hydrates on the client.
+ */
 export function AgentRestaurants({
-  agentId,
+  restaurants,
+  governorates,
+  regions,
   restaurantsCount,
+  lang,
+  t,
 }: {
-  agentId: string;
+  restaurants: Restaurant[];
+  governorates: Governorate[];
+  regions: Region[];
   restaurantsCount: number;
+  lang: Locale;
+  t: Dictionary;
 }) {
-  const { t, lang, dir } = useI18n();
-
-  const { data: restaurants, isPending } = useQuery({
-    queryKey: queryKeys.agents.restaurants(agentId),
-    queryFn: () => getAgentRestaurants(agentId),
-  });
-  const { data: governorates } = useQuery({
-    queryKey: queryKeys.governorates,
-    queryFn: getGovernorates,
-  });
-  const { data: regions } = useQuery({
-    queryKey: queryKeys.regions,
-    queryFn: getRegions,
-  });
-
   const separator = lang === "ar" ? "، " : ", ";
   const locationLabel = (governorateId: string, regionId: string) => {
-    const gov = governorates?.find((g) => g.id === governorateId)?.name[lang];
-    const region = regions?.find((r) => r.id === regionId)?.name[lang];
+    const gov = governorates.find((g) => g.id === governorateId)?.name[lang];
+    const region = regions.find((r) => r.id === regionId)?.name[lang];
     return [gov, region].filter(Boolean).join(separator);
   };
 
-  const ViewAllArrow = dir === "rtl" ? ArrowLeft : ArrowRight;
+  const ViewAllArrow = lang === "ar" ? ArrowLeft : ArrowRight;
 
   return (
     <section className="mt-14 border-t border-border/60 pt-10">
@@ -69,12 +59,7 @@ export function AgentRestaurants({
       </div>
 
       <div className="mt-7 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {isPending &&
-          Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-64 rounded-2xl" />
-          ))}
-
-        {restaurants?.slice(0, 4).map((restaurant) => (
+        {restaurants.slice(0, 4).map((restaurant) => (
           <RestaurantCard
             key={restaurant.id}
             restaurant={restaurant}

@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
-import { useQuery } from "@tanstack/react-query";
 import { MessageCircle, Phone, Store } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -15,27 +14,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  getAgentsByGovernorate,
-  getGovernorates,
-} from "@/features/marketing/services";
 import { useI18n } from "@/i18n/client";
-import { queryKeys } from "@/lib/api/query-keys";
+import type { Agent, Governorate } from "@/lib/types";
 
-export function AgentsSection() {
+/**
+ * Data arrives from the server (SSR — agents are in the initial HTML);
+ * this component only handles the governorate filter interaction.
+ */
+export function AgentsSection({
+  agents,
+  governorates,
+}: {
+  agents: Agent[];
+  governorates: Governorate[];
+}) {
   const { t, lang } = useI18n();
   const [governorateId, setGovernorateId] = useState("damascus");
 
-  const { data: governorates } = useQuery({
-    queryKey: queryKeys.governorates,
-    queryFn: getGovernorates,
-  });
-
-  const { data: agents, isPending } = useQuery({
-    queryKey: queryKeys.agents.byGovernorate(governorateId),
-    queryFn: () => getAgentsByGovernorate(governorateId),
-  });
+  const filtered = agents.filter((a) => a.governorateId === governorateId);
 
   return (
     <section id="agents" className="scroll-mt-20 py-16 md:py-24">
@@ -54,14 +50,14 @@ export function AgentsSection() {
             value={governorateId}
             onValueChange={(value) => value && setGovernorateId(value)}
             items={Object.fromEntries(
-              (governorates ?? []).map((gov) => [gov.id, gov.name[lang]]),
+              governorates.map((gov) => [gov.id, gov.name[lang]]),
             )}
           >
             <SelectTrigger className="mt-2 h-11 w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {(governorates ?? []).map((gov) => (
+              {governorates.map((gov) => (
                 <SelectItem key={gov.id} value={gov.id}>
                   {gov.name[lang]}
                 </SelectItem>
@@ -71,21 +67,16 @@ export function AgentsSection() {
         </div>
 
         <div className="grid content-start gap-5 sm:grid-cols-2">
-          {isPending &&
-            Array.from({ length: 2 }).map((_, i) => (
-              <Skeleton key={i} className="h-40 rounded-2xl" />
-            ))}
-
-          {!isPending && agents?.length === 0 && (
+          {filtered.length === 0 && (
             <div className="col-span-full rounded-2xl border border-dashed border-border p-10 text-center text-muted-foreground">
               {t.common.comingSoon}
             </div>
           )}
 
-          {agents?.map((agent) => (
+          {filtered.map((agent) => (
             <article
               key={agent.id}
-              className="group relative overflow-hidden rounded-2xl border border-border/60 transform-gpu bg-card p-5 transition-[translate,scale,border-color] duration-300 ease-smooth hover:-translate-y-0.5 hover:border-primary/35"
+              className="group relative transform-gpu overflow-hidden rounded-2xl border border-border/60 bg-card p-5 transition-[translate,scale,border-color] duration-300 ease-smooth hover:-translate-y-0.5 hover:border-primary/35"
             >
               {/* business-card accent stripe */}
               <div className="absolute inset-y-0 start-0 w-1 bg-gradient-to-b from-primary to-zest" />

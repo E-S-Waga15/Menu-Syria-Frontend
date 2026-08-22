@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -8,26 +9,74 @@ import { Info, MapPin, Phone, Search, Star } from "lucide-react";
 
 import { LanguageSwitcher } from "@/components/shared/language-switcher";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
-import {
-  CartSheet,
-  FloatingCartBar,
-} from "@/features/public-menu/components/cart";
+import { FloatingCartBar } from "@/features/public-menu/components/cart";
 import { DishCard } from "@/features/public-menu/components/dish-card";
-import { DishModal } from "@/features/public-menu/components/dish-modal";
-import type { PublicMenu } from "@/features/public-menu/services";
+import type { StorefrontCopy } from "@/features/public-menu/lib/format";
 import { useI18n } from "@/i18n/client";
-import type { MenuItem } from "@/lib/types";
+import type {
+  Business,
+  CatalogItem,
+  LocalizedText,
+} from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { useCartStore } from "@/stores/cart-store";
+import { selectCartCount, useCartStore } from "@/stores/cart-store";
 
-export function MenuScreen({ menu }: { menu: PublicMenu }) {
+// Overlays load as separate chunks on first use — a QR visitor scrolling
+// the menu never downloads the modal/checkout JS until they need it.
+const DishModal = dynamic(
+  () =>
+    import("@/features/public-menu/components/dish-modal").then(
+      (m) => m.DishModal,
+    ),
+  { ssr: false },
+);
+const CartSheet = dynamic(
+  () =>
+    import("@/features/public-menu/components/cart-sheet").then(
+      (m) => m.CartSheet,
+    ),
+  { ssr: false },
+);
+
+export interface StorefrontCategory {
+  id: string;
+  name: LocalizedText;
+  sortOrder: number;
+}
+
+/**
+ * The customer-facing storefront screen — renders a restaurant menu or an
+ * e-commerce catalog depending on the data and label pack passed in.
+ */
+export function MenuScreen({
+  business,
+  subtitle,
+  categories,
+  items,
+  governorateName,
+  regionName,
+  aboutHref,
+  copy,
+  showTable = true,
+}: {
+  business: Business;
+  /** cuisine for restaurants, store category for shops */
+  subtitle: LocalizedText;
+  categories: StorefrontCategory[];
+  items: CatalogItem[];
+  governorateName: LocalizedText;
+  regionName: LocalizedText;
+  aboutHref: string;
+  copy: StorefrontCopy;
+  showTable?: boolean;
+}) {
   const { t, lang } = useI18n();
-  const { restaurant, categories, items, governorateName, regionName } = menu;
   const addItem = useCartStore((s) => s.addItem);
+  const cartCount = useCartStore(selectCartCount);
 
   const [search, setSearch] = useState("");
   const [compact, setCompact] = useState(false);
-  const [openedDish, setOpenedDish] = useState<MenuItem | null>(null);
+  const [openedDish, setOpenedDish] = useState<CatalogItem | null>(null);
   const [activeCategory, setActiveCategory] = useState(categories[0]?.id);
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
   // Suspends the scroll-spy while a pill click drives a smooth scroll
@@ -92,7 +141,7 @@ export function MenuScreen({ menu }: { menu: PublicMenu }) {
   );
 
   const itemsByCategory = useMemo(() => {
-    const map = new Map<string, MenuItem[]>();
+    const map = new Map<string, CatalogItem[]>();
     for (const item of filteredItems) {
       const list = map.get(item.categoryId) ?? [];
       list.push(item);
@@ -103,15 +152,15 @@ export function MenuScreen({ menu }: { menu: PublicMenu }) {
     return map;
   }, [filteredItems]);
 
-  const handleAdd = (item: MenuItem) => addItem(restaurant.id, item);
+  const handleAdd = (item: CatalogItem) => addItem(business.id, item);
 
   return (
     <div
       className="min-h-dvh bg-background"
       style={
         {
-          "--menu-primary": restaurant.theme.primaryColor,
-          "--menu-secondary": restaurant.theme.secondaryColor,
+          "--menu-primary": business.theme.primaryColor,
+          "--menu-secondary": business.theme.secondaryColor,
         } as React.CSSProperties
       }
     >
@@ -127,7 +176,7 @@ export function MenuScreen({ menu }: { menu: PublicMenu }) {
             {/* identity row */}
             <div className="flex items-center gap-3.5 pt-3">
               <Image
-                src={restaurant.logoUrl}
+                src={business.logoUrl}
                 alt=""
                 width={72}
                 height={72}
@@ -135,20 +184,20 @@ export function MenuScreen({ menu }: { menu: PublicMenu }) {
               />
               <div className="min-w-0 flex-1">
                 <h1 className="truncate font-heading text-lg font-bold md:text-xl">
-                  {restaurant.name[lang]}
+                  {business.name[lang]}
                 </h1>
                 <p className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
                   <Star className="size-3 fill-zest text-zest" />
-                  {restaurant.rating} · {restaurant.cuisine[lang]}
+                  {business.rating} · {subtitle[lang]}
                 </p>
-                {/* the details page lives inside the menu route — the only
+                {/* the details page lives inside the storefront route — the only
                     destination a QR visitor can reach, with no site chrome */}
                 <Link
-                  href={`/${lang}/menu/${restaurant.slug}/about`}
+                  href={aboutHref}
                   className="mt-1 inline-flex items-center gap-1 text-xs font-bold text-[var(--menu-primary)] hover:underline"
                 >
                   <Info className="size-3.5" />
-                  {t.menu.viewRestaurantDetails}
+                  {copy.viewRestaurantDetails}
                 </Link>
               </div>
               <ThemeToggle />
@@ -165,10 +214,10 @@ export function MenuScreen({ menu }: { menu: PublicMenu }) {
               </span>
               <span className="flex shrink-0 items-center gap-1.5">
                 <Phone className="size-3.5 text-[var(--menu-primary)]" />
-                <span dir="ltr">{restaurant.phone}</span>
+                <span dir="ltr">{business.phone}</span>
               </span>
               <a
-                href={`tel:${restaurant.phone.replace(/\s/g, "")}`}
+                href={`tel:${business.phone.replace(/\s/g, "")}`}
                 className="ms-auto flex shrink-0 items-center gap-1.5 rounded-full bg-[var(--menu-primary)]/10 px-3.5 py-1.5 font-bold text-[var(--menu-primary)] transition-colors duration-200 hover:bg-[var(--menu-primary)]/20"
               >
                 <Phone className="size-3.5" />
@@ -184,7 +233,7 @@ export function MenuScreen({ menu }: { menu: PublicMenu }) {
                 type="search"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder={t.menu.searchPlaceholder}
+                placeholder={copy.searchPlaceholder}
                 className="h-11 w-full rounded-full border border-border/70 bg-surface-container-low ps-11 pe-4 text-sm outline-none transition-[border-color,box-shadow] duration-200 focus:border-[var(--menu-primary)] focus:ring-2 focus:ring-[var(--menu-primary)]/25"
               />
             </div>
@@ -234,6 +283,7 @@ export function MenuScreen({ menu }: { menu: PublicMenu }) {
                 <DishCard
                   key={item.id}
                   item={item}
+                  copy={copy}
                   onAdd={handleAdd}
                   onOpen={setOpenedDish}
                 />
@@ -241,7 +291,7 @@ export function MenuScreen({ menu }: { menu: PublicMenu }) {
             </div>
             {filteredItems.length === 0 && (
               <p className="py-16 text-center text-muted-foreground">
-                {t.menu.emptyCartBody}
+                {copy.emptyCartBody}
               </p>
             )}
           </section>
@@ -266,6 +316,7 @@ export function MenuScreen({ menu }: { menu: PublicMenu }) {
                     <DishCard
                       key={item.id}
                       item={item}
+                      copy={copy}
                       onAdd={handleAdd}
                       onOpen={setOpenedDish}
                     />
@@ -277,13 +328,20 @@ export function MenuScreen({ menu }: { menu: PublicMenu }) {
         )}
       </main>
 
-      <FloatingCartBar />
-      <CartSheet restaurant={restaurant} />
-      <DishModal
-        item={openedDish}
-        restaurantId={restaurant.id}
-        onClose={() => setOpenedDish(null)}
-      />
+      <FloatingCartBar copy={copy} />
+      {/* mount lazily: the chunk downloads when the cart first has items /
+          a dish is first opened, not on initial page load */}
+      {cartCount > 0 && (
+        <CartSheet business={business} copy={copy} showTable={showTable} />
+      )}
+      {openedDish && (
+        <DishModal
+          item={openedDish}
+          businessId={business.id}
+          copy={copy}
+          onClose={() => setOpenedDish(null)}
+        />
+      )}
     </div>
   );
 }

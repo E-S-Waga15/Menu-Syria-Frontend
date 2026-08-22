@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
-import { useQuery } from "@tanstack/react-query";
 import { MapPin, MessageCircle, Phone, Search, Store } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -16,41 +15,34 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  getAgents,
-  getGovernorates,
-  getRegions,
-} from "@/features/marketing/services";
 import { useI18n } from "@/i18n/client";
-import { queryKeys } from "@/lib/api/query-keys";
+import type { Agent, Governorate, Region } from "@/lib/types";
 
 const ALL = "all";
 
-export function AgentsDirectory() {
+/**
+ * Data arrives from the server (SSR — the directory is in the initial HTML);
+ * search and filters run locally on the hydrated list.
+ */
+export function AgentsDirectory({
+  agents,
+  governorates,
+  regions,
+}: {
+  agents: Agent[];
+  governorates: Governorate[];
+  regions: Region[];
+}) {
   const { t, lang } = useI18n();
 
   const [search, setSearch] = useState("");
   const [governorateId, setGovernorateId] = useState(ALL);
   const [regionId, setRegionId] = useState(ALL);
 
-  const { data: agents, isPending } = useQuery({
-    queryKey: queryKeys.agents.all,
-    queryFn: getAgents,
-  });
-  const { data: governorates } = useQuery({
-    queryKey: queryKeys.governorates,
-    queryFn: getGovernorates,
-  });
-  const { data: regions } = useQuery({
-    queryKey: queryKeys.regions,
-    queryFn: getRegions,
-  });
-
   // regions narrow to the picked governorate
   const regionChoices = useMemo(
     () =>
-      (regions ?? []).filter(
+      regions.filter(
         (r) => governorateId === ALL || r.governorateId === governorateId,
       ),
     [regions, governorateId],
@@ -58,7 +50,7 @@ export function AgentsDirectory() {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return (agents ?? []).filter((agent) => {
+    return agents.filter((agent) => {
       if (governorateId !== ALL && agent.governorateId !== governorateId)
         return false;
       if (regionId !== ALL && agent.regionId !== regionId) return false;
@@ -73,14 +65,14 @@ export function AgentsDirectory() {
   }, [agents, search, governorateId, regionId]);
 
   const governorateName = (id: string) =>
-    governorates?.find((g) => g.id === id)?.name[lang] ?? "";
+    governorates.find((g) => g.id === id)?.name[lang] ?? "";
   const regionName = (id: string) =>
-    regions?.find((r) => r.id === id)?.name[lang] ?? "";
+    regions.find((r) => r.id === id)?.name[lang] ?? "";
 
   const governorateItems = {
     [ALL]: t.agentsPage.allGovernorates,
     ...Object.fromEntries(
-      (governorates ?? []).map((gov) => [gov.id, gov.name[lang]]),
+      governorates.map((gov) => [gov.id, gov.name[lang]]),
     ),
   };
   const regionItems = {
@@ -151,12 +143,7 @@ export function AgentsDirectory() {
 
       {/* results */}
       <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {isPending &&
-          Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="h-44 rounded-2xl" />
-          ))}
-
-        {!isPending && filtered.length === 0 && (
+        {filtered.length === 0 && (
           <div className="col-span-full rounded-2xl border border-dashed border-border p-14 text-center text-muted-foreground">
             {t.agentsPage.noResults}
           </div>

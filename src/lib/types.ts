@@ -27,14 +27,17 @@ export interface RestaurantTheme {
   secondaryColor: string;
 }
 
-export interface Restaurant {
+/**
+ * Shared shape for anything that sells through the platform —
+ * restaurants publish menus, stores publish product catalogs.
+ */
+export interface Business {
   id: string;
   slug: string;
   name: LocalizedText;
   description: LocalizedText;
   logoUrl: string;
   coverImages: string[];
-  cuisine: LocalizedText;
   governorateId: string;
   regionId: string;
   address: LocalizedText;
@@ -50,9 +53,25 @@ export interface Restaurant {
   planExpiresAt: string;
 }
 
+export interface Restaurant extends Business {
+  cuisine: LocalizedText;
+}
+
+/** E-commerce storefront (clothing, electronics, gifts…) */
+export interface Store extends Business {
+  category: LocalizedText;
+}
+
 export interface MenuCategory {
   id: string;
   restaurantId: string;
+  name: LocalizedText;
+  sortOrder: number;
+}
+
+export interface StoreCategory {
+  id: string;
+  storeId: string;
   name: LocalizedText;
   sortOrder: number;
 }
@@ -65,21 +84,34 @@ export interface MenuItemOption {
   priceDelta: number;
 }
 
-export interface MenuItem {
+/**
+ * Shared sellable-item shape: a dish on a menu or a product in a store.
+ * The public storefront UI (cards, modal, cart, WhatsApp order) renders
+ * this shape regardless of the business type behind it.
+ */
+export interface CatalogItem {
   id: string;
   categoryId: string;
-  restaurantId: string;
   name: LocalizedText;
   description: LocalizedText;
   price: number;
   imageUrl: string;
-  /** extra gallery photos for the dish modal; falls back to [imageUrl] */
+  /** extra gallery photos for the item modal; falls back to [imageUrl] */
   images?: string[];
+  /** dish ingredients — or product specs/features for stores */
   ingredients?: LocalizedText[];
   options?: MenuItemOption[];
   isAvailable: boolean;
   badge?: DishBadge;
   sortOrder: number;
+}
+
+export interface MenuItem extends CatalogItem {
+  restaurantId: string;
+}
+
+export interface StoreProduct extends CatalogItem {
+  storeId: string;
 }
 
 export interface Review {
