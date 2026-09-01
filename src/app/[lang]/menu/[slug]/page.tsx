@@ -30,8 +30,10 @@ export async function generateMetadata({
 
 export default async function PublicMenuPage({
   params,
+  searchParams,
 }: PageProps<"/[lang]/menu/[slug]">) {
   const { lang, slug } = await params;
+  const { t: tableParam } = await searchParams;
   if (!isLocale(lang)) notFound();
 
   const [menu, t] = await Promise.all([
@@ -58,6 +60,7 @@ export default async function PublicMenuPage({
         regionName={menu.regionName}
         aboutHref={`/${lang}/menu/${slug}/about`}
         copy={t.menu}
+        tableParam={typeof tableParam === "string" ? tableParam : undefined}
       />
     </>
   );

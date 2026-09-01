@@ -1,11 +1,18 @@
 import type { MetadataRoute } from "next";
 
-import { getAgents, getFeaturedRestaurants } from "@/features/marketing/services";
+import {
+  getAgents,
+  getFeaturedRestaurants,
+} from "@/features/marketing/services";
 import { getStores } from "@/features/public-store/services";
 import { locales } from "@/i18n/config";
 import { SITE_URL } from "@/lib/seo/site";
 
-function localized(path: string, priority: number, changeFrequency: "daily" | "weekly" | "monthly"): MetadataRoute.Sitemap {
+function localized(
+  path: string,
+  priority: number,
+  changeFrequency: "daily" | "weekly" | "monthly",
+): MetadataRoute.Sitemap {
   return locales.map((lang) => ({
     url: `${SITE_URL}/${lang}${path}`,
     lastModified: new Date(),
@@ -31,6 +38,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...localized("/restaurants", 0.9, "daily"),
     ...localized("/stores", 0.9, "daily"),
     ...localized("/agents", 0.8, "weekly"),
+    ...localized("/about", 0.7, "monthly"),
     ...localized("/login", 0.3, "monthly"),
     ...localized("/register/restaurant", 0.6, "monthly"),
     ...localized("/register/agent", 0.5, "monthly"),
@@ -38,9 +46,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       ...localized(`/restaurants/${r.slug}`, 0.8, "weekly"),
       ...localized(`/menu/${r.slug}`, 0.7, "daily"),
     ]),
-    ...stores.flatMap((s) => [
-      ...localized(`/store/${s.slug}`, 0.8, "daily"),
-    ]),
+    ...stores.flatMap((s) => [...localized(`/store/${s.slug}`, 0.8, "daily")]),
     ...agents.flatMap((a) => localized(`/agents/${a.id}`, 0.6, "monthly")),
   ];
 }

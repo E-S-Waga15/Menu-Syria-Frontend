@@ -1,9 +1,27 @@
+import Image from "next/image";
 import Link from "next/link";
 
+import logoMark from "@/assets/logo.png";
+import logoMarkInverse from "@/assets/logo-mark-inverse.svg";
+import logoWord from "@/assets/logo_word.png";
+import logoWordWhite from "@/assets/logo_word_white.png";
 import { cn } from "@/lib/utils";
 
 /**
- * Wordmark: a berry rounded plate holding a fork glyph + bilingual brand name.
+ * Brand mark (`src/assets/logo.png`) + the drawn wordmark.
+ *
+ * The wordmark is artwork, not type — `logo_word.png` on light grounds and
+ * `logo_word_white.png` on dark ones, since the berry lettering would vanish
+ * against the footer.
+ *
+ * Both wordmarks are 560×60, so height drives a ~9.3× wider box: every 1px of
+ * height costs 9px of row. That makes the lockup the widest thing in the
+ * mobile header (which also holds the menu trigger, theme toggle and login
+ * button), so mark, gap and wordmark all step up together — 28+131px on a
+ * phone, 36+168px from `lg`.
+ *
+ * `alt=""` on both images: the wrapping link already carries `aria-label`,
+ * so the brand name is announced once, not twice.
  */
 export function Logo({
   lang,
@@ -19,39 +37,21 @@ export function Logo({
   return (
     <Link
       href={`/${lang}`}
-      className={cn("flex items-center gap-2.5", className)}
+      className={cn("flex items-center gap-2 sm:gap-2.5", className)}
       aria-label={brand}
     >
-      <span
-        className={cn(
-          "flex size-9 items-center justify-center rounded-xl shadow-soft",
-          inverted ? "bg-white/10 text-white" : "bg-primary text-primary-foreground",
-        )}
-      >
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          className="size-5"
-          aria-hidden
-        >
-          {/* fork */}
-          <path d="M7 3v5a2 2 0 0 0 2 2h0a2 2 0 0 0 2-2V3" />
-          <path d="M9 10v11" />
-          {/* knife */}
-          <path d="M16 3c-1.5 2.5-1.5 5.5 0 8v10" />
-        </svg>
-      </span>
-      <span
-        className={cn(
-          "font-heading text-lg font-bold tracking-tight",
-          inverted ? "text-white" : "text-foreground",
-        )}
-      >
-        {brand}
-      </span>
+      <Image
+        src={inverted ? logoMarkInverse : logoMark}
+        alt=""
+        className="size-7 object-contain sm:size-8 lg:size-9"
+        priority
+      />
+      <Image
+        src={inverted ? logoWordWhite : logoWord}
+        alt=""
+        className="h-3 w-auto object-contain sm:h-3 lg:h-3"
+        priority
+      />
     </Link>
   );
 }

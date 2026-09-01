@@ -1,7 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { ArrowLeft, ArrowRight, ShoppingBag, UtensilsCrossed } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  ShoppingBag,
+  UtensilsCrossed,
+} from "lucide-react";
 
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/get-dictionary";
@@ -19,8 +24,10 @@ export function SectorsSection({ lang, t }: { lang: Locale; t: Dictionary }) {
       href: `/${lang}/register/restaurant`,
       image:
         "https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=900&q=80",
-      accent: "from-primary/85 via-primary/40",
-      chip: "bg-berry-soft text-berry-soft-foreground",
+      // same dark wash as the store card: the berry overlay tinted the
+      // photo red and the white copy on top of it stopped being legible
+      accent: "from-zest-foreground/85 via-zest-foreground/40",
+      chip: "bg-[#ffd9de] text-[#90003b]",
     },
     {
       icon: ShoppingBag,

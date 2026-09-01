@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 
 import { RestaurantRegisterForm } from "@/features/auth/components/restaurant-register-form";
 import { isLocale } from "@/i18n/config";
@@ -22,14 +23,23 @@ export default async function StoreRegisterPage({
   const t = await getDictionary(lang);
 
   return (
-    <RestaurantRegisterForm
-      copy={{
-        title: t.auth.storeRegTitle,
-        body: t.auth.storeRegBody,
-        nameLabel: t.auth.storeNameLabel,
-        namePlaceholder: t.auth.storeNamePlaceholder,
-        typeLabel: t.auth.storeTypeLabel,
-      }}
-    />
+    // the shared form reads ?ref= via useSearchParams, which needs a boundary
+    <Suspense>
+      <RestaurantRegisterForm
+        copy={{
+          title: t.auth.storeRegTitle,
+          body: t.auth.storeRegBody,
+          nameLabel: t.auth.storeNameLabel,
+          namePlaceholder: t.auth.storeNamePlaceholder,
+          typeLabel: t.auth.storeTypeLabel,
+          step1: t.auth.storeStep1,
+          descriptionPlaceholder: t.auth.storeDescriptionPlaceholder,
+          logoLabel: t.auth.storeLogoLabel,
+          previewItemName: t.auth.previewProductName,
+          previewItemDesc: t.auth.previewProductDesc,
+          instagramPlaceholder: t.auth.storeInstagramPlaceholder,
+        }}
+      />
+    </Suspense>
   );
 }

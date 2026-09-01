@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useEffect, useState } from "react";
 
 import {
   Carousel,
@@ -8,17 +9,56 @@ import {
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
+  type CarouselApi,
 } from "@/components/ui/carousel";
 import { useI18n } from "@/i18n/client";
+import { cn } from "@/lib/utils";
+
+/**
+ * Five seconds a slide — long enough to read a photo, short enough that the
+ * set turns over while someone is still on the page. It is the interval the
+ * big storefronts settle on, and it holds up here for the same reason.
+ */
+const SLIDE_MS = 5000;
 
 export function RestaurantGallery({ images }: { images: string[] }) {
   const { dir } = useI18n();
+  const [api, setApi] = useState<CarouselApi>();
+  const [slide, setSlide] = useState(0);
+  const [paused, setPaused] = useState(false);
+
+  const many = images.length > 1;
+
+  // mirror embla's position so the dashes can follow it. No initial read:
+  // embla starts on slide 0 and so does this state.
+  useEffect(() => {
+    if (!api) return;
+    const onSelect = () => setSlide(api.selectedScrollSnap());
+    api.on("select", onSelect);
+    return () => {
+      api.off("select", onSelect);
+    };
+  }, [api]);
+
+  // Advance on a timer, and stand down while the visitor is interacting —
+  // a carousel that moves under a pointer mid-drag feels broken.
+  useEffect(() => {
+    if (!api || !many || paused) return;
+    const id = window.setInterval(() => api.scrollNext(), SLIDE_MS);
+    return () => window.clearInterval(id);
+  }, [api, many, paused]);
 
   return (
     <Carousel
       opts={{ loop: true, direction: dir }}
+      setApi={setApi}
       dir="ltr"
       className="group relative"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onFocusCapture={() => setPaused(true)}
+      onBlurCapture={() => setPaused(false)}
+      onPointerDown={() => setPaused(true)}
     >
       <CarouselContent className="ms-0">
         {images.map((src, index) => (
@@ -31,14 +71,41 @@ export function RestaurantGallery({ images }: { images: string[] }) {
                 priority={index === 0}
                 sizes="100vw"
                 className="object-cover"
+                draggable={false}
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/5 to-black/20" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/5 to-black/20" />
             </div>
           </CarouselItem>
         ))}
       </CarouselContent>
-      <CarouselPrevious className="start-4 border-0 bg-white/80 opacity-0 shadow-lifted backdrop-blur transition-opacity group-hover:opacity-100 max-md:opacity-100 dark:bg-black/50" />
-      <CarouselNext className="end-4 border-0 bg-white/80 opacity-0 shadow-lifted backdrop-blur transition-opacity group-hover:opacity-100 max-md:opacity-100 dark:bg-black/50" />
+
+      {many && (
+        <>
+          {/* arrows stay visible: hiding them until hover left no sign that
+              there was anything to move through, and no sign at all on touch */}
+          <CarouselPrevious className="start-4 size-10 border-0 bg-white/85 text-foreground backdrop-blur hover:bg-white dark:bg-black/55 dark:text-white dark:hover:bg-black/75" />
+          <CarouselNext className="end-4 size-10 border-0 bg-white/85 text-foreground backdrop-blur hover:bg-white dark:bg-black/55 dark:text-white dark:hover:bg-black/75" />
+
+          {/* dashes: how many photos there are, and which one is showing */}
+          <div className="absolute inset-x-0 bottom-4 flex justify-center gap-1.5">
+            {images.map((src, index) => (
+              <button
+                key={src}
+                type="button"
+                onClick={() => api?.scrollTo(index)}
+                aria-label={`${index + 1}/${images.length}`}
+                aria-current={index === slide ? "true" : undefined}
+                className={cn(
+                  "h-1.5 cursor-pointer rounded-full transition-[width,background-color] duration-300 ease-smooth",
+                  index === slide
+                    ? "w-7 bg-white"
+                    : "w-2 bg-white/55 hover:bg-white/80",
+                )}
+              />
+            ))}
+          </div>
+        </>
+      )}
     </Carousel>
   );
 }

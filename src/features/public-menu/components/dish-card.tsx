@@ -4,7 +4,10 @@ import Image from "next/image";
 
 import { Plus } from "lucide-react";
 
-import { formatPrice, type StorefrontCopy } from "@/features/public-menu/lib/format";
+import {
+  formatPrice,
+  type StorefrontCopy,
+} from "@/features/public-menu/lib/format";
 import { useI18n } from "@/i18n/client";
 import type { CatalogItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -86,17 +89,11 @@ export function DishCard({
       </div>
 
       <div className="flex flex-1 flex-col p-3.5 pb-4">
-        <h3 className="font-heading text-sm font-semibold leading-snug md:text-base">
+        <h3 className="flex-1 font-heading text-sm font-semibold leading-snug md:text-base">
           {item.name[lang]}
         </h3>
-        <p className="mt-1 line-clamp-2 flex-1 text-xs leading-relaxed text-muted-foreground md:text-[0.8rem]">
-          {item.description[lang]}
-        </p>
         <div className="mt-3 flex items-center justify-between gap-2">
-          <p
-            className="text-sm font-bold text-[var(--menu-primary)] md:text-base"
-            dir="ltr"
-          >
+          <p className="text-sm font-bold text-[var(--menu-primary)] md:text-base">
             {formatPrice(item.price, t.common.currency)}
           </p>
           <button

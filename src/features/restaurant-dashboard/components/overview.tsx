@@ -3,12 +3,7 @@
 import Image from "next/image";
 
 import { useQuery } from "@tanstack/react-query";
-import {
-  Banknote,
-  Eye,
-  Receipt,
-  TrendingUp,
-} from "lucide-react";
+import { Banknote, Eye, Receipt, TrendingUp } from "lucide-react";
 
 import { StatCard } from "@/features/restaurant-dashboard/components/stat-card";
 import {
@@ -38,7 +33,7 @@ export function DashboardOverview() {
 
   if (!analytics) {
     return (
-      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <Skeleton key={i} className="h-32 rounded-2xl" />
         ))}
@@ -60,7 +55,7 @@ export function DashboardOverview() {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           label={t.dashboard.todayOrders}
           value={String(analytics.todayOrders)}
@@ -87,7 +82,7 @@ export function DashboardOverview() {
         />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.4fr_1fr]">
         {/* recent orders */}
         <section className="rounded-2xl border border-border/60 bg-card p-5 shadow-soft">
           <h2 className="font-heading text-lg font-semibold">

@@ -1,5 +1,7 @@
-import { AgentRestaurantsList } from "@/features/agent-dashboard/components/restaurants-list";
+import { SubscribedBusinesses } from "@/features/agent-dashboard/components/subscribed-businesses";
+import { getMyReferredRestaurants } from "@/features/agent-dashboard/services";
 
-export default function AgentRestaurantsPage() {
-  return <AgentRestaurantsList />;
+export default async function AgentRestaurantsPage() {
+  const restaurants = await getMyReferredRestaurants();
+  return <SubscribedBusinesses businesses={restaurants} kind="restaurant" />;
 }

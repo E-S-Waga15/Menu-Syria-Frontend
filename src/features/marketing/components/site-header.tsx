@@ -3,12 +3,18 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-import { Menu } from "lucide-react";
+import { ChevronDown, Menu } from "lucide-react";
 
 import { LanguageSwitcher } from "@/components/shared/language-switcher";
 import { Logo } from "@/components/shared/logo";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Sheet,
   SheetContent,
@@ -16,13 +22,17 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { useHydratedSession } from "@/features/auth/use-hydrated-session";
+import { NotificationBell } from "@/features/notifications/components/notification-bell";
+import { ProfileMenu } from "@/features/marketing/components/profile-menu";
 import { useI18n } from "@/i18n/client";
 import { cn } from "@/lib/utils";
 
 export function SiteHeader() {
-  const { t, lang } = useI18n();
+  const { t, lang, dir } = useI18n();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { session, hydrated } = useHydratedSession();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -36,7 +46,7 @@ export function SiteHeader() {
     { href: `/${lang}/restaurants`, label: t.nav.restaurants },
     { href: `/${lang}/stores`, label: t.nav.stores },
     { href: `/${lang}/agents`, label: t.nav.agents },
-    { href: `/${lang}#team`, label: t.nav.team },
+    { href: `/${lang}/about`, label: t.nav.about },
   ];
 
   return (
@@ -48,39 +58,9 @@ export function SiteHeader() {
           : "border-transparent bg-transparent",
       )}
     >
-      <div className="container-page flex h-16 items-center justify-between gap-4">
-        <Logo lang={lang} brand={t.common.brand} />
-
-        <nav className="hidden items-center gap-1 lg:flex" aria-label="Main">
-          {links.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="rounded-lg px-3.5 py-2 text-sm font-semibold text-foreground/80 transition-colors hover:bg-accent hover:text-primary"
-            >
-              {link.label}
-            </Link>
-          ))}
-        </nav>
-
-        <div className="flex items-center gap-1.5">
-          <LanguageSwitcher className="hidden sm:inline-flex" />
-          <ThemeToggle />
-          <Button
-            variant="ghost"
-            className="hidden font-semibold md:inline-flex"
-            render={<Link href={`/${lang}/login`} />}
-          >
-            {t.nav.login}
-          </Button>
-          <Button
-            className="hidden shadow-glow md:inline-flex"
-            render={<Link href={`/${lang}#sectors`} />}
-          >
-            {t.nav.createStore}
-          </Button>
-
-          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+      <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+        <div className="container-page flex h-16 items-center justify-between gap-4">
+          <div className="flex items-center gap-1">
             <SheetTrigger
               render={
                 <Button
@@ -93,42 +73,85 @@ export function SiteHeader() {
             >
               <Menu className="size-5" />
             </SheetTrigger>
-            <SheetContent side={lang === "ar" ? "left" : "right"}>
-              <SheetHeader>
-                <SheetTitle>{t.common.brand}</SheetTitle>
-              </SheetHeader>
-              <nav className="flex flex-col gap-1 px-4">
-                {links.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    onClick={() => setMobileOpen(false)}
-                    className="rounded-lg px-3 py-2.5 text-base font-semibold transition-colors hover:bg-accent"
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-                <div className="mt-4 flex flex-col gap-2">
-                  <Button
-                    variant="outline"
-                    render={<Link href={`/${lang}/login`} />}
-                    onClick={() => setMobileOpen(false)}
+            <Logo lang={lang} brand={t.common.brand} />
+          </div>
+
+          <nav className="hidden items-center gap-1 lg:flex" aria-label="Main">
+            {links.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="rounded-lg px-3.5 py-2 text-sm font-semibold text-foreground/80 transition-colors hover:bg-accent hover:text-primary"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+
+          <div className="flex items-center gap-1.5">
+            <LanguageSwitcher className="hidden sm:inline-flex" />
+            <ThemeToggle />
+            {hydrated && session ? (
+              <>
+                <NotificationBell href={`/${lang}/notifications`} ids={[]} />
+                <ProfileMenu session={session} />
+              </>
+            ) : (
+              <>
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    render={<Button className="gap-1 font-semibold" />}
                   >
                     {t.nav.login}
-                  </Button>
-                  <Button
-                    render={<Link href={`/${lang}#sectors`} />}
-                    onClick={() => setMobileOpen(false)}
-                  >
-                    {t.nav.createStore}
-                  </Button>
-                  <LanguageSwitcher className="self-center" />
-                </div>
-              </nav>
-            </SheetContent>
-          </Sheet>
+                    <ChevronDown className="size-3.5" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="min-w-64">
+                    <DropdownMenuItem render={<Link href={`/${lang}/login`} />}>
+                      {t.nav.loginBusiness}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      render={<Link href={`/${lang}/login/user`} />}
+                    >
+                      {t.nav.loginCustomer}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <Button
+                  variant="outline"
+                  className="hidden border-[1.5px] border-primary/40 font-semibold text-primary hover:bg-berry-soft/40 hover:text-primary md:inline-flex"
+                  render={<Link href={`/${lang}#sectors`} />}
+                >
+                  {t.nav.createStore}
+                </Button>
+              </>
+            )}
+          </div>
         </div>
-      </div>
+
+        {/* opens from the inline-start edge — the side the trigger sits on:
+            right in Arabic, left in English. Driven by `dir`, not a hardcoded
+            "ar", so any future RTL locale is covered too. */}
+        <SheetContent side={dir === "rtl" ? "right" : "left"}>
+          <SheetHeader>
+            <SheetTitle>{t.common.brand}</SheetTitle>
+          </SheetHeader>
+          <nav className="flex flex-col gap-1 px-4">
+            {links.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={() => setMobileOpen(false)}
+                className="rounded-lg px-3 py-2.5 text-base font-semibold transition-colors hover:bg-accent"
+              >
+                {link.label}
+              </Link>
+            ))}
+            <div className="mt-4 flex flex-col gap-2">
+              <LanguageSwitcher className="self-center" />
+            </div>
+          </nav>
+        </SheetContent>
+      </Sheet>
     </header>
   );
 }

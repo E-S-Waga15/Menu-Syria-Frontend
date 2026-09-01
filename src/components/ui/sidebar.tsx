@@ -359,7 +359,7 @@ function SidebarSeparator({
     <Separator
       data-slot="sidebar-separator"
       data-sidebar="separator"
-      className={cn("mx-2 w-auto bg-sidebar-border", className)}
+      className={cn("mx-2 data-horizontal:w-auto bg-sidebar-border", className)}
       {...props}
     />
   )
@@ -509,12 +509,17 @@ function SidebarMenuButton({
     isActive?: boolean
     tooltip?: string | React.ComponentProps<typeof TooltipContent>
   } & VariantProps<typeof sidebarMenuButtonVariants>) {
-  const { isMobile, state } = useSidebar()
+  const { isMobile, state, setOpenMobile } = useSidebar()
   const comp = useRender({
     defaultTagName: "button",
     props: mergeProps<"button">(
       {
         className: cn(sidebarMenuButtonVariants({ variant, size }), className),
+        // navigating from the mobile off-canvas sidebar should close it —
+        // staying open behind the new page is never what's wanted
+        onClick: () => {
+          if (isMobile) setOpenMobile(false)
+        },
       },
       props
     ),

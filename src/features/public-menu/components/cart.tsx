@@ -7,7 +7,11 @@ import {
   type StorefrontCopy,
 } from "@/features/public-menu/lib/format";
 import { useI18n } from "@/i18n/client";
-import { selectCartCount, selectCartTotal, useCartStore } from "@/stores/cart-store";
+import {
+  selectCartCount,
+  selectCartTotal,
+  useCartStore,
+} from "@/stores/cart-store";
 import { useUiStore } from "@/stores/ui-store";
 
 export function FloatingCartBar({ copy }: { copy: StorefrontCopy }) {
@@ -38,7 +42,7 @@ export function FloatingCartBar({ copy }: { copy: StorefrontCopy }) {
           </span>
           <span className="text-sm font-bold">{copy.viewOrder}</span>
         </span>
-        <span className="text-sm font-bold" dir="ltr">
+        <span className="text-sm font-bold">
           {formatPrice(total, t.common.currency)}
         </span>
       </button>

@@ -13,7 +13,7 @@ import {
   TrendingUp,
   UserRound,
 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,14 +31,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   getAdminRestaurants,
   getAdminStats,
@@ -96,7 +88,7 @@ export function AdminControlCenter() {
 
   if (!stats || !restaurants) {
     return (
-      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <Skeleton key={i} className="h-32 rounded-2xl" />
         ))}
@@ -109,7 +101,7 @@ export function AdminControlCenter() {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           label={t.admin.totalRestaurants}
           value={stats.totalRestaurants.toLocaleString("en-US")}
@@ -135,8 +127,8 @@ export function AdminControlCenter() {
         />
       </div>
 
-      <section className="overflow-hidden rounded-2xl border border-border/60 bg-card">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 px-5 py-4">
+      <section className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="font-heading text-lg font-semibold">
             {t.admin.restaurants}
           </h2>
@@ -189,88 +181,68 @@ export function AdminControlCenter() {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-surface-container-low hover:bg-surface-container-low">
-                <TableHead className="px-5 font-bold">
-                  {t.admin.restaurants}
-                </TableHead>
-                <TableHead className="font-bold">
-                  {t.admin.filterByGovernorate}
-                </TableHead>
-                <TableHead className="font-bold">
-                  {t.admin.filterByStatus}
-                </TableHead>
-                <TableHead className="font-bold" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map((restaurant, index) => (
-                <TableRow
-                  key={restaurant.id}
-                  className={cn(
-                    index % 2 === 1 &&
-                      "bg-surface-container-low/60 dark:bg-surface-container-low/40",
-                  )}
-                >
-                  <TableCell className="px-5">
-                    <span className="flex items-center gap-3">
-                      <Image
-                        src={restaurant.logoUrl}
-                        alt=""
-                        width={36}
-                        height={36}
-                        className="size-9 rounded-lg object-cover"
-                      />
-                      <span className="font-semibold">
-                        {restaurant.name[lang]}
-                      </span>
-                    </span>
-                  </TableCell>
-                  <TableCell>
+        {filtered.length === 0 ? (
+          <p className="rounded-2xl border border-dashed border-border p-14 text-center text-muted-foreground">
+            {t.restaurantsPage.empty}
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {filtered.map((restaurant) => (
+              <div
+                key={restaurant.id}
+                className="flex items-center gap-3 rounded-2xl border border-border/60 bg-card p-4"
+              >
+                <Image
+                  src={restaurant.logoUrl}
+                  alt=""
+                  width={44}
+                  height={44}
+                  className="size-11 shrink-0 rounded-xl object-cover"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-semibold">
+                    {restaurant.name[lang]}
+                  </p>
+                  <p className="truncate text-xs text-muted-foreground">
                     {governorateName(restaurant.governorateId)}
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={statusStyle[restaurant.status]}>
-                      {statusLabel[restaurant.status]}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="px-5 text-end">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger
-                        render={
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            aria-label="⋯"
-                          />
-                        }
-                      >
-                        <MoreHorizontal className="size-4" />
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() => toast.success(t.common.done)}
-                        >
-                          <CircleCheck className="size-4" />
-                          {t.admin.upgradePlan}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          variant="destructive"
-                          onClick={() => toast.success(t.common.done)}
-                        >
-                          <Ban className="size-4" />
-                          {t.admin.banAccount}
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+                  </p>
+                  <Badge className={cn("mt-1.5", statusStyle[restaurant.status])}>
+                    {statusLabel[restaurant.status]}
+                  </Badge>
+                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    render={
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        className="shrink-0"
+                        aria-label="⋯"
+                      />
+                    }
+                  >
+                    <MoreHorizontal className="size-4" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onClick={() => toast.success(t.common.done)}
+                    >
+                      <CircleCheck className="size-4" />
+                      {t.admin.upgradePlan}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      variant="destructive"
+                      onClick={() => toast.success(t.common.done)}
+                    >
+                      <Ban className="size-4" />
+                      {t.admin.banAccount}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );

@@ -13,7 +13,7 @@ function Stars({ rating, className }: { rating: number; className?: string }) {
         <Star
           key={i}
           className={cn(
-            "size-4",
+            "size-3.5",
             i < Math.round(rating)
               ? "fill-zest text-zest"
               : "fill-surface-container-high text-surface-container-high",
@@ -86,14 +86,16 @@ export function ReviewsSection({
         </div>
 
         {/* review cards */}
-        <ul className="space-y-4">
+        {/* two up from `sm`, and tighter inside: at full width each review was
+            a page-wide slab, which made three of them read as the whole page */}
+        <ul className="grid gap-3 sm:grid-cols-2">
           {reviews.map((review) => (
             <li
               key={review.id}
-              className="rounded-2xl border border-border/60 bg-card p-5"
+              className="rounded-2xl border border-border/60 bg-card p-4"
             >
               <div className="flex items-center gap-3">
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-berry-soft font-heading font-bold text-berry-soft-foreground">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#ffd9de] font-heading text-sm font-bold text-[#90003b]">
                   {review.author.trim().charAt(0)}
                 </span>
                 <div className="min-w-0 flex-1">
@@ -110,7 +112,7 @@ export function ReviewsSection({
                 </div>
                 <Stars rating={review.rating} />
               </div>
-              <p className="mt-3.5 text-sm leading-relaxed text-muted-foreground">
+              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
                 {review.comment[lang]}
               </p>
             </li>

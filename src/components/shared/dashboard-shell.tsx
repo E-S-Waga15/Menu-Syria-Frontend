@@ -8,6 +8,7 @@ import { ExternalLink, LogOut } from "lucide-react";
 
 import { LanguageSwitcher } from "@/components/shared/language-switcher";
 import { Logo } from "@/components/shared/logo";
+import { LogoMark } from "@/components/shared/logo-mark";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,12 +40,16 @@ export function DashboardShell({
   title,
   previewHref,
   previewLabel,
+  accountMenu,
   children,
 }: {
   navItems: DashboardNavItem[];
   title: string;
   previewHref?: string;
   previewLabel?: string;
+  /** avatar-triggered account menu (language/theme/logout) — omit to leave
+   * the header as-is (e.g. the admin console doesn't get one) */
+  accountMenu?: ReactNode;
   children: ReactNode;
 }) {
   const { t, lang, dir } = useI18n();
@@ -52,10 +57,25 @@ export function DashboardShell({
 
   return (
     <SidebarProvider>
-      <Sidebar side={dir === "rtl" ? "right" : "left"} collapsible="offcanvas">
-        <SidebarHeader className="px-4 py-4">
-          <Logo lang={lang} brand={t.common.brand} />
-          <p className="mt-1 text-xs font-semibold text-muted-foreground">
+      {/* `icon`, not `offcanvas`: collapsing should leave a usable rail —
+          the mark on top and one icon per section — rather than removing the
+          navigation entirely */}
+      <Sidebar side={dir === "rtl" ? "right" : "left"} collapsible="icon">
+        <SidebarHeader className="px-4 py-4 group-data-[collapsible=icon]:px-2">
+          {/* full lockup when open; the bare mark once there is only a rail */}
+          <Logo
+            lang={lang}
+            brand={t.common.brand}
+            className="group-data-[collapsible=icon]:hidden"
+          />
+          <Link
+            href={`/${lang}`}
+            aria-label={t.common.brand}
+            className="hidden justify-center group-data-[collapsible=icon]:flex"
+          >
+            <LogoMark className="h-7" />
+          </Link>
+          <p className="mt-1 text-xs font-semibold text-muted-foreground group-data-[collapsible=icon]:hidden">
             {title}
           </p>
         </SidebarHeader>
@@ -72,6 +92,7 @@ export function DashboardShell({
                     <SidebarMenuItem key={item.href}>
                       <SidebarMenuButton
                         isActive={isActive}
+                        tooltip={item.label}
                         className="h-10 gap-3 rounded-xl px-3.5 font-semibold data-[active=true]:bg-sidebar-primary data-[active=true]:text-sidebar-primary-foreground data-[active=true]:shadow-glow"
                         render={<Link href={item.href} />}
                       >
@@ -85,11 +106,11 @@ export function DashboardShell({
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>
-        <SidebarFooter className="gap-2 p-4">
+        <SidebarFooter className="gap-2 p-4 group-data-[collapsible=icon]:p-2">
           {previewHref && (
             <Button
               variant="outline"
-              className="w-full justify-center gap-2 font-semibold"
+              className="w-full justify-center gap-2 font-semibold group-data-[collapsible=icon]:px-0"
               render={
                 <a
                   href={previewHref}
@@ -98,17 +119,21 @@ export function DashboardShell({
                 />
               }
             >
-              <ExternalLink className="size-4" />
-              {previewLabel ?? t.dashboard.preview}
+              <ExternalLink className="size-4 shrink-0" />
+              <span className="group-data-[collapsible=icon]:hidden">
+                {previewLabel ?? t.dashboard.preview}
+              </span>
             </Button>
           )}
           <Button
             variant="ghost"
-            className="w-full justify-center gap-2 font-semibold text-muted-foreground hover:text-destructive"
+            className="w-full justify-center gap-2 font-semibold text-muted-foreground group-data-[collapsible=icon]:px-0 hover:text-destructive"
             render={<Link href={`/${lang}`} />}
           >
-            <LogOut className="size-4" />
-            {t.common.logout}
+            <LogOut className="size-4 shrink-0" />
+            <span className="group-data-[collapsible=icon]:hidden">
+              {t.common.logout}
+            </span>
           </Button>
         </SidebarFooter>
       </Sidebar>
@@ -119,8 +144,12 @@ export function DashboardShell({
           <h1 className="flex-1 truncate font-heading text-base font-bold md:text-lg">
             {title}
           </h1>
-          <LanguageSwitcher />
-          <ThemeToggle />
+          {accountMenu ?? (
+            <>
+              <LanguageSwitcher />
+              <ThemeToggle />
+            </>
+          )}
         </header>
         <div className="flex-1 p-4 md:p-6 lg:p-8">{children}</div>
       </SidebarInset>

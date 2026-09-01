@@ -1,5 +1,5 @@
-import { SettingsPanel } from "@/features/restaurant-dashboard/components/settings-panel";
+import { BusinessProfile } from "@/features/restaurant-dashboard/components/business-profile";
 
 export default function DashboardSettingsPage() {
-  return <SettingsPanel />;
+  return <BusinessProfile />;
 }

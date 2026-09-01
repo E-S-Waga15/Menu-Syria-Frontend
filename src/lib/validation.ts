@@ -9,11 +9,13 @@ export type ValidationMessages = Dictionary["validation"];
  * Syrian mobile number: 9 digits starting with 9, tolerant of spaces,
  * dashes, a leading 0, or the +963 country code.
  */
+export const isSyrianPhone = (value: string): boolean => {
+  const digits = value
+    .replace(/[\s+-]/g, "")
+    .replace(/^963/, "")
+    .replace(/^0/, "");
+  return /^9\d{8}$/.test(digits);
+};
+
 export const syrianPhone = (message: string) =>
-  z.string().refine((value) => {
-    const digits = value
-      .replace(/[\s+-]/g, "")
-      .replace(/^963/, "")
-      .replace(/^0/, "");
-    return /^9\d{8}$/.test(digits);
-  }, message);
+  z.string().refine(isSyrianPhone, message);

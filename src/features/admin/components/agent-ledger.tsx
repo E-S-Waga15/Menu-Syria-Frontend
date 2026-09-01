@@ -13,14 +13,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
   getAdminAgentById,
   getAdminAgentLedger,
 } from "@/features/admin/services";
@@ -91,7 +83,7 @@ export function AdminAgentLedger({ agentId }: { agentId: string }) {
         </Badge>
       </section>
 
-      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           label={t.admin.credit}
           value={formatPrice(credit, t.common.currency)}
@@ -117,56 +109,36 @@ export function AdminAgentLedger({ agentId }: { agentId: string }) {
       </div>
 
       {/* ledger */}
-      <section className="overflow-hidden rounded-2xl border border-border/60 bg-card">
-        <h2 className="border-b border-border/60 px-5 py-4 font-heading text-lg font-semibold">
+      <section className="space-y-3">
+        <h2 className="font-heading text-lg font-semibold">
           {t.admin.agentLedger}
         </h2>
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-surface-container-low hover:bg-surface-container-low">
-                <TableHead className="px-5 font-bold">
-                  {t.agent.transactionDate}
-                </TableHead>
-                <TableHead className="font-bold">
-                  {t.agent.transactionRestaurant}
-                </TableHead>
-                <TableHead className="font-bold">{t.admin.credit}</TableHead>
-                <TableHead className="px-5 font-bold">
-                  {t.admin.debit}
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {ledger.map((tx, index) => (
-                <TableRow
-                  key={tx.id}
-                  className={cn(
-                    index % 2 === 1 &&
-                      "bg-surface-container-low/60 dark:bg-surface-container-low/40",
-                  )}
-                >
-                  <TableCell className="px-5 font-semibold" dir="ltr">
-                    {tx.date}
-                  </TableCell>
-                  <TableCell>{tx.restaurantName[lang]}</TableCell>
-                  <TableCell className="font-bold text-success" dir="ltr">
-                    {tx.amount > 0
-                      ? formatPrice(tx.amount, t.common.currency)
-                      : "—"}
-                  </TableCell>
-                  <TableCell
-                    className="px-5 font-bold text-destructive"
-                    dir="ltr"
-                  >
-                    {tx.amount < 0
-                      ? formatPrice(Math.abs(tx.amount), t.common.currency)
-                      : "—"}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+        <div className="space-y-2.5">
+          {ledger.map((tx) => (
+            <div
+              key={tx.id}
+              className="flex items-center justify-between gap-4 rounded-2xl border border-border/60 bg-card p-4"
+            >
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold">
+                  {tx.restaurantName[lang]}
+                </p>
+                <p className="text-xs text-muted-foreground" dir="ltr">
+                  {tx.date}
+                </p>
+              </div>
+              <p
+                className={cn(
+                  "shrink-0 font-bold",
+                  tx.amount >= 0 ? "text-success" : "text-destructive",
+                )}
+                dir="ltr"
+              >
+                {tx.amount >= 0 ? "+" : "−"}
+                {formatPrice(Math.abs(tx.amount), t.common.currency)}
+              </p>
+            </div>
+          ))}
         </div>
       </section>
 

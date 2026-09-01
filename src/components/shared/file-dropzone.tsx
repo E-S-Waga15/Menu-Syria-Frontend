@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useRef, useState } from "react";
 
-import { CloudUpload, X } from "lucide-react";
+import { Camera, CloudUpload, UserRound, X } from "lucide-react";
 
 import { useI18n } from "@/i18n/client";
 import { cn } from "@/lib/utils";
@@ -13,11 +13,14 @@ export function FileDropzone({
   hint,
   onFile,
   className,
+  variant = "card",
 }: {
   label: string;
   hint?: string;
   onFile?: (file: File | null) => void;
   className?: string;
+  /** "card" = dashed rectangle (logos, ID docs); "avatar" = circular profile photo */
+  variant?: "card" | "avatar";
 }) {
   const { t } = useI18n();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -46,6 +49,71 @@ export function FileDropzone({
     if (inputRef.current) inputRef.current.value = "";
   };
 
+  const input = (
+    <input
+      ref={inputRef}
+      type="file"
+      accept="image/*"
+      className="sr-only"
+      onChange={(e) => accept(e.target.files?.[0])}
+      tabIndex={-1}
+    />
+  );
+
+  if (variant === "avatar") {
+    return (
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        aria-label={label}
+        className={cn(
+          "group relative mx-auto flex size-28 items-center justify-center rounded-full transition-[translate,scale] duration-200 ease-smooth hover:-translate-y-0.5",
+          className,
+        )}
+      >
+        {input}
+        <span
+          className={cn(
+            "flex size-full items-center justify-center overflow-hidden rounded-full border-2",
+            preview
+              ? "border-primary/30"
+              : "border-dashed border-border group-hover:border-primary/50",
+          )}
+        >
+          {preview ? (
+            <Image
+              src={preview}
+              alt=""
+              width={112}
+              height={112}
+              className="size-full object-cover"
+              unoptimized
+            />
+          ) : (
+            <span className="flex size-full items-center justify-center bg-surface-container-low text-muted-foreground">
+              <UserRound className="size-10" />
+            </span>
+          )}
+        </span>
+
+        {preview ? (
+          <span
+            role="button"
+            aria-label={t.common.delete}
+            onClick={clear}
+            className="absolute top-0 end-0 flex size-7 items-center justify-center rounded-full bg-card text-muted-foreground ring-2 ring-background hover:bg-destructive/10 hover:text-destructive"
+          >
+            <X className="size-3.5" />
+          </span>
+        ) : (
+          <span className="absolute bottom-0 end-0 flex size-8 items-center justify-center rounded-full bg-primary text-primary-foreground ring-2 ring-background">
+            <Camera className="size-4" />
+          </span>
+        )}
+      </button>
+    );
+  }
+
   return (
     <button
       type="button"
@@ -68,14 +136,7 @@ export function FileDropzone({
         className,
       )}
     >
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        className="sr-only"
-        onChange={(e) => accept(e.target.files?.[0])}
-        tabIndex={-1}
-      />
+      {input}
 
       {preview ? (
         <>

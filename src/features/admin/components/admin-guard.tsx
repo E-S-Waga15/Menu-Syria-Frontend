@@ -1,13 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 
-import { useAuthStore } from "@/features/auth/store";
+import { useHydratedSession } from "@/features/auth/use-hydrated-session";
 import { useI18n } from "@/i18n/client";
-
-const subscribeHydration = (callback: () => void) =>
-  useAuthStore.persist.onFinishHydration(callback);
 
 /**
  * Client gate for the platform console: anyone without an admin session
@@ -17,13 +14,7 @@ const subscribeHydration = (callback: () => void) =>
 export function AdminGuard({ children }: { children: ReactNode }) {
   const { lang } = useI18n();
   const router = useRouter();
-  const session = useAuthStore((s) => s.session);
-
-  const hydrated = useSyncExternalStore(
-    subscribeHydration,
-    () => useAuthStore.persist.hasHydrated(),
-    () => false,
-  );
+  const { session, hydrated } = useHydratedSession();
 
   const isAdmin = session?.role === "admin";
 

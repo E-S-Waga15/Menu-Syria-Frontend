@@ -2,12 +2,16 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 export type UserRole = "user" | "owner" | "agent" | "waiter" | "admin";
+export type BusinessType = "restaurant" | "store";
 
 interface Session {
   /** phone for OTP users, email for credentialed roles */
   identifier: string;
   role: UserRole;
   name: string;
+  /** only meaningful for role "owner" — which dashboard wording/presets to use */
+  businessType?: BusinessType;
+  avatarUrl?: string;
 }
 
 interface AuthState {

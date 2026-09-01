@@ -59,7 +59,6 @@ export default async function PublicStorePage({
         regionName={catalog.regionName}
         aboutHref={`/${lang}/store/${slug}/about`}
         copy={t.storeFront}
-        showTable={false}
       />
     </>
   );

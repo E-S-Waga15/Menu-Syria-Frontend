@@ -83,7 +83,7 @@ export function AnalyticsView() {
 
   if (!data) {
     return (
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {Array.from({ length: 4 }).map((_, i) => (
           <Skeleton key={i} className="h-80 rounded-2xl" />
         ))}
@@ -102,20 +102,47 @@ export function AnalyticsView() {
   }));
 
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
       <ChartCard title={t.dashboard.revenueGrowth}>
         <ResponsiveContainer>
           <AreaChart data={data.revenueByMonth}>
             <defs>
               <linearGradient id="revFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="var(--chart-1)" stopOpacity={0.3} />
-                <stop offset="100%" stopColor="var(--chart-1)" stopOpacity={0} />
+                <stop
+                  offset="0%"
+                  stopColor="var(--chart-1)"
+                  stopOpacity={0.3}
+                />
+                <stop
+                  offset="100%"
+                  stopColor="var(--chart-1)"
+                  stopOpacity={0}
+                />
               </linearGradient>
             </defs>
-            <CartesianGrid stroke="var(--border)" strokeDasharray="4 4" vertical={false} />
-            <XAxis dataKey="label" stroke="var(--muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
-            <YAxis stroke="var(--muted-foreground)" fontSize={11} tickLine={false} axisLine={false} width={32} />
-            <Tooltip contentStyle={tooltipStyle} cursor={{ stroke: "var(--border)" }} />
+            <CartesianGrid
+              stroke="var(--border)"
+              strokeDasharray="4 4"
+              vertical={false}
+            />
+            <XAxis
+              dataKey="label"
+              stroke="var(--muted-foreground)"
+              fontSize={11}
+              tickLine={false}
+              axisLine={false}
+            />
+            <YAxis
+              stroke="var(--muted-foreground)"
+              fontSize={11}
+              tickLine={false}
+              axisLine={false}
+              width={32}
+            />
+            <Tooltip
+              contentStyle={tooltipStyle}
+              cursor={{ stroke: "var(--border)" }}
+            />
             <Area
               type="monotone"
               dataKey="value"
@@ -130,11 +157,35 @@ export function AnalyticsView() {
       <ChartCard title={t.dashboard.visitsChart}>
         <ResponsiveContainer>
           <BarChart data={visits}>
-            <CartesianGrid stroke="var(--border)" strokeDasharray="4 4" vertical={false} />
-            <XAxis dataKey="label" stroke="var(--muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
-            <YAxis stroke="var(--muted-foreground)" fontSize={11} tickLine={false} axisLine={false} width={36} />
-            <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "var(--surface-container)" }} />
-            <Bar dataKey="value" fill="var(--chart-2)" radius={[6, 6, 0, 0]} maxBarSize={36} />
+            <CartesianGrid
+              stroke="var(--border)"
+              strokeDasharray="4 4"
+              vertical={false}
+            />
+            <XAxis
+              dataKey="label"
+              stroke="var(--muted-foreground)"
+              fontSize={11}
+              tickLine={false}
+              axisLine={false}
+            />
+            <YAxis
+              stroke="var(--muted-foreground)"
+              fontSize={11}
+              tickLine={false}
+              axisLine={false}
+              width={36}
+            />
+            <Tooltip
+              contentStyle={tooltipStyle}
+              cursor={{ fill: "var(--surface-container)" }}
+            />
+            <Bar
+              dataKey="value"
+              fill="var(--chart-2)"
+              radius={[6, 6, 0, 0]}
+              maxBarSize={36}
+            />
           </BarChart>
         </ResponsiveContainer>
       </ChartCard>

@@ -101,7 +101,10 @@ export function OrdersKanban() {
                       <Receipt className="size-4 text-muted-foreground" />
                       {fmt(t.dashboard.orderNumber, { number: order.number })}
                     </p>
-                    <span className="text-xs font-semibold text-muted-foreground" dir="ltr">
+                    <span
+                      className="text-xs font-semibold text-muted-foreground"
+                      dir="ltr"
+                    >
                       {new Date(order.createdAt).toLocaleTimeString(
                         lang === "ar" ? "ar-SY" : "en-US",
                         { hour: "2-digit", minute: "2-digit" },

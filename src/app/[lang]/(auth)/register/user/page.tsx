@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 import { UserProfileForm } from "@/features/auth/components/user-profile-form";
-import { getGovernorates, getRegions } from "@/features/marketing/services";
 import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 
@@ -25,15 +24,10 @@ export default async function UserRegisterPage({
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
 
-  const [governorates, regions] = await Promise.all([
-    getGovernorates(),
-    getRegions(),
-  ]);
-
   return (
     // useSearchParams (the phone handoff) requires a Suspense boundary
     <Suspense>
-      <UserProfileForm governorates={governorates} regions={regions} />
+      <UserProfileForm />
     </Suspense>
   );
 }

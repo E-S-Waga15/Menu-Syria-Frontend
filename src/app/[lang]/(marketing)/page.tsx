@@ -4,6 +4,7 @@ import { Reveal } from "@/components/shared/reveal";
 import { AgentsSection } from "@/features/marketing/components/agents-section";
 import { SectorsSection } from "@/features/marketing/components/sectors-section";
 import { CtaBand } from "@/features/marketing/components/cta-band";
+import { Faq } from "@/features/marketing/components/faq-section";
 import { Hero } from "@/features/marketing/components/hero";
 import { RestaurantsMarquee } from "@/features/marketing/components/restaurants-marquee";
 import { Services } from "@/features/marketing/components/services";
@@ -12,31 +13,27 @@ import {
   getAgents,
   getFeaturedRestaurants,
   getGovernorates,
-  getTeam,
 } from "@/features/marketing/services";
 import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
-import {
-  JsonLd,
-  organizationJsonLd,
-  websiteJsonLd,
-} from "@/lib/seo/json-ld";
+import { JsonLd, organizationJsonLd, websiteJsonLd } from "@/lib/seo/json-ld";
 
 export default async function HomePage({ params }: PageProps<"/[lang]">) {
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
 
-  const [t, restaurants, team, agents, governorates] = await Promise.all([
+  const [t, restaurants, agents, governorates] = await Promise.all([
     getDictionary(lang),
     getFeaturedRestaurants(),
-    getTeam(),
     getAgents(),
     getGovernorates(),
   ]);
 
   return (
     <main>
-      <JsonLd data={organizationJsonLd(t.seo.siteName, t.seo.homeDescription)} />
+      <JsonLd
+        data={organizationJsonLd(t.seo.siteName, t.seo.homeDescription)}
+      />
       <JsonLd data={websiteJsonLd(t.seo.siteName, lang)} />
       <Hero lang={lang} t={t} />
       <Reveal>
@@ -49,10 +46,18 @@ export default async function HomePage({ params }: PageProps<"/[lang]">) {
         <Services t={t} />
       </Reveal>
       <Reveal>
-        <AgentsSection agents={agents} governorates={governorates} />
+        <AgentsSection
+          lang={lang}
+          t={t}
+          agents={agents}
+          governorates={governorates}
+        />
       </Reveal>
       <Reveal>
-        <StatsTeam lang={lang} t={t} team={team} />
+        <StatsTeam t={t} />
+      </Reveal>
+      <Reveal>
+        <Faq t={t} />
       </Reveal>
       <Reveal>
         <CtaBand lang={lang} t={t} />

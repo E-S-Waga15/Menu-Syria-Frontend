@@ -84,9 +84,7 @@ export function storeJsonLd(store: Store, lang: Locale, url: string) {
   };
 }
 
-export function breadcrumbsJsonLd(
-  items: { name: string; url: string }[],
-) {
+export function breadcrumbsJsonLd(items: { name: string; url: string }[]) {
   return {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -95,6 +93,23 @@ export function breadcrumbsJsonLd(
       position: index + 1,
       name: item.name,
       item: item.url,
+    })),
+  };
+}
+
+/**
+ * FAQPage schema. Google can surface these as expandable results, but only
+ * when the answers are also present in the rendered HTML — which is why the
+ * FAQ ships as a server component rather than fetching its copy on the client.
+ */
+export function faqJsonLd(items: { q: string; a: string }[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: items.map((item) => ({
+      "@type": "Question",
+      name: item.q,
+      acceptedAnswer: { "@type": "Answer", text: item.a },
     })),
   };
 }

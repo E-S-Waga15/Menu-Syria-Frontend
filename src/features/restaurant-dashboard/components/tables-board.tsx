@@ -59,9 +59,7 @@ export function TablesBoard() {
 
   const update = (id: string, patch: Partial<DiningTable>) =>
     setTables((prev) =>
-      prev.map((table) =>
-        table.id === id ? { ...table, ...patch } : table,
-      ),
+      prev.map((table) => (table.id === id ? { ...table, ...patch } : table)),
     );
 
   return (

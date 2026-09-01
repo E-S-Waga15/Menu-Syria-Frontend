@@ -20,7 +20,6 @@ export const queryKeys = {
     restaurants: (id: string) => ["agents", id, "restaurants"] as const,
     transactions: (id: string) => ["agents", id, "transactions"] as const,
   },
-  team: ["team"] as const,
   admin: {
     stats: ["admin", "stats"] as const,
     restaurants: ["admin", "restaurants"] as const,

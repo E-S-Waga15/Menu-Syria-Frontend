@@ -5,21 +5,24 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { Info, MapPin, Phone, Search, Star } from "lucide-react";
+import { Armchair, Info, MapPin, Phone, Search, Star } from "lucide-react";
 
 import { LanguageSwitcher } from "@/components/shared/language-switcher";
-import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { FloatingCartBar } from "@/features/public-menu/components/cart";
+import { CategoryMenu } from "@/features/public-menu/components/category-menu";
 import { DishCard } from "@/features/public-menu/components/dish-card";
+import { getSupportedFulfillment } from "@/features/public-menu/lib/fulfillment";
 import type { StorefrontCopy } from "@/features/public-menu/lib/format";
 import { useI18n } from "@/i18n/client";
 import type {
   Business,
   CatalogItem,
+  FulfillmentMode,
   LocalizedText,
 } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { selectCartCount, useCartStore } from "@/stores/cart-store";
+import { useUiStore } from "@/stores/ui-store";
 
 // Overlays load as separate chunks on first use — a QR visitor scrolling
 // the menu never downloads the modal/checkout JS until they need it.
@@ -48,6 +51,13 @@ export interface StorefrontCategory {
  * The customer-facing storefront screen — renders a restaurant menu or an
  * e-commerce catalog depending on the data and label pack passed in.
  */
+/**
+ * Past this many sections the horizontal bar becomes something you drag rather
+ * than read, so a picker is offered alongside it. At or below it the pills
+ * already fit and the extra control would be noise.
+ */
+const SECTION_MENU_THRESHOLD = 4;
+
 export function MenuScreen({
   business,
   subtitle,
@@ -57,7 +67,7 @@ export function MenuScreen({
   regionName,
   aboutHref,
   copy,
-  showTable = true,
+  tableParam,
 }: {
   business: Business;
   /** cuisine for restaurants, store category for shops */
@@ -68,15 +78,29 @@ export function MenuScreen({
   regionName: LocalizedText;
   aboutHref: string;
   copy: StorefrontCopy;
-  showTable?: boolean;
+  /** the `?t=` table id, read server-side — present only for a real table QR */
+  tableParam?: string;
 }) {
   const { t, lang } = useI18n();
   const addItem = useCartStore((s) => s.addItem);
   const cartCount = useCartStore(selectCartCount);
 
+  const supportedModes = useMemo(
+    () => getSupportedFulfillment(business),
+    [business],
+  );
+  const [fulfillment, setFulfillment] = useState<FulfillmentMode>(() =>
+    tableParam && supportedModes.includes("dineIn")
+      ? "dineIn"
+      : "cuisine" in business
+        ? "pickup"
+        : "delivery",
+  );
+
   const [search, setSearch] = useState("");
   const [compact, setCompact] = useState(false);
   const [openedDish, setOpenedDish] = useState<CatalogItem | null>(null);
+  const setCartSheetOpen = useUiStore((s) => s.setCartSheetOpen);
   const [activeCategory, setActiveCategory] = useState(categories[0]?.id);
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
   // Suspends the scroll-spy while a pill click drives a smooth scroll
@@ -174,96 +198,135 @@ export function MenuScreen({
             )}
           >
             {/* identity row */}
-            <div className="flex items-center gap-3.5 pt-3">
+            <div className="flex items-center gap-2.5 pt-2.5 sm:gap-3.5 sm:pt-3">
               <Image
                 src={business.logoUrl}
                 alt=""
                 width={72}
                 height={72}
-                className="size-16 rounded-2xl border-2 border-[var(--menu-primary)]/20 object-cover md:size-18"
+                className="size-12 rounded-2xl border-2 border-[var(--menu-primary)]/20 object-cover sm:size-16 md:size-18"
               />
               <div className="min-w-0 flex-1">
-                <h1 className="truncate font-heading text-lg font-bold md:text-xl">
+                <h1 className="truncate font-heading text-base font-bold sm:text-lg md:text-xl">
                   {business.name[lang]}
                 </h1>
-                <p className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <Star className="size-3 fill-zest text-zest" />
+                <p className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground sm:gap-1.5 sm:text-xs">
+                  <Star className="size-2.5 fill-zest text-zest sm:size-3" />
                   {business.rating} · {subtitle[lang]}
                 </p>
                 {/* the details page lives inside the storefront route — the only
                     destination a QR visitor can reach, with no site chrome */}
                 <Link
                   href={aboutHref}
-                  className="mt-1 inline-flex items-center gap-1 text-xs font-bold text-[var(--menu-primary)] hover:underline"
+                  className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-bold text-[var(--menu-primary)] hover:underline sm:mt-1 sm:text-xs"
                 >
-                  <Info className="size-3.5" />
+                  <Info className="size-3 sm:size-3.5" />
                   {copy.viewRestaurantDetails}
                 </Link>
               </div>
-              <ThemeToggle />
+              {/* table chip when dine-in, otherwise the open/closed status */}
+              {fulfillment === "dineIn" ? (
+                <span className="flex shrink-0 items-center gap-1 rounded-full bg-[var(--menu-primary)]/10 px-2.5 py-1 text-[11px] font-bold text-[var(--menu-primary)] sm:gap-1.5 sm:px-3.5 sm:py-1.5 sm:text-xs">
+                  <Armchair className="size-3 sm:size-3.5" />
+                  {copy.tableLabel} {tableParam}
+                </span>
+              ) : (
+                <span
+                  className={cn(
+                    "flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold sm:gap-1.5 sm:px-3 sm:py-1.5 sm:text-xs",
+                    business.isOpen
+                      ? "bg-success/10 text-success"
+                      : "bg-muted text-muted-foreground",
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "size-1.5 rounded-full",
+                      business.isOpen ? "bg-success" : "bg-muted-foreground",
+                    )}
+                  />
+                  {business.isOpen
+                    ? t.restaurant.openNow
+                    : t.restaurant.closedNow}
+                </span>
+              )}
               <LanguageSwitcher />
             </div>
 
-            {/* location + phone + call */}
-            <div className="scrollbar-none -mx-4 mt-2.5 flex items-center gap-x-4 gap-y-1 overflow-x-auto px-4 pb-1 text-xs font-semibold text-muted-foreground">
-              <span className="flex shrink-0 items-center gap-1.5">
-                <MapPin className="size-3.5 text-[var(--menu-primary)]" />
-                {governorateName[lang]}
-                {lang === "ar" ? "، " : ", "}
-                {regionName[lang]}
-              </span>
-              <span className="flex shrink-0 items-center gap-1.5">
-                <Phone className="size-3.5 text-[var(--menu-primary)]" />
-                <span dir="ltr">{business.phone}</span>
-              </span>
-              <a
-                href={`tel:${business.phone.replace(/\s/g, "")}`}
-                className="ms-auto flex shrink-0 items-center gap-1.5 rounded-full bg-[var(--menu-primary)]/10 px-3.5 py-1.5 font-bold text-[var(--menu-primary)] transition-colors duration-200 hover:bg-[var(--menu-primary)]/20"
-              >
-                <Phone className="size-3.5" />
-                {t.restaurant.call}
-              </a>
-            </div>
+            {/* location + call — only relevant once the customer isn't already at a table */}
+            {fulfillment !== "dineIn" && (
+              <div className="scrollbar-none -mx-4 mt-2 flex items-center gap-x-1.5 gap-y-1 overflow-x-auto px-4 pb-1 text-[11px] font-semibold text-muted-foreground sm:mt-2.5 sm:gap-x-2 sm:text-xs">
+                <span className="flex shrink-0 items-center gap-1 sm:gap-1.5">
+                  <MapPin className="size-3 text-[var(--menu-primary)] sm:size-3.5" />
+                  {governorateName[lang]}
+                  {lang === "ar" ? "، " : ", "}
+                  {regionName[lang]}
+                </span>
+                <a
+                  href={`tel:${business.phone.replace(/\s/g, "")}`}
+                  className="ms-auto flex shrink-0 items-center gap-1 rounded-full bg-[var(--menu-primary)]/10 px-2.5 py-1 font-bold text-[var(--menu-primary)] transition-colors duration-200 hover:bg-[var(--menu-primary)]/20 sm:gap-1.5 sm:px-3.5 sm:py-1.5"
+                >
+                  <Phone className="size-3 sm:size-3.5" />
+                  {t.restaurant.call}
+                </a>
+              </div>
+            )}
           </div>
 
-          <div className={cn("pb-3", compact ? "pt-3" : "pt-1")}>
+          <div
+            className={cn(
+              "pb-2.5 sm:pb-3",
+              compact ? "pt-2.5 sm:pt-3" : "pt-1",
+            )}
+          >
             <div className="relative">
-              <Search className="absolute start-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="absolute start-3.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground sm:start-4 sm:size-4" />
               <input
                 type="search"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={copy.searchPlaceholder}
-                className="h-11 w-full rounded-full border border-border/70 bg-surface-container-low ps-11 pe-4 text-sm outline-none transition-[border-color,box-shadow] duration-200 focus:border-[var(--menu-primary)] focus:ring-2 focus:ring-[var(--menu-primary)]/25"
+                className="h-9 w-full rounded-full border border-border/70 bg-surface-container-low ps-9 pe-4 text-[13px] outline-none transition-[border-color,box-shadow] duration-200 focus:border-[var(--menu-primary)] focus:ring-2 focus:ring-[var(--menu-primary)]/25 sm:h-11 sm:ps-11 sm:text-sm"
               />
             </div>
           </div>
 
           {/* categories pills */}
           {query === "" && (
-            <nav
-              aria-label={t.dashboard.categories}
-              className="scrollbar-none -mx-4 flex gap-2 overflow-x-auto px-4 pb-3"
-            >
-              {categories.map((category) => {
-                const isActive = category.id === activeCategory;
-                return (
-                  <button
-                    key={category.id}
-                    type="button"
-                    onClick={() => scrollToCategory(category.id)}
-                    className={cn(
-                      "shrink-0 transform-gpu rounded-full px-4.5 py-2 text-sm font-semibold transition-[background-color,color,translate,scale] duration-300 ease-smooth",
-                      isActive
-                        ? "bg-[var(--menu-primary)] text-white"
-                        : "bg-surface-container text-foreground/70 hover:bg-surface-container-high",
-                    )}
-                  >
-                    {category.name[lang]}
-                  </button>
-                );
-              })}
-            </nav>
+            <div className="flex items-start gap-2 pb-2.5 sm:pb-3">
+              {categories.length > SECTION_MENU_THRESHOLD && (
+                <CategoryMenu
+                  sections={categories}
+                  activeId={activeCategory}
+                  onSelect={scrollToCategory}
+                  copy={copy}
+                  theme={business.theme}
+                />
+              )}
+              <nav
+                aria-label={copy.sectionsLabel}
+                className="scrollbar-none -me-4 flex flex-1 gap-1.5 overflow-x-auto pe-4 sm:gap-2"
+              >
+                {categories.map((category) => {
+                  const isActive = category.id === activeCategory;
+                  return (
+                    <button
+                      key={category.id}
+                      type="button"
+                      onClick={() => scrollToCategory(category.id)}
+                      className={cn(
+                        "shrink-0 transform-gpu rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition-[background-color,color,translate,scale] duration-300 ease-smooth sm:px-4.5 sm:py-2 sm:text-sm",
+                        isActive
+                          ? "bg-[var(--menu-primary)] text-white"
+                          : "bg-surface-container text-foreground/70 hover:bg-surface-container-high",
+                      )}
+                    >
+                      {category.name[lang]}
+                    </button>
+                  );
+                })}
+              </nav>
+            </div>
           )}
         </div>
       </header>
@@ -332,12 +395,25 @@ export function MenuScreen({
       {/* mount lazily: the chunk downloads when the cart first has items /
           a dish is first opened, not on initial page load */}
       {cartCount > 0 && (
-        <CartSheet business={business} copy={copy} showTable={showTable} />
+        <CartSheet
+          business={business}
+          copy={copy}
+          fulfillment={fulfillment}
+          onFulfillmentChange={setFulfillment}
+          tableNumber={tableParam}
+          onOpenItem={(item) => {
+            // one panel at a time: the cart closes as the product opens, so
+            // going back lands on the cart rather than stacking two sheets
+            setCartSheetOpen(false);
+            setOpenedDish(item);
+          }}
+        />
       )}
       {openedDish && (
         <DishModal
           item={openedDish}
           businessId={business.id}
+          theme={business.theme}
           copy={copy}
           onClose={() => setOpenedDish(null)}
         />

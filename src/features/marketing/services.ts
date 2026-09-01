@@ -5,7 +5,6 @@ import {
   regions,
   restaurants,
   reviews,
-  teamMembers,
 } from "@/lib/mock/data";
 import type {
   Agent,
@@ -13,7 +12,6 @@ import type {
   Region,
   Restaurant,
   Review,
-  TeamMember,
 } from "@/lib/types";
 
 export async function getGovernorates(): Promise<Governorate[]> {
@@ -76,11 +74,6 @@ export async function getAgentsByGovernorate(
       agents.filter((a) => a.governorateId === governorateId),
     );
   return apiFetch(`/agents?governorate=${governorateId}`);
-}
-
-export async function getTeam(): Promise<TeamMember[]> {
-  if (IS_MOCK) return mockDelay(teamMembers, 150);
-  return apiFetch("/team");
 }
 
 export async function getRestaurantReviews(

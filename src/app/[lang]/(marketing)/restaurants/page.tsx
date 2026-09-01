@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-import { RestaurantCard } from "@/features/marketing/components/restaurant-card";
+import { BusinessDirectory } from "@/features/marketing/components/business-directory";
 import {
   getFeaturedRestaurants,
   getGovernorates,
@@ -36,13 +36,6 @@ export default async function RestaurantsPage({ params }: PageProps<"/[lang]">) 
     getRegions(),
   ]);
 
-  const separator = lang === "ar" ? "، " : ", ";
-  const locationLabel = (governorateId: string, regionId: string) => {
-    const gov = governorates.find((g) => g.id === governorateId)?.name[lang];
-    const region = regions.find((r) => r.id === regionId)?.name[lang];
-    return [gov, region].filter(Boolean).join(separator);
-  };
-
   return (
     <main className="container-page pt-28 pb-20 md:pt-32">
       <div className="max-w-2xl">
@@ -63,18 +56,13 @@ export default async function RestaurantsPage({ params }: PageProps<"/[lang]">) 
             {t.restaurantsPage.empty}
           </p>
         ) : (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {restaurants.map((restaurant) => (
-              <RestaurantCard
-                key={restaurant.id}
-                restaurant={restaurant}
-                locationLabel={locationLabel(
-                  restaurant.governorateId,
-                  restaurant.regionId,
-                )}
-              />
-            ))}
-          </div>
+          <BusinessDirectory
+            items={restaurants}
+            governorates={governorates}
+            regions={regions}
+            lang={lang}
+            copy={t.restaurantsPage}
+          />
         )}
       </div>
     </main>

@@ -1,79 +1,73 @@
-"use client";
-
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
 
-import { MessageCircle, Phone, Store } from "lucide-react";
+import { ArrowLeft, ArrowRight, MapPin, Store } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useI18n } from "@/i18n/client";
+import type { Locale } from "@/i18n/config";
+import type { Dictionary } from "@/i18n/get-dictionary";
 import type { Agent, Governorate } from "@/lib/types";
 
+/** the home page shows a shortlist; the full network lives on /agents */
+const PREVIEW_COUNT = 5;
+
 /**
- * Data arrives from the server (SSR — agents are in the initial HTML);
- * this component only handles the governorate filter interaction.
+ * The agent network, previewed.
+ *
+ * An agent is the route in, not a support line: usually a local food creator
+ * who knows the area's restaurants and signs them up. So the cards lead to the
+ * agent's own page — where their work, their restaurants and their referral
+ * code live — rather than firing off a phone call from a card that has not yet
+ * explained who the person is.
+ *
+ * No filtering here on purpose either: picking a governorate on the home page
+ * meant a visitor could land on an empty grid before they knew what an agent
+ * was. The shortlist shows the network exists and hands off to the directory,
+ * which is where searching belongs. With no state left, this renders on the
+ * server.
  */
 export function AgentsSection({
+  lang,
+  t,
   agents,
   governorates,
 }: {
+  lang: Locale;
+  t: Dictionary;
   agents: Agent[];
   governorates: Governorate[];
 }) {
-  const { t, lang } = useI18n();
-  const [governorateId, setGovernorateId] = useState("damascus");
+  const Arrow = lang === "ar" ? ArrowLeft : ArrowRight;
+  const preview = agents.slice(0, PREVIEW_COUNT);
 
-  const filtered = agents.filter((a) => a.governorateId === governorateId);
+  const governorateName = (id: string) =>
+    governorates.find((g) => g.id === id)?.name[lang] ?? "";
 
   return (
     <section id="agents" className="scroll-mt-20 py-16 md:py-24">
-      <div className="container-page grid gap-10 lg:grid-cols-[minmax(0,20rem)_1fr] lg:gap-16">
-        <div>
-          <p className="label-eyebrow text-primary">{t.home.agentsEyebrow}</p>
-          <h2 className="text-display mt-3 text-3xl md:text-4xl">
-            {t.home.agentsTitle}
-          </h2>
-          <p className="mt-4 text-muted-foreground">{t.home.agentsBody}</p>
+      <div className="container-page">
+        <div className="flex flex-wrap items-end justify-between gap-6">
+          <div className="max-w-2xl">
+            <p className="label-eyebrow text-primary">{t.home.agentsEyebrow}</p>
+            <h2 className="text-display mt-3 text-3xl md:text-4xl">
+              {t.home.agentsTitle}
+            </h2>
+            <p className="mt-4 text-muted-foreground md:text-lg">
+              {t.home.agentsBody}
+            </p>
+          </div>
 
-          <label className="mt-8 block text-sm font-semibold">
-            {t.home.agentsSelectLabel}
-          </label>
-          <Select
-            value={governorateId}
-            onValueChange={(value) => value && setGovernorateId(value)}
-            items={Object.fromEntries(
-              governorates.map((gov) => [gov.id, gov.name[lang]]),
-            )}
+          <Link
+            href={`/${lang}/agents`}
+            className="group/all inline-flex shrink-0 items-center gap-1.5 pb-1 text-sm font-bold text-primary transition-colors hover:text-berry-bright"
           >
-            <SelectTrigger className="mt-2 h-11 w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {governorates.map((gov) => (
-                <SelectItem key={gov.id} value={gov.id}>
-                  {gov.name[lang]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            {t.home.agentsViewAll}
+            <Arrow className="size-4 transition-[translate] duration-200 ease-smooth group-hover/all:-translate-x-0.5 rtl:group-hover/all:translate-x-0.5" />
+          </Link>
         </div>
 
-        <div className="grid content-start gap-5 sm:grid-cols-2">
-          {filtered.length === 0 && (
-            <div className="col-span-full rounded-2xl border border-dashed border-border p-10 text-center text-muted-foreground">
-              {t.common.comingSoon}
-            </div>
-          )}
-
-          {filtered.map((agent) => (
+        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {preview.map((agent) => (
             <article
               key={agent.id}
               className="group relative transform-gpu overflow-hidden rounded-2xl border border-border/60 bg-card p-5 transition-[translate,scale,border-color] duration-300 ease-smooth hover:-translate-y-0.5 hover:border-primary/35"
@@ -87,47 +81,36 @@ export function AgentsSection({
               >
                 <Image
                   src={agent.photoUrl}
-                  alt={agent.name[lang]}
+                  alt=""
                   width={64}
                   height={64}
-                  className="size-16 rounded-full border-2 border-berry-soft object-cover"
+                  className="size-16 shrink-0 rounded-full border-2 border-berry-soft object-cover"
                 />
-                <div>
-                  <h3 className="font-heading font-semibold group-hover:text-primary">
+                <div className="min-w-0">
+                  <h3 className="truncate font-heading font-semibold group-hover:text-primary">
                     {agent.name[lang]}
                   </h3>
                   <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
-                    <Store className="size-3.5" />
+                    <MapPin className="size-3.5 shrink-0" />
+                    <span className="truncate">
+                      {governorateName(agent.governorateId)}
+                    </span>
+                  </p>
+                  <p className="mt-0.5 flex items-center gap-1.5 text-sm text-muted-foreground">
+                    <Store className="size-3.5 shrink-0" />
                     {agent.restaurantsCount} {t.home.agentRestaurantsCount}
                   </p>
                 </div>
               </Link>
 
-              <div className="mt-5 flex gap-2">
-                <Button
-                  size="sm"
-                  className="flex-1 bg-[#414141] text-white hover:bg-[#2d2d2d] dark:bg-white/10 dark:hover:bg-white/20"
-                  render={<a href={`tel:${agent.phone.replace(/\s/g, "")}`} />}
-                >
-                  <Phone className="size-3.5" />
-                  {t.home.agentCall}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="flex-1 border-success/40 text-success hover:bg-success/10 hover:text-success"
-                  render={
-                    <a
-                      href={`https://wa.me/${agent.whatsapp.replace(/[+\s]/g, "")}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    />
-                  }
-                >
-                  <MessageCircle className="size-3.5" />
-                  {t.home.agentWhatsapp}
-                </Button>
-              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-5 w-full border-[1.5px] group-hover:border-primary/40 group-hover:text-primary"
+                render={<Link href={`/${lang}/agents/${agent.id}`} />}
+              >
+                {t.home.agentViewDetails}
+              </Button>
             </article>
           ))}
         </div>

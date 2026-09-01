@@ -1,16 +1,24 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
-import { Check, MapPin, Plus } from "lucide-react";
-import { Controller, useForm, useWatch } from "react-hook-form";
-import { toast } from "sonner";
+import {
+  Check,
+  MapPin,
+  Plus,
+  ShoppingBag,
+  UtensilsCrossed,
+} from "lucide-react";
+import { useForm, useWatch } from "react-hook-form";
+import { toast } from "@/lib/toast";
 
 import { FieldError } from "@/components/shared/field-error";
 import { FileDropzone } from "@/components/shared/file-dropzone";
+import { GoogleLocationPicker } from "@/components/shared/google-location-picker";
+import { GovernorateRegionSelect } from "@/components/shared/governorate-region-select";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -21,13 +29,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
   registerWizardSchema,
@@ -62,6 +63,12 @@ export interface RegisterCopy {
   nameLabel: string;
   namePlaceholder: string;
   typeLabel: string;
+  step1?: string;
+  descriptionPlaceholder?: string;
+  logoLabel?: string;
+  previewItemName?: string;
+  previewItemDesc?: string;
+  instagramPlaceholder?: string;
 }
 
 export function RestaurantRegisterForm({
@@ -70,6 +77,8 @@ export function RestaurantRegisterForm({
   /** overrides for the store variant; defaults to restaurant wording */
   copy?: RegisterCopy;
 }) {
+  const referralFromAgent = useSearchParams().get("ref")?.trim() ?? "";
+
   const { t, lang } = useI18n();
   const router = useRouter();
   const login = useAuthStore((s) => s.login);
@@ -99,14 +108,16 @@ export function RestaurantRegisterForm({
       whatsapp: "",
       instagram: "",
       facebook: "",
-      referral: "",
+      // an agent page links here as ?ref=CODE, so arriving through an agent
+      // pre-fills their referral instead of asking the owner to retype it
+      referral: referralFromAgent,
     },
     mode: "onTouched",
   });
 
-  const [primaryColor, secondaryColor, lat, lng] = useWatch({
+  const [primaryColor, secondaryColor, lat, lng, governorateId] = useWatch({
     control,
-    name: ["primaryColor", "secondaryColor", "lat", "lng"],
+    name: ["primaryColor", "secondaryColor", "lat", "lng", "governorateId"],
   });
 
   const { data: governorates } = useQuery({
@@ -114,7 +125,13 @@ export function RestaurantRegisterForm({
     queryFn: getGovernorates,
   });
 
-  const steps = [t.auth.step1, t.auth.step2, t.auth.step3, t.auth.step4];
+  const Icon = copy ? ShoppingBag : UtensilsCrossed;
+  const steps = [
+    copy?.step1 ?? t.auth.step1,
+    t.auth.step2,
+    t.auth.step3,
+    t.auth.step4,
+  ];
 
   const nextStep = async () => {
     const valid = await trigger(stepFields[step]);
@@ -126,6 +143,7 @@ export function RestaurantRegisterForm({
       identifier: values.whatsapp,
       role: "owner",
       name: values.name,
+      businessType: copy ? "store" : "restaurant",
     });
     toast.success(t.auth.applicationSent);
     router.push(`/${lang}/dashboard`);
@@ -133,17 +151,22 @@ export function RestaurantRegisterForm({
 
   return (
     <div className="w-full max-w-3xl">
-      <div className="text-center">
+      <div className="space-y-3 text-center">
+        <span className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-berry-soft text-berry-soft-foreground">
+          <Icon className="size-8" />
+        </span>
         <h1 className="font-heading text-2xl font-bold md:text-3xl">
           {copy?.title ?? t.auth.restaurantRegTitle}
         </h1>
-        <p className="mt-2 text-sm text-muted-foreground md:text-base">
+        <p className="mx-auto max-w-md text-sm text-muted-foreground md:text-base">
           {copy?.body ?? t.auth.restaurantRegBody}
         </p>
       </div>
 
-      {/* step indicator */}
-      <ol className="mx-auto mt-8 flex max-w-xl items-center">
+      {/* step indicator — the label sits absolutely below the circle so it
+          never affects the row's height, keeping the connector line
+          centered on the circles instead of on the circle+label stack */}
+      <ol className="mx-auto mt-8 flex max-w-xl items-center pb-6">
         {steps.map((label, i) => (
           <li
             key={label}
@@ -157,22 +180,20 @@ export function RestaurantRegisterForm({
                 )}
               />
             )}
-            <span className="flex flex-col items-center gap-1.5">
+            <span
+              className={cn(
+                "relative flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-bold transition-colors duration-300",
+                i < step
+                  ? "bg-primary text-primary-foreground"
+                  : i === step
+                    ? "bg-primary text-primary-foreground shadow-glow scale-110"
+                    : "bg-surface-container text-muted-foreground",
+              )}
+            >
+              {i < step ? <Check className="size-4" /> : i + 1}
               <span
                 className={cn(
-                  "flex size-9 items-center justify-center rounded-full text-sm font-bold transition-colors duration-300",
-                  i < step
-                    ? "bg-primary text-primary-foreground"
-                    : i === step
-                      ? "bg-primary text-primary-foreground shadow-glow scale-110"
-                      : "bg-surface-container text-muted-foreground",
-                )}
-              >
-                {i < step ? <Check className="size-4" /> : i + 1}
-              </span>
-              <span
-                className={cn(
-                  "hidden text-xs font-semibold sm:block",
+                  "absolute top-full start-1/2 mt-1.5 hidden -translate-x-1/2 rtl:translate-x-1/2 whitespace-nowrap text-xs font-semibold sm:block",
                   i === step ? "text-foreground" : "text-muted-foreground",
                 )}
               >
@@ -210,7 +231,11 @@ export function RestaurantRegisterForm({
                 <Label htmlFor="r-cuisine">
                   {copy?.typeLabel ?? t.auth.restaurantTypeLabel}
                 </Label>
-                <Input id="r-cuisine" className="h-11" {...register("cuisine")} />
+                <Input
+                  id="r-cuisine"
+                  className="h-11"
+                  {...register("cuisine")}
+                />
               </div>
             </div>
             <div className="space-y-2">
@@ -218,13 +243,18 @@ export function RestaurantRegisterForm({
               <Textarea
                 id="r-desc"
                 rows={3}
-                placeholder={t.auth.descriptionPlaceholder}
+                placeholder={
+                  copy?.descriptionPlaceholder ?? t.auth.descriptionPlaceholder
+                }
                 {...register("description")}
               />
             </div>
             <div className="space-y-2">
-              <Label>{t.auth.logoLabel}</Label>
-              <FileDropzone label={t.auth.logoLabel} hint={t.auth.logoHint} />
+              <Label>{copy?.logoLabel ?? t.auth.logoLabel}</Label>
+              <FileDropzone
+                label={copy?.logoLabel ?? t.auth.logoLabel}
+                hint={t.auth.logoHint}
+              />
             </div>
           </div>
         )}
@@ -323,10 +353,10 @@ export function RestaurantRegisterForm({
                 </div>
                 <div className="p-4">
                   <p className="font-heading font-semibold">
-                    {t.auth.previewDishName}
+                    {copy?.previewItemName ?? t.auth.previewDishName}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {t.auth.previewDishDesc}
+                    {copy?.previewItemDesc ?? t.auth.previewDishDesc}
                   </p>
                   <div className="mt-3 flex items-center justify-between">
                     <span
@@ -354,32 +384,17 @@ export function RestaurantRegisterForm({
             <div className="grid gap-6 md:grid-cols-2">
               <div className="space-y-2">
                 <Label>{t.auth.governorateLabel} *</Label>
-                <Controller
-                  control={control}
-                  name="governorateId"
-                  render={({ field }) => (
-                    <Select
-                      value={field.value || null}
-                      onValueChange={(v) => v && field.onChange(v)}
-                      items={Object.fromEntries(
-                        (governorates ?? []).map((g) => [g.id, g.name[lang]]),
-                      )}
-                    >
-                      <SelectTrigger
-                        className="h-11 w-full"
-                        aria-invalid={!!errors.governorateId}
-                      >
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(governorates ?? []).map((g) => (
-                          <SelectItem key={g.id} value={g.id}>
-                            {g.name[lang]}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                <GovernorateRegionSelect
+                  triggerClassName="h-11"
+                  governorateValue={governorateId}
+                  onGovernorateChange={(v) =>
+                    setValue("governorateId", v, { shouldValidate: true })
+                  }
+                  governorateItems={Object.fromEntries(
+                    (governorates ?? []).map((g) => [g.id, g.name[lang]]),
                   )}
+                  governorateAriaLabel={t.auth.governorateLabel}
+                  governorateInvalid={!!errors.governorateId}
                 />
                 <FieldError message={errors.governorateId?.message} />
               </div>
@@ -437,13 +452,23 @@ export function RestaurantRegisterForm({
                   <DialogHeader>
                     <DialogTitle>{t.auth.pickLocation}</DialogTitle>
                   </DialogHeader>
-                  <MapPinPicker
-                    onPick={(pickedLat, pickedLng) => {
+                  <GoogleLocationPicker
+                    initialCoords={lat && lng ? { lat, lng } : undefined}
+                    selectedGovernorateId={governorateId}
+                    governorates={governorates}
+                    onLocationChange={({ lat: pickedLat, lng: pickedLng }) => {
                       setValue("lat", pickedLat);
                       setValue("lng", pickedLng);
-                      setMapOpen(false);
                     }}
                   />
+                  <Button
+                    type="button"
+                    className="w-full"
+                    onClick={() => setMapOpen(false)}
+                  >
+                    <Check className="size-4" />
+                    <span className="font-semibold">OK</span>
+                  </Button>
                 </DialogContent>
               </Dialog>
             </div>
@@ -470,7 +495,7 @@ export function RestaurantRegisterForm({
               <Input
                 id="r-ig"
                 dir="ltr"
-                placeholder="@yourrestaurant"
+                placeholder={copy?.instagramPlaceholder ?? "@yourrestaurant"}
                 className="h-11"
                 {...register("instagram")}
               />
@@ -527,58 +552,6 @@ export function RestaurantRegisterForm({
           )}
         </div>
       </form>
-    </div>
-  );
-}
-
-/** Stylised pin-drop surface — swaps for a real map SDK once keys exist. */
-function MapPinPicker({
-  onPick,
-}: {
-  onPick: (lat: number, lng: number) => void;
-}) {
-  const [pin, setPin] = useState<{ x: number; y: number } | null>(null);
-
-  return (
-    <div className="space-y-4 px-1 pb-1">
-      <div
-        className="relative h-72 cursor-crosshair overflow-hidden rounded-2xl border border-border bg-[linear-gradient(var(--surface-container)_1px,transparent_1px),linear-gradient(90deg,var(--surface-container)_1px,transparent_1px)] bg-surface-container-low"
-        style={{ backgroundSize: "28px 28px" }}
-        onClick={(e) => {
-          const rect = e.currentTarget.getBoundingClientRect();
-          setPin({
-            x: ((e.clientX - rect.left) / rect.width) * 100,
-            y: ((e.clientY - rect.top) / rect.height) * 100,
-          });
-        }}
-      >
-        {/* faux roads */}
-        <div className="absolute inset-x-0 top-1/3 h-3 -rotate-3 bg-surface-container-high/70" />
-        <div className="absolute inset-y-0 start-1/4 w-2.5 rotate-6 bg-surface-container-high/70" />
-        <div className="absolute inset-x-0 bottom-1/4 h-2 rotate-2 bg-surface-container-high/50" />
-
-        {pin && (
-          <MapPin
-            className="absolute size-8 -translate-x-1/2 -translate-y-full fill-berry-soft text-primary"
-            style={{ left: `${pin.x}%`, top: `${pin.y}%` }}
-          />
-        )}
-      </div>
-      <Button
-        type="button"
-        className="w-full"
-        disabled={!pin}
-        onClick={() => {
-          if (!pin) return;
-          // project the canvas position onto a plausible bounding box around Damascus
-          const lat = 33.58 - (pin.y / 100) * 0.14;
-          const lng = 36.2 + (pin.x / 100) * 0.2;
-          onPick(Number(lat.toFixed(6)), Number(lng.toFixed(6)));
-        }}
-      >
-        <Check className="size-4" />
-        <span className="font-semibold">OK</span>
-      </Button>
     </div>
   );
 }

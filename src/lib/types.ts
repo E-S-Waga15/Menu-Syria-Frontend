@@ -49,8 +49,24 @@ export interface Business {
   theme: RestaurantTheme;
   rating: number;
   isOpen: boolean;
+  /** display-only reopen time (e.g. "٩:٠٠ ص") shown when closed — not a
+   * real schedule, just enough for the closed-state copy on the storefront */
+  opensAt?: LocalizedText;
   status: SubscriptionStatus;
   planExpiresAt: string;
+  /** order channels the plan covers; omitted means both are available */
+  orderChannels?: OrderChannel[];
+  /**
+   * Opening hours, index 0 = Sunday. `null` for a day the place is shut.
+   * Omitted entirely means the owner has not published hours — a different
+   * thing from being closed, and shown differently.
+   */
+  openingHours?: (DayHours | null)[];
+}
+
+export interface DayHours {
+  opens: string;
+  closes: string;
 }
 
 export interface Restaurant extends Business {
@@ -61,6 +77,17 @@ export interface Restaurant extends Business {
 export interface Store extends Business {
   category: LocalizedText;
 }
+
+/** How the customer will receive their order. Restaurants support all
+ * three; stores never offer dine-in (see `getSupportedFulfillment`). */
+export type FulfillmentMode = "dineIn" | "pickup" | "delivery";
+
+/**
+ * How an order can be placed, which the business's plan decides: straight
+ * through the platform, handed off to WhatsApp, or both. A business with only
+ * one enabled shows one button, not a disabled second one.
+ */
+export type OrderChannel = "platform" | "whatsapp";
 
 export interface MenuCategory {
   id: string;
@@ -78,10 +105,25 @@ export interface StoreCategory {
 
 export type DishBadge = "popular" | "new" | "chefSpecial";
 
-export interface MenuItemOption {
+export type OptionSelectionType = "single" | "multiple";
+
+export interface CatalogOption {
   id: string;
   name: LocalizedText;
   priceDelta: number;
+}
+
+/**
+ * A group of related choices on a catalog item — "single" renders as an
+ * exclusive pick (e.g. Size: Regular/Large, only one at a time), "multiple"
+ * as independent add-ons (e.g. extra toppings, several at once).
+ */
+export interface CatalogOptionGroup {
+  id: string;
+  name: LocalizedText;
+  selectionType: OptionSelectionType;
+  required: boolean;
+  options: CatalogOption[];
 }
 
 /**
@@ -100,7 +142,7 @@ export interface CatalogItem {
   images?: string[];
   /** dish ingredients — or product specs/features for stores */
   ingredients?: LocalizedText[];
-  options?: MenuItemOption[];
+  optionGroups?: CatalogOptionGroup[];
   isAvailable: boolean;
   badge?: DishBadge;
   sortOrder: number;
@@ -140,12 +182,6 @@ export interface Agent {
   commissionRate: number;
 }
 
-export interface TeamMember {
-  id: string;
-  name: LocalizedText;
-  role: LocalizedText;
-  photoUrl: string;
-}
 
 export type OrderStatus = "new" | "preparing" | "ready";
 
@@ -210,4 +246,23 @@ export interface RestaurantAnalytics {
   visitsByDay: AnalyticsPoint[];
   salesByCategory: AnalyticsPoint[];
   bestSeller: MenuItem;
+}
+
+/** What a notification is about; the copy for each lives in the dictionary. */
+export type NotificationKind =
+  | "expiringSoon"
+  | "expired"
+  | "renewed"
+  | "joined";
+
+export interface AppNotification {
+  id: string;
+  kind: NotificationKind;
+  /** the business the notice concerns */
+  subjectName: LocalizedText;
+  /** days until expiry (or since, when already expired) */
+  days?: number;
+  createdAt: string;
+  /** where reading it should take you */
+  href?: string;
 }

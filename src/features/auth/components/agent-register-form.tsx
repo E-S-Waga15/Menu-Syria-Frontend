@@ -1,14 +1,17 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useMemo } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
-import { Controller, useForm } from "react-hook-form";
-import { toast } from "sonner";
+import { Handshake } from "lucide-react";
+import { Controller, useForm, useWatch } from "react-hook-form";
+import { toast } from "@/lib/toast";
 
 import { FieldError } from "@/components/shared/field-error";
 import { FileDropzone } from "@/components/shared/file-dropzone";
+import { GovernorateRegionSelect } from "@/components/shared/governorate-region-select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,7 +27,7 @@ import {
   agentRegisterSchema,
   type AgentRegisterValues,
 } from "@/features/auth/schemas";
-import { getGovernorates } from "@/features/marketing/services";
+import { getGovernorates, getRegions } from "@/features/marketing/services";
 import { useI18n } from "@/i18n/client";
 import { queryKeys } from "@/lib/api/query-keys";
 
@@ -36,47 +39,91 @@ export function AgentRegisterForm() {
     queryKey: queryKeys.governorates,
     queryFn: getGovernorates,
   });
+  const { data: regions } = useQuery({
+    queryKey: queryKeys.regions,
+    queryFn: getRegions,
+  });
 
   const {
     register,
     handleSubmit,
     control,
-    formState: { errors },
+    setValue,
+    formState: { errors, isSubmitting },
   } = useForm<AgentRegisterValues>({
     resolver: zodResolver(agentRegisterSchema(t.validation)),
-    defaultValues: { name: "", phone: "", governorateId: "", experience: "" },
+    defaultValues: {
+      name: "",
+      phone: "",
+      gender: "male",
+      governorateId: "",
+      regionId: "",
+      bio: "",
+      instagram: "",
+      facebook: "",
+    },
     mode: "onTouched",
   });
 
-  const submit = () => {
+  const [governorateId, regionId] = useWatch({
+    control,
+    name: ["governorateId", "regionId"],
+  });
+
+  const regionChoices = useMemo(
+    () => (regions ?? []).filter((r) => r.governorateId === governorateId),
+    [regions, governorateId],
+  );
+
+  const genderItems = {
+    male: t.auth.genderMale,
+    female: t.auth.genderFemale,
+  };
+  const governorateItems = Object.fromEntries(
+    (governorates ?? []).map((g) => [g.id, g.name[lang]]),
+  );
+  const regionItems = Object.fromEntries(
+    regionChoices.map((r) => [r.id, r.name[lang]]),
+  );
+
+  const submit = async () => {
     toast.success(t.auth.applicationSent);
     router.push(`/${lang}`);
   };
 
   return (
     <div className="w-full max-w-2xl">
-      <div className="text-center">
+      <div className="space-y-3 text-center">
+        <span className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-berry-soft text-berry-soft-foreground">
+          <Handshake className="size-8" />
+        </span>
         <h1 className="font-heading text-2xl font-bold md:text-3xl">
           {t.auth.agentRegTitle}
         </h1>
-        <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground md:text-base">
+        <p className="mx-auto max-w-md text-sm text-muted-foreground md:text-base">
           {t.auth.agentRegBody}
         </p>
       </div>
 
-      {/* formal tertiary-toned card */}
       <form
         onSubmit={handleSubmit(submit)}
         noValidate
-        className="mt-8 space-y-6 rounded-3xl border-t-4 border border-border/60 border-t-[#414141] bg-card p-6 shadow-lifted md:p-10 dark:border-t-white/40"
+        className="mt-8 space-y-6 rounded-3xl border border-border/60 bg-card p-6 md:p-10"
       >
+        <FileDropzone
+          variant="avatar"
+          label={t.auth.personalPhotoLabel}
+          hint={t.auth.dropzoneHint}
+        />
+
         <div className="grid gap-6 md:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="a-name">{t.auth.fullNameLabel} *</Label>
             <Input
               id="a-name"
+              autoComplete="name"
               aria-invalid={!!errors.name}
-              className="h-11"
+              className="h-12"
               {...register("name")}
             />
             <FieldError message={errors.name?.message} />
@@ -89,7 +136,7 @@ export function AgentRegisterForm() {
               inputMode="tel"
               placeholder="+963 9XX XXX XXX"
               aria-invalid={!!errors.phone}
-              className="h-11"
+              className="h-12"
               {...register("phone")}
             />
             <FieldError message={errors.phone?.message} />
@@ -97,56 +144,88 @@ export function AgentRegisterForm() {
         </div>
 
         <div className="space-y-2">
-          <Label>{t.auth.governorateLabel} *</Label>
+          <Label>{t.auth.genderLabel}</Label>
           <Controller
             control={control}
-            name="governorateId"
+            name="gender"
             render={({ field }) => (
               <Select
-                value={field.value || null}
+                value={field.value}
                 onValueChange={(v) => v && field.onChange(v)}
-                items={Object.fromEntries(
-                  (governorates ?? []).map((g) => [g.id, g.name[lang]]),
-                )}
+                items={genderItems}
               >
-                <SelectTrigger
-                  className="h-11 w-full"
-                  aria-invalid={!!errors.governorateId}
-                >
+                <SelectTrigger className="h-12 w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {(governorates ?? []).map((g) => (
-                    <SelectItem key={g.id} value={g.id}>
-                      {g.name[lang]}
+                  {Object.entries(genderItems).map(([id, label]) => (
+                    <SelectItem key={id} value={id}>
+                      {label}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             )}
           />
-          <FieldError message={errors.governorateId?.message} />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="a-exp">{t.auth.experienceLabel}</Label>
-          <Textarea id="a-exp" rows={3} {...register("experience")} />
+          <Label>{t.auth.governorateLabel} *</Label>
+          <GovernorateRegionSelect
+            triggerClassName="h-12"
+            governorateValue={governorateId}
+            onGovernorateChange={(v) => {
+              setValue("governorateId", v, { shouldValidate: true });
+              setValue("regionId", "");
+            }}
+            governorateItems={governorateItems}
+            governorateAriaLabel={t.auth.governorateLabel}
+            governorateInvalid={!!errors.governorateId}
+            regionValue={regionId}
+            onRegionChange={(v) =>
+              setValue("regionId", v, { shouldValidate: true })
+            }
+            regionItems={regionItems}
+            regionAriaLabel={t.agentsPage.region}
+            regionDisabled={!governorateId}
+          />
+          <div className="grid gap-1 sm:grid-cols-2 sm:gap-x-3">
+            <FieldError message={errors.governorateId?.message} />
+            <FieldError message={errors.regionId?.message} />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="a-bio">{t.auth.bioLabel}</Label>
+          <Textarea
+            id="a-bio"
+            rows={3}
+            placeholder={t.auth.bioPlaceholder}
+            {...register("bio")}
+          />
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
           <div className="space-y-2">
-            <Label>{t.auth.idDocLabel} *</Label>
-            <FileDropzone label={t.auth.idDocLabel} />
+            <Label htmlFor="a-ig">{t.auth.instagramLabel}</Label>
+            <Input
+              id="a-ig"
+              dir="ltr"
+              placeholder="@yourname"
+              className="h-12"
+              {...register("instagram")}
+            />
           </div>
           <div className="space-y-2">
-            <Label>{t.auth.personalPhotoLabel} *</Label>
-            <FileDropzone label={t.auth.personalPhotoLabel} />
+            <Label htmlFor="a-fb">{t.auth.facebookLabel}</Label>
+            <Input id="a-fb" dir="ltr" className="h-12" {...register("facebook")} />
           </div>
         </div>
 
         <Button
           type="submit"
-          className="h-12 w-full bg-[#414141] text-base text-white shadow-soft hover:bg-[#2d2d2d] dark:bg-white/15 dark:hover:bg-white/25"
+          disabled={isSubmitting}
+          className="h-12 w-full text-base"
         >
           {t.auth.submitApplication}
         </Button>

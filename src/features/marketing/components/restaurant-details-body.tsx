@@ -1,7 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { ExternalLink, MapPin, Phone, Star, UtensilsCrossed } from "lucide-react";
+import {
+  ExternalLink,
+  MapPin,
+  Phone,
+  Star,
+  UtensilsCrossed,
+} from "lucide-react";
 
 import {
   FacebookIcon,
@@ -10,16 +16,34 @@ import {
 } from "@/components/shared/brand-icons";
 import { Badge } from "@/components/ui/badge";
 import { MapEmbed } from "@/features/marketing/components/map-embed";
+import { OpeningHours } from "@/features/marketing/components/opening-hours";
 import { ReviewsSection } from "@/features/marketing/components/reviews-section";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/get-dictionary";
 import type { Business, Review } from "@/lib/types";
 
-/**
- * The full details content (identity, contact, menu CTA, map, reviews).
- * Shared between the marketing details page and the isolated in-menu
- * details page (`/menu/[slug]/about`) that QR visitors are allowed to see.
- */
+/** one card shell for every block on this page, so nothing drifts */
+function Panel({
+  title,
+  action,
+  children,
+}: {
+  title: string;
+  /** sits opposite the heading rather than under the content */
+  action?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-2xl border border-border/60 bg-card p-5 md:p-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="font-heading text-lg font-bold">{title}</h2>
+        {action}
+      </div>
+      <div className="mt-4">{children}</div>
+    </section>
+  );
+}
+
 export function RestaurantDetailsBody({
   restaurant,
   reviews,
@@ -42,22 +66,11 @@ export function RestaurantDetailsBody({
 }) {
   const separator = lang === "ar" ? "، " : ", ";
 
-  const socials = [
-    {
-      label: t.restaurant.call,
-      icon: Phone,
-      href: `tel:${restaurant.phone.replace(/\s/g, "")}`,
-      className: "bg-muted text-foreground hover:bg-surface-container-high",
-    },
-    {
-      label: t.restaurant.whatsapp,
-      icon: WhatsAppIcon,
-      href: `https://wa.me/${restaurant.whatsapp.replace(/[+\s]/g, "")}`,
-      className:
-        "bg-[#25D366]/10 text-[#128C4A] hover:bg-[#25D366]/20 dark:text-[#4cd97f]",
-    },
+  /** the profiles the business keeps, as opposed to ways to reach a person */
+  const socialPages = [
     restaurant.facebook && {
       label: t.restaurant.facebook,
+      handle: restaurant.facebook,
       icon: FacebookIcon,
       href: `https://facebook.com/${restaurant.facebook}`,
       className:
@@ -65,6 +78,7 @@ export function RestaurantDetailsBody({
     },
     restaurant.instagram && {
       label: t.restaurant.instagram,
+      handle: restaurant.instagram,
       icon: InstagramIcon,
       href: `https://instagram.com/${restaurant.instagram}`,
       className:
@@ -72,6 +86,7 @@ export function RestaurantDetailsBody({
     },
   ].filter(Boolean) as {
     label: string;
+    handle: string;
     icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
     href: string;
     className: string;
@@ -80,30 +95,37 @@ export function RestaurantDetailsBody({
   return (
     <div className="container-page">
       {/* identity bar — sits mostly below the gallery so nothing is cropped */}
-      <div className="relative -mt-6 flex flex-wrap items-end gap-5 md:-mt-8">
+      {/* The row is bottom-aligned, so whichever child is taller sets how far
+          the logo sits from the gallery. Keeping the badge on the name's line
+          (below) shortens the text block back under the logo's height, which
+          is what lets the mark ride up into the photo on a phone the way it
+          already did on desktop. */}
+      <div className="relative -mt-8 flex flex-wrap items-end gap-4 md:-mt-8 md:gap-5">
         <Image
           src={restaurant.logoUrl}
-          alt={restaurant.name[lang]}
+          alt=""
           width={120}
           height={120}
           className="size-28 rounded-2xl border-4 border-background object-cover md:size-32"
         />
-        <div className="flex-1 pb-1 pt-8 md:pt-10">
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-display text-3xl md:text-4xl">
+        <div className="flex-1 pt-6 pb-1 md:pt-10">
+          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
+            <h1 className="text-display text-2xl md:text-4xl">
               {restaurant.name[lang]}
             </h1>
             <Badge
               className={
                 restaurant.isOpen
-                  ? "bg-success/10 text-success"
-                  : "bg-muted text-muted-foreground"
+                  ? "shrink-0 bg-success/10 px-2 py-0.5 text-[11px] text-success md:px-2.5 md:text-xs"
+                  : "shrink-0 bg-muted px-2 py-0.5 text-[11px] text-muted-foreground md:px-2.5 md:text-xs"
               }
             >
               <span
                 className={`me-1 size-1.5 rounded-full ${restaurant.isOpen ? "bg-success" : "bg-muted-foreground"}`}
               />
-              {restaurant.isOpen ? t.restaurant.openNow : t.restaurant.closedNow}
+              {restaurant.isOpen
+                ? t.restaurant.openNow
+                : t.restaurant.closedNow}
             </Badge>
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
@@ -121,75 +143,119 @@ export function RestaurantDetailsBody({
         </div>
       </div>
 
-      <div className="mt-10 grid gap-10 pb-6 lg:grid-cols-[1.2fr_1fr]">
-        <div className="space-y-8">
-          <p className="max-w-2xl text-lg leading-relaxed text-muted-foreground">
-            {restaurant.description[lang]}
-          </p>
-
-          {/* contact info */}
-          <section className="space-y-4">
-            <h2 className="font-heading text-lg font-semibold">
-              {t.restaurant.contactInfo}
-            </h2>
-            <p className="flex items-center gap-2.5 text-base font-semibold">
-              <span className="flex size-9 items-center justify-center rounded-full bg-berry-soft text-berry-soft-foreground">
-                <Phone className="size-4" />
-              </span>
-              <span dir="ltr">{restaurant.phone}</span>
+      <div className="mt-10 grid items-start gap-6 pb-6 lg:grid-cols-[1.2fr_1fr]">
+        <div className="space-y-6">
+          <Panel title={t.restaurant.aboutTitle}>
+            <p className="leading-relaxed text-muted-foreground md:text-lg">
+              {restaurant.description[lang]}
             </p>
-            <div className="flex flex-wrap gap-2.5">
-              {socials.map((social) => (
-                <a
-                  key={social.label}
-                  href={social.href}
-                  target={social.href.startsWith("http") ? "_blank" : undefined}
-                  rel="noopener noreferrer"
-                  className={`flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition-colors ${social.className}`}
-                >
-                  <social.icon className="size-4" />
-                  {social.label}
-                </a>
-              ))}
-            </div>
-          </section>
+          </Panel>
 
-          {/* the one action that matters — themed with the restaurant's own color */}
+          {/* the one action that matters — themed with the business's own colour */}
           {showMenuCta && (
             <Link
               href={menuHref ?? `/${lang}/menu/${restaurant.slug}`}
-              className="group flex w-full transform-gpu items-center justify-center gap-3 rounded-2xl px-8 py-5 text-lg font-bold text-white transition-transform duration-300 ease-smooth hover:scale-[1.015] md:w-auto md:min-w-96"
+              className="group relative flex w-full transform-gpu items-center justify-center gap-3 overflow-hidden rounded-2xl px-8 py-5 text-lg font-bold text-white transition-[scale] duration-300 ease-smooth hover:scale-[1.01]"
               style={{
                 background: `linear-gradient(135deg, ${restaurant.theme.primaryColor}, color-mix(in oklch, ${restaurant.theme.primaryColor}, ${restaurant.theme.secondaryColor} 35%))`,
               }}
             >
-              <UtensilsCrossed className="size-5 transition-transform group-hover:rotate-12" />
-              {t.restaurant.browseMenu}
+              {/* a slow sheen across the button — the only flourish on the page,
+                  so it reads as considered rather than decorated */}
+              <span
+                aria-hidden
+                className="absolute inset-y-0 -inset-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent transition-transform duration-700 ease-smooth group-hover:translate-x-full"
+              />
+              <UtensilsCrossed className="relative size-5 transition-transform duration-300 group-hover:rotate-12" />
+              <span className="relative">{t.restaurant.browseMenu}</span>
             </Link>
           )}
+
+          <Panel title={t.restaurant.contactInfo}>
+            <a
+              href={`tel:${restaurant.phone.replace(/\s/g, "")}`}
+              className="flex items-center gap-2.5 text-base font-semibold transition-colors hover:text-primary"
+            >
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#ffd9de] text-[#90003b]">
+                <Phone className="size-4" />
+              </span>
+              <span dir="ltr">{restaurant.phone}</span>
+            </a>
+
+            <a
+              href={`https://wa.me/${restaurant.whatsapp.replace(/[+\s]/g, "")}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 flex items-center gap-2.5 text-base font-semibold transition-colors hover:text-[#128C4A]"
+            >
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#25D366]/12 text-[#128C4A] dark:text-[#4cd97f]">
+                <WhatsAppIcon className="size-4" />
+              </span>
+              <span dir="ltr">{restaurant.whatsapp}</span>
+            </a>
+
+            {socialPages.length > 0 && (
+              <div className="mt-6 border-t border-border/60 pt-5">
+                <h3 className="label-eyebrow text-muted-foreground">
+                  {t.restaurant.socialPages}
+                </h3>
+                <div className="mt-3 flex flex-wrap gap-2.5">
+                  {socialPages.map((page) => (
+                    <a
+                      key={page.label}
+                      href={page.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`flex items-center gap-2.5 rounded-full px-4 py-2.5 text-sm font-semibold transition-colors ${page.className}`}
+                    >
+                      <page.icon className="size-4 shrink-0" />
+                      <span className="flex flex-col leading-tight">
+                        <span>{page.label}</span>
+                        <span
+                          className="text-[11px] font-medium opacity-70"
+                          dir="ltr"
+                        >
+                          @{page.handle}
+                        </span>
+                      </span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+          </Panel>
         </div>
 
-        <div className="space-y-3">
-          <h2 className="font-heading text-lg font-semibold">
-            {t.restaurant.location}
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            {restaurant.address[lang]}
-          </p>
-          <MapEmbed
-            lat={restaurant.location.lat}
-            lng={restaurant.location.lng}
-            label={t.restaurant.location}
-          />
-          <a
-            href={`https://maps.google.com/?q=${restaurant.location.lat},${restaurant.location.lng}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
+        <div className="space-y-6">
+          <Panel
+            title={t.restaurant.location}
+            action={
+              <a
+                href={`https://maps.google.com/?q=${restaurant.location.lat},${restaurant.location.lng}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
+              >
+                {t.restaurant.openInMaps}
+                <ExternalLink className="size-3.5" />
+              </a>
+            }
           >
-            {t.restaurant.openInMaps}
-            <ExternalLink className="size-3.5" />
-          </a>
+            <p className="text-sm text-muted-foreground">
+              {restaurant.address[lang]}
+            </p>
+            <div className="mt-4">
+              <MapEmbed
+                lat={restaurant.location.lat}
+                lng={restaurant.location.lng}
+                label={t.restaurant.location}
+              />
+            </div>
+          </Panel>
+
+          <Panel title={t.restaurant.workingHours}>
+            <OpeningHours hours={restaurant.openingHours} t={t} />
+          </Panel>
         </div>
       </div>
 

@@ -1,17 +1,17 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-import type { CatalogItem, MenuItemOption } from "@/lib/types";
+import type { CatalogItem, CatalogOption } from "@/lib/types";
 
 export interface CartLine {
   /** item id + selected option ids — lines with different options stay separate */
   key: string;
   item: CatalogItem;
-  options: MenuItemOption[];
+  options: CatalogOption[];
   quantity: number;
 }
 
-const lineKey = (itemId: string, options: MenuItemOption[]) =>
+const lineKey = (itemId: string, options: CatalogOption[]) =>
   `${itemId}|${options
     .map((o) => o.id)
     .sort()
@@ -27,7 +27,7 @@ interface CartState {
   addItem: (
     restaurantId: string,
     item: CatalogItem,
-    options?: MenuItemOption[],
+    options?: CatalogOption[],
     quantity?: number,
   ) => void;
   removeLine: (key: string) => void;
@@ -77,7 +77,9 @@ export const useCartStore = create<CartState>()(
 
       clear: () => set({ lines: [], restaurantId: null }),
     }),
-    { name: "menu-syria-cart", version: 2 },
+    // v3: option ids now come from grouped optionGroups instead of a flat
+    // list — bumped so a stale cart from before this change resets cleanly
+    { name: "menu-syria-cart", version: 3 },
   ),
 );
 

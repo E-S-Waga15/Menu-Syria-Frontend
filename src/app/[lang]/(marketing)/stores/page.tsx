@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-import { RestaurantCard } from "@/features/marketing/components/restaurant-card";
+import { BusinessDirectory } from "@/features/marketing/components/business-directory";
 import { getGovernorates, getRegions } from "@/features/marketing/services";
 import { getStores } from "@/features/public-store/services";
 import { isLocale } from "@/i18n/config";
@@ -33,13 +33,6 @@ export default async function StoresPage({ params }: PageProps<"/[lang]">) {
     getRegions(),
   ]);
 
-  const separator = lang === "ar" ? "، " : ", ";
-  const locationLabel = (governorateId: string, regionId: string) => {
-    const gov = governorates.find((g) => g.id === governorateId)?.name[lang];
-    const region = regions.find((r) => r.id === regionId)?.name[lang];
-    return [gov, region].filter(Boolean).join(separator);
-  };
-
   return (
     <main className="container-page pt-28 pb-20 md:pt-32">
       <div className="max-w-2xl">
@@ -58,16 +51,14 @@ export default async function StoresPage({ params }: PageProps<"/[lang]">) {
             {t.storesPage.empty}
           </p>
         ) : (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {stores.map((store) => (
-              <RestaurantCard
-                key={store.id}
-                restaurant={store}
-                href={`/${lang}/store/${store.slug}`}
-                locationLabel={`${locationLabel(store.governorateId, store.regionId)} · ${store.category[lang]}`}
-              />
-            ))}
-          </div>
+          <BusinessDirectory
+            items={stores}
+            governorates={governorates}
+            regions={regions}
+            lang={lang}
+            copy={t.storesPage}
+            basePath="stores"
+          />
         )}
       </div>
     </main>

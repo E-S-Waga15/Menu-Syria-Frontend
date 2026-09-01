@@ -34,8 +34,6 @@ export const userProfileSchema = (v: ValidationMessages) =>
     name: z.string().trim().min(2, v.nameMin),
     birthDate: z.string().min(1, v.birthDateRequired),
     gender: z.enum(["male", "female"]),
-    governorateId: z.string(),
-    regionId: z.string(),
   });
 export type UserProfileValues = z.infer<ReturnType<typeof userProfileSchema>>;
 
@@ -63,8 +61,12 @@ export const agentRegisterSchema = (v: ValidationMessages) =>
   z.object({
     name: z.string().trim().min(2, v.nameMin),
     phone: syrianPhone(v.phoneInvalid),
+    gender: z.enum(["male", "female"]),
     governorateId: z.string().min(1, v.governorateRequired),
-    experience: z.string(),
+    regionId: z.string().min(1, v.regionRequired),
+    bio: z.string(),
+    instagram: z.string(),
+    facebook: z.string(),
   });
 export type AgentRegisterValues = z.infer<
   ReturnType<typeof agentRegisterSchema>

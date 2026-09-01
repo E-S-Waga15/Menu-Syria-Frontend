@@ -61,7 +61,9 @@ export function QrPanel() {
     <div className="grid items-start gap-6 lg:grid-cols-2">
       {/* QR generator */}
       <section className="rounded-2xl border border-border/60 bg-card p-6 md:p-8">
-        <h2 className="font-heading text-lg font-bold">{t.dashboard.qrTitle}</h2>
+        <h2 className="font-heading text-lg font-bold">
+          {t.dashboard.qrTitle}
+        </h2>
         <p className="mt-1.5 text-sm text-muted-foreground">
           {t.dashboard.qrBody}
         </p>
@@ -100,7 +102,11 @@ export function QrPanel() {
               <Download className="size-4" />
               {t.dashboard.downloadPng}
             </Button>
-            <Button variant="outline" className="h-11 flex-1" onClick={downloadPdf}>
+            <Button
+              variant="outline"
+              className="h-11 flex-1"
+              onClick={downloadPdf}
+            >
               <FileText className="size-4" />
               {t.dashboard.downloadPdf}
             </Button>
@@ -110,7 +116,9 @@ export function QrPanel() {
 
       {/* live phone preview */}
       <section className="rounded-2xl border border-border/60 bg-card p-6 md:p-8">
-        <h2 className="font-heading text-lg font-bold">{t.dashboard.preview}</h2>
+        <h2 className="font-heading text-lg font-bold">
+          {t.dashboard.preview}
+        </h2>
         <div className="mt-6 flex justify-center">
           <div className="relative w-[19rem] overflow-hidden rounded-[2.6rem] border-[10px] border-[#191c1d] bg-background dark:border-black">
             {/* notch */}

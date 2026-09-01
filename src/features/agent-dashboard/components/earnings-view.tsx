@@ -9,19 +9,11 @@ import {
   Hourglass,
   Link2,
 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { formatPrice } from "@/features/public-menu/lib/format";
 import {
   getMyAgentProfile,
@@ -46,7 +38,7 @@ export function AgentEarningsView() {
 
   if (!agent || !transactions) {
     return (
-      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <Skeleton key={i} className="h-32 rounded-2xl" />
         ))}
@@ -63,7 +55,7 @@ export function AgentEarningsView() {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           label={t.agent.totalEarnings}
           value={formatPrice(4850000, t.common.currency)}
@@ -116,68 +108,65 @@ export function AgentEarningsView() {
         </div>
       </section>
 
-      {/* zebra transactions table */}
-      <section className="overflow-hidden rounded-2xl border border-border/60 bg-card">
-        <h2 className="border-b border-border/60 px-5 py-4 font-heading text-lg font-semibold">
+      {/* transaction cards */}
+      <section className="space-y-3">
+        <h2 className="font-heading text-lg font-semibold">
           {t.agent.transactions}
         </h2>
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-surface-container-low hover:bg-surface-container-low">
-                <TableHead className="px-5 font-bold">
-                  {t.agent.transactionDate}
-                </TableHead>
-                <TableHead className="font-bold">
-                  {t.agent.transactionRestaurant}
-                </TableHead>
-                <TableHead className="font-bold">
-                  {t.agent.transactionType}
-                </TableHead>
-                <TableHead className="px-5 text-end font-bold">
-                  {t.agent.transactionAmount}
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {transactions.map((tx, index) => (
-                <TableRow
-                  key={tx.id}
+        <div className="space-y-2.5">
+          {transactions.map((tx) => (
+            <div
+              key={tx.id}
+              className="flex items-center justify-between gap-4 rounded-2xl border border-border/60 bg-card p-4"
+            >
+              <div className="flex min-w-0 items-center gap-3">
+                <span
                   className={cn(
-                    index % 2 === 1 &&
-                      "bg-surface-container-low/60 dark:bg-surface-container-low/40",
+                    "flex size-10 shrink-0 items-center justify-center rounded-xl",
+                    tx.type === "commission"
+                      ? "bg-success/10 text-success"
+                      : "bg-zest-soft text-zest-soft-foreground",
                   )}
                 >
-                  <TableCell className="px-5 font-semibold" dir="ltr">
+                  {tx.type === "commission" ? (
+                    <HandCoins className="size-4.5" />
+                  ) : (
+                    <Banknote className="size-4.5" />
+                  )}
+                </span>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold">
+                    {tx.restaurantName[lang]}
+                  </p>
+                  <p className="text-xs text-muted-foreground" dir="ltr">
                     {tx.date}
-                  </TableCell>
-                  <TableCell>{tx.restaurantName[lang]}</TableCell>
-                  <TableCell>
-                    <Badge
-                      className={
-                        tx.type === "commission"
-                          ? "bg-success/10 text-success"
-                          : "bg-zest-soft text-zest-soft-foreground"
-                      }
-                    >
-                      {tx.type === "commission"
-                        ? t.agent.commission
-                        : t.agent.payout}
-                    </Badge>
-                  </TableCell>
-                  <TableCell
-                    className={cn(
-                      "px-5 text-end font-bold",
-                      tx.amount >= 0 ? "text-success" : "text-destructive",
-                    )}
-                    dir="ltr"
-                  >
-                    {formatPrice(tx.amount, t.common.currency)}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                  </p>
+                </div>
+              </div>
+              <div className="shrink-0 space-y-1 text-end">
+                <p
+                  className={cn(
+                    "font-bold",
+                    tx.amount >= 0 ? "text-success" : "text-destructive",
+                  )}
+                  dir="ltr"
+                >
+                  {formatPrice(tx.amount, t.common.currency)}
+                </p>
+                <Badge
+                  className={
+                    tx.type === "commission"
+                      ? "bg-success/10 text-success"
+                      : "bg-zest-soft text-zest-soft-foreground"
+                  }
+                >
+                  {tx.type === "commission"
+                    ? t.agent.commission
+                    : t.agent.payout}
+                </Badge>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
     </div>
