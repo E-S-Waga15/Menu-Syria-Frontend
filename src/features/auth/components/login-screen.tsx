@@ -35,7 +35,6 @@ import {
   InputOTPSlot,
 } from "@/components/ui/input-otp";
 import { Label } from "@/components/ui/label";
-import { AuthStepDots } from "@/features/auth/components/auth-step-dots";
 import { RolePickerModal } from "@/features/auth/components/role-picker-modal";
 import { useRoleResolution } from "@/features/auth/hooks/use-role-resolution";
 import { destinationForRole } from "@/features/auth/lib/destinations";
@@ -223,12 +222,6 @@ export function LoginScreen() {
                 )}
               </div>
             </div>
-
-            {method === "phone" && (
-              <div className="mt-6">
-                <AuthStepDots step={step === "phone" ? 0 : 1} />
-              </div>
-            )}
 
             <div className="mt-6">
               {method === "phone" ? (

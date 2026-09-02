@@ -1,107 +1,109 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import Link from "next/link";
 
-import { useQuery } from "@tanstack/react-query";
 import {
-  Ban,
-  CircleCheck,
+  ArrowLeft,
+  ArrowRight,
+  CalendarClock,
+  CheckCircle2,
   CreditCard,
-  MoreHorizontal,
+  Handshake,
+  Settings2,
+  ShoppingBag,
   Store,
   TrendingUp,
-  UserRound,
+  UsersRound,
+  UtensilsCrossed,
+  Wallet,
 } from "lucide-react";
-import { toast } from "@/lib/toast";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  getAdminRestaurants,
-  getAdminStats,
-} from "@/features/admin/services";
-import { getGovernorates } from "@/features/marketing/services";
-import { formatPrice } from "@/features/public-menu/lib/format";
+import { QuickAccess } from "@/components/shared/quick-access";
 import { StatCard } from "@/features/restaurant-dashboard/components/stat-card";
-import { useI18n } from "@/i18n/client";
-import { queryKeys } from "@/lib/api/query-keys";
-import type { SubscriptionStatus } from "@/lib/types";
+import { daysUntil } from "@/features/notifications/services";
+import { formatPrice } from "@/features/public-menu/lib/format";
+import { fmt, useI18n } from "@/i18n/client";
+import type { AdminStats } from "@/features/admin/services";
+import type { Business } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-const ALL = "all";
+/** how many lapsing accounts the overview shows before deferring to the list */
+const ATTENTION_LIMIT = 5;
 
-export function AdminControlCenter() {
+/**
+ * The console's landing page.
+ *
+ * It answers two questions and then gets out of the way: how is the platform
+ * doing, and what needs doing today. It deliberately does not repeat the
+ * directories — each of those is a page of its own now, so this links into
+ * them rather than embedding a second, thinner copy that would drift.
+ */
+export function AdminControlCenter({
+  stats,
+  businesses,
+}: {
+  stats: AdminStats;
+  businesses: { business: Business; kind: "restaurant" | "store" }[];
+}) {
   const { t, lang } = useI18n();
+  const Arrow = lang === "ar" ? ArrowLeft : ArrowRight;
+  const base = `/${lang}/admin`;
 
-  const { data: stats } = useQuery({
-    queryKey: queryKeys.admin.stats,
-    queryFn: getAdminStats,
-  });
-  const { data: restaurants } = useQuery({
-    queryKey: queryKeys.admin.restaurants,
-    queryFn: getAdminRestaurants,
-  });
-  const { data: governorates } = useQuery({
-    queryKey: queryKeys.governorates,
-    queryFn: getGovernorates,
-  });
+  // soonest first, expired included — this is the day's work queue
+  const attention = businesses
+    .map((row) => ({ ...row, days: daysUntil(row.business.planExpiresAt) }))
+    .filter((row) => row.days <= 30)
+    .sort((a, b) => a.days - b.days);
 
-  const [statusFilter, setStatusFilter] = useState(ALL);
-  const [governorateFilter, setGovernorateFilter] = useState(ALL);
-
-  const statusLabel: Record<SubscriptionStatus, string> = {
-    active: t.common.active,
-    expired: t.common.expired,
-    pending: t.common.pending,
-  };
-
-  const statusStyle: Record<SubscriptionStatus, string> = {
-    active: "bg-success/10 text-success",
-    expired: "bg-destructive/10 text-destructive",
-    pending: "bg-zest-soft text-zest-soft-foreground",
-  };
-
-  const filtered = useMemo(
-    () =>
-      (restaurants ?? []).filter(
-        (r) =>
-          (statusFilter === ALL || r.status === statusFilter) &&
-          (governorateFilter === ALL || r.governorateId === governorateFilter),
-      ),
-    [restaurants, statusFilter, governorateFilter],
-  );
-
-  if (!stats || !restaurants) {
-    return (
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-32 rounded-2xl" />
-        ))}
-      </div>
-    );
-  }
-
-  const governorateName = (id: string) =>
-    governorates?.find((g) => g.id === id)?.name[lang] ?? id;
+  const sections = [
+    {
+      href: `${base}/users`,
+      label: t.admin.users,
+      hint: t.admin.usersHint,
+      icon: UsersRound,
+    },
+    {
+      href: `${base}/restaurants`,
+      label: t.admin.restaurants,
+      hint: t.admin.restaurantsHint,
+      icon: UtensilsCrossed,
+    },
+    {
+      href: `${base}/stores`,
+      label: t.admin.stores,
+      hint: t.admin.storesHint,
+      icon: ShoppingBag,
+    },
+    {
+      href: `${base}/agents`,
+      label: t.admin.agents,
+      hint: t.admin.agentsHint,
+      icon: Handshake,
+    },
+    {
+      href: `${base}/subscriptions`,
+      label: t.admin.subscriptions,
+      hint: t.admin.subscriptionsHint,
+      icon: CreditCard,
+    },
+    {
+      href: `${base}/plans`,
+      label: t.admin.plansPage,
+      hint: t.admin.plansHint,
+      icon: Wallet,
+    },
+    {
+      href: `${base}/settings`,
+      label: t.admin.systemSettings,
+      hint: t.admin.settingsHint,
+      icon: Settings2,
+    },
+  ];
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         <StatCard
           label={t.admin.totalRestaurants}
           value={stats.totalRestaurants.toLocaleString("en-US")}
@@ -110,7 +112,7 @@ export function AdminControlCenter() {
         <StatCard
           label={t.admin.totalAgents}
           value={stats.totalAgents.toLocaleString("en-US")}
-          icon={UserRound}
+          icon={Handshake}
           accent="neutral"
         />
         <StatCard
@@ -127,121 +129,70 @@ export function AdminControlCenter() {
         />
       </div>
 
-      <section className="space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="font-heading text-lg font-semibold">
-            {t.admin.restaurants}
-          </h2>
-          <div className="flex flex-wrap gap-2">
-            <Select
-              value={statusFilter}
-              onValueChange={(v) => v && setStatusFilter(v)}
-              items={{
-                [ALL]: t.admin.filterByStatus,
-                active: t.common.active,
-                expired: t.common.expired,
-                pending: t.common.pending,
-              }}
-            >
-              <SelectTrigger className="h-9 min-w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL}>{t.admin.filterByStatus}</SelectItem>
-                <SelectItem value="active">{t.common.active}</SelectItem>
-                <SelectItem value="expired">{t.common.expired}</SelectItem>
-                <SelectItem value="pending">{t.common.pending}</SelectItem>
-              </SelectContent>
-            </Select>
+      <QuickAccess title={t.admin.quickAccess} items={sections} />
 
-            <Select
-              value={governorateFilter}
-              onValueChange={(v) => v && setGovernorateFilter(v)}
-              items={{
-                [ALL]: t.admin.filterByGovernorate,
-                ...Object.fromEntries(
-                  (governorates ?? []).map((g) => [g.id, g.name[lang]]),
-                ),
-              }}
-            >
-              <SelectTrigger className="h-9 min-w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL}>
-                  {t.admin.filterByGovernorate}
-                </SelectItem>
-                {(governorates ?? []).map((g) => (
-                  <SelectItem key={g.id} value={g.id}>
-                    {g.name[lang]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+      <section className="rounded-2xl border border-border/60 bg-card p-5 md:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="font-heading text-lg font-bold">
+            {t.admin.needsAttention}
+            {attention.length > 0 && (
+              <span className="ms-2 rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-semibold text-destructive tabular-nums">
+                {attention.length}
+              </span>
+            )}
+          </h2>
+          <Link
+            href={`${base}/subscriptions`}
+            className="group/all inline-flex items-center gap-1.5 text-sm font-bold text-primary transition-colors hover:text-berry-bright"
+          >
+            {t.admin.viewAll}
+            <Arrow className="size-4 transition-[translate] duration-200 ease-smooth group-hover/all:-translate-x-0.5 rtl:group-hover/all:translate-x-0.5" />
+          </Link>
         </div>
 
-        {filtered.length === 0 ? (
-          <p className="rounded-2xl border border-dashed border-border p-14 text-center text-muted-foreground">
-            {t.restaurantsPage.empty}
+        {attention.length === 0 ? (
+          <p className="mt-4 flex items-center gap-2.5 rounded-xl border border-dashed border-border px-4 py-3.5 text-sm text-muted-foreground">
+            <CheckCircle2 className="size-4 shrink-0 text-success" />
+            {t.admin.allHealthy}
           </p>
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {filtered.map((restaurant) => (
-              <div
-                key={restaurant.id}
-                className="flex items-center gap-3 rounded-2xl border border-border/60 bg-card p-4"
-              >
-                <Image
-                  src={restaurant.logoUrl}
-                  alt=""
-                  width={44}
-                  height={44}
-                  className="size-11 shrink-0 rounded-xl object-cover"
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-semibold">
-                    {restaurant.name[lang]}
-                  </p>
-                  <p className="truncate text-xs text-muted-foreground">
-                    {governorateName(restaurant.governorateId)}
-                  </p>
-                  <Badge className={cn("mt-1.5", statusStyle[restaurant.status])}>
-                    {statusLabel[restaurant.status]}
-                  </Badge>
-                </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger
-                    render={
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        className="shrink-0"
-                        aria-label="⋯"
-                      />
-                    }
+          <ul className="mt-4 space-y-2.5">
+            {attention.slice(0, ATTENTION_LIMIT).map((row) => {
+              const expired = row.days < 0;
+              return (
+                <li key={row.business.id}>
+                  <Link
+                    href={`${base}/${row.kind === "restaurant" ? "restaurants" : "stores"}/${row.business.id}`}
+                    className="flex items-center gap-3 rounded-xl border border-border/60 p-2.5 transition-colors hover:border-primary/35"
                   >
-                    <MoreHorizontal className="size-4" />
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem
-                      onClick={() => toast.success(t.common.done)}
+                    <Image
+                      src={row.business.logoUrl}
+                      alt=""
+                      width={40}
+                      height={40}
+                      className="size-10 shrink-0 rounded-lg object-cover"
+                    />
+                    <span className="min-w-0 flex-1 truncate text-sm font-bold">
+                      {row.business.name[lang]}
+                    </span>
+                    <span
+                      className={cn(
+                        "flex shrink-0 items-center gap-1.5 text-xs font-semibold",
+                        expired
+                          ? "text-destructive"
+                          : "text-zest-soft-foreground",
+                      )}
                     >
-                      <CircleCheck className="size-4" />
-                      {t.admin.upgradePlan}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      variant="destructive"
-                      onClick={() => toast.success(t.common.done)}
-                    >
-                      <Ban className="size-4" />
-                      {t.admin.banAccount}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            ))}
-          </div>
+                      <CalendarClock className="size-3.5" />
+                      {expired
+                        ? fmt(t.agent.daysOverdue, { days: Math.abs(row.days) })
+                        : fmt(t.agent.daysLeft, { days: row.days })}
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
         )}
       </section>
     </div>

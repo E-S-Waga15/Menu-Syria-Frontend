@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   QrCode,
   Receipt,
+  Tag,
   Settings,
   ShoppingBag,
   Table2,
@@ -52,6 +53,7 @@ export function RestaurantDashboardShell({
       label: isStore ? t.dashboard.myProducts : t.dashboard.myMenu,
       icon: isStore ? ShoppingBag : UtensilsCrossed,
     },
+    { href: `${base}/offers`, label: t.offers.title, icon: Tag },
     { href: `${base}/orders`, label: t.dashboard.orders, icon: Receipt },
     // dining-table management is restaurant-only
     ...(isStore

@@ -35,7 +35,8 @@
     "expired": "Expired",
     "pending": "Pending",
     "available": "Available",
-    "unavailable": "Unavailable"
+    "unavailable": "Unavailable",
+    "actions": "Actions"
   },
   "seo": {
     "siteName": "Menu Syria",
@@ -62,7 +63,8 @@
     "governorateRequired": "Choose a governorate",
     "regionRequired": "Choose a region",
     "numbersOnly": "Numbers only",
-    "priceRequired": "Enter a valid price"
+    "priceRequired": "Enter a valid price",
+    "offerPriceTooHigh": "The offer price must be lower than the price before it"
   },
   "nav": {
     "home": "Home",
@@ -585,7 +587,18 @@
     "reorderInCategoryOnly": "Pick a category to reorder",
     "mainImage": "Main",
     "removeImage": "Remove image",
-    "imagesHint": "The first image is the one shown on the card"
+    "imagesHint": "The first image is the one shown on the card",
+    "quickAccess": "Quick access",
+    "menuHint": "Dishes, sections and prices",
+    "productsHint": "Products, sections and prices",
+    "ordersHint": "Incoming orders and their status",
+    "tablesHint": "Table layout and waiters",
+    "analyticsHint": "Sales and performance over time",
+    "qrHint": "Your menu code and share link",
+    "qrStoreHint": "Your store code and share link",
+    "settingsHint": "Restaurant details, brand and plan",
+    "settingsStoreHint": "Store details, brand and plan",
+    "notificationsHint": "Alerts and subscription status"
   },
   "agent": {
     "dashboard": "Agent dashboard",
@@ -629,7 +642,11 @@
     "upgradeRequested": "Upgrade requested — we will be in touch",
     "registerRestaurantHint": "Register a new restaurant under your referral code",
     "registerStoreHint": "Register a new store under your referral code",
-    "contactOwner": "Contact the owner"
+    "contactOwner": "Contact the owner",
+    "quickAccess": "Quick access",
+    "myRestaurantsHint": "Restaurants subscribed through you",
+    "myStoresHint": "Stores subscribed through you",
+    "notificationsHint": "Subscriptions coming up for renewal"
   },
   "admin": {
     "dashboard": "Central dashboard",
@@ -658,7 +675,96 @@
     "addGovernorate": "Add governorate",
     "addRegion": "Add region",
     "cronJobs": "Scheduled jobs",
-    "notifications": "Automated notifications"
+    "notifications": "Automated notifications",
+    "console": "Console",
+    "users": "Users",
+    "stores": "Stores",
+    "subscriptions": "Subscriptions",
+    "plansPage": "Plans & packages",
+    "totalUsers": "Total users",
+    "totalStores": "Total stores",
+    "searchUsers": "Search by name or number…",
+    "searchBusinesses": "Search by name…",
+    "roleUser": "Customer",
+    "roleOwner": "Business owner",
+    "roleAgent": "Agent",
+    "roleWaiter": "Waiter",
+    "roleAdmin": "Admin",
+    "statusActive": "Active",
+    "statusBanned": "Banned",
+    "statusExpired": "Expired",
+    "statusPending": "Pending",
+    "allRoles": "All roles",
+    "allStatuses": "All statuses",
+    "joinedOn": "Joined",
+    "noResults": "Nothing matches",
+    "subscriber": "subscriber",
+    "subscribers": "{count} subscribers",
+    "pricePerMonth": "/ month",
+    "mostPopular": "Most chosen",
+    "planFeatures": "What is included",
+    "editPlan": "Edit plan",
+    "addPlan": "Add plan",
+    "expiringSoon": "Expiring soon",
+    "expiringCount": "{count} subscriptions expiring soon",
+    "reportsRevenue": "Monthly revenue",
+    "reportsGrowth": "Subscription growth",
+    "reportsByPlan": "Split by plan",
+    "reportsByGovernorate": "Split by governorate",
+    "openStorefront": "Open storefront",
+    "viewDetails": "View details",
+    "actions": "Options",
+    "viewProfile": "View details",
+    "editRecord": "Edit",
+    "disableAccount": "Disable account",
+    "enableAccount": "Enable account",
+    "deleteRecord": "Delete",
+    "confirmDisable": "Disable {name}?",
+    "confirmDisableBody": "They will not be able to sign in until re-enabled.",
+    "confirmEnable": "Enable {name}?",
+    "confirmEnableBody": "They regain access to their account immediately.",
+    "accountDisabled": "Account disabled",
+    "accountEnabled": "Account enabled",
+    "filterByRegion": "Region",
+    "allRegions": "All regions",
+    "businessDetails": "Business details",
+    "ownerContact": "Owner contact",
+    "referredBy": "Signed up through",
+    "subscriptionSection": "Subscription",
+    "renewSubscription": "Renew subscription",
+    "changePlan": "Change plan",
+    "renewDone": "Renewal recorded",
+    "planChanged": "Plan changed",
+    "planName": "Plan name",
+    "planPrice": "Monthly price",
+    "planFeature": "Feature",
+    "addFeature": "Add feature",
+    "savePlan": "Save plan",
+    "newPlan": "New plan",
+    "planSaved": "Plan saved",
+    "planDeleted": "Plan deleted",
+    "markPopular": "Most chosen",
+    "notificationsPage": "Notifications",
+    "quickAccess": "Quick access",
+    "needsAttention": "Needs your attention",
+    "viewAll": "View all",
+    "allHealthy": "Nothing needs action right now",
+    "usersHint": "Accounts, roles and bans",
+    "restaurantsHint": "Subscribed restaurants and their state",
+    "storesHint": "Online stores",
+    "agentsHint": "The agent network and their ledgers",
+    "subscriptionsHint": "Who renews and who lapsed",
+    "plansHint": "Pricing and features",
+    "settingsHint": "Governorates, regions and system",
+    "regionsOf": "Regions of {name}",
+    "selectGovernorate": "Pick a governorate to see and edit its regions",
+    "noRegions": "No regions in this governorate yet",
+    "renameRecord": "Rename",
+    "regionCount": "{count} regions",
+    "cannotDeleteGovernorate": "A governorate with regions cannot be deleted — remove its regions first",
+    "saved": "Saved",
+    "regionName": "Region name",
+    "governorateName": "Governorate name"
   },
   "orderHistory": {
     "title": "Past orders",
@@ -745,5 +851,315 @@
     "expiredNotice": "{name} subscription has ended",
     "renewedNotice": "{name} subscription renewed",
     "joinedNotice": "{name} joined through you"
+  },
+  "legal": {
+    "updatedOn": "Last updated",
+    "onThisPage": "On this page",
+    "contactTitle": "A question about this page?",
+    "contactBody": "Write to us at {email} and we will reply within three business days.",
+    "contactCta": "Email us",
+    "updatedAt": "2 September 2026",
+    "privacy": {
+      "metaTitle": "Privacy policy",
+      "metaDescription": "How Menu Syria collects, uses and protects your data, who can see it, and what rights you have over it.",
+      "eyebrow": "Privacy",
+      "title": "Privacy policy",
+      "intro": "We handle your data the way we would want ours handled. This page sets out what we collect, why, and who we share it with — in plain language rather than evasive wording.",
+      "sections": [
+        {
+          "id": "collect",
+          "title": "What we collect",
+          "paragraphs": [
+            "We collect what the platform needs to work, and no more. What that is depends on your role here."
+          ],
+          "bullets": [
+            "Business owners: your business name and type, phone number and email, governorate and region, logo and photos, and your subscription details.",
+            "Customers: your name and phone number when you create an account or place an order, and a delivery address if you choose delivery.",
+            "Agents: your name, phone number, region, and the social accounts you choose to show on your public page.",
+            "Technical data: browser, device and pages visited, collected in aggregate to measure performance and catch faults."
+          ]
+        },
+        {
+          "id": "use",
+          "title": "Why we use it",
+          "paragraphs": [
+            "Every piece of data we hold serves a stated purpose, and each of those purposes is needed to run or improve the service.",
+            "We do not sell your data, rent it, or use it for third-party advertising."
+          ],
+          "bullets": [
+            "Running your account: building and serving your digital menu or store, and delivering and managing your orders.",
+            "Contacting you: messages about your subscription and its renewal, and important alerts on your account.",
+            "Support: answering your questions and fixing the problems you report.",
+            "Improving the platform: understanding what is actually used, so we develop what is worth developing."
+          ]
+        },
+        {
+          "id": "customers",
+          "title": "Data belonging to a business's customers",
+          "paragraphs": [
+            "When a customer places an order with a restaurant or store through the platform, the order details — name, phone number, and address where given — go straight to the business receiving it, because that business is the one fulfilling the order.",
+            "We pass that data on as the operator running the platform on the business's behalf, not as its owner. The business is responsible for protecting its customers' privacy and for not using their data outside fulfilling the order."
+          ],
+          "bullets": []
+        },
+        {
+          "id": "sharing",
+          "title": "Sharing information",
+          "paragraphs": [
+            "We share your information only in these cases:"
+          ],
+          "bullets": [
+            "The technical providers the platform runs on — hosting, image storage and messaging — and only as far as their work requires.",
+            "A business you placed an order with, or the agent you subscribed through.",
+            "Where a legal obligation requires it, after we have verified the request and its scope."
+          ]
+        },
+        {
+          "id": "cookies",
+          "title": "Cookies and local storage",
+          "paragraphs": [
+            "We use cookies and your browser's local storage for operational purposes, not advertising: remembering your language and theme, keeping your session open, and holding your cart and favourites on your own device.",
+            "That data stays in your browser and reaches us only as far as carrying out your request requires. You can clear it from your browser settings at any time, which resets your preferences."
+          ],
+          "bullets": []
+        },
+        {
+          "id": "security",
+          "title": "Keeping data safe",
+          "paragraphs": [
+            "We protect data with encryption in transit, and with access controls so that only the people who need your data to do their job can reach it.",
+            "We keep your data for as long as your account exists. When an account is closed we delete the personal data within a reasonable period, except what we must retain for accounting or legal reasons.",
+            "No system is completely secure and we will not claim otherwise. But we treat any security failure seriously and notify those affected without delay."
+          ],
+          "bullets": []
+        },
+        {
+          "id": "rights",
+          "title": "Your rights over your data",
+          "paragraphs": [
+            "Your data is yours. At any time you can ask to:",
+            "We answer these requests within thirty days at most."
+          ],
+          "bullets": [
+            "See what we hold about you.",
+            "Correct anything inaccurate, from your dashboard directly or by writing to us.",
+            "Delete your account and your data.",
+            "Object to or restrict a particular use of your data."
+          ]
+        },
+        {
+          "id": "changes",
+          "title": "Changes to this policy",
+          "paragraphs": [
+            "We may update this policy as the service develops. For any material change we will tell you through the platform or by email before it takes effect, and the last-updated date at the top of this page will change."
+          ],
+          "bullets": []
+        }
+      ]
+    },
+    "terms": {
+      "metaTitle": "Terms of service",
+      "metaDescription": "The terms governing use of the Menu Syria platform by restaurants, stores, agents and customers.",
+      "eyebrow": "Terms",
+      "title": "Terms of service",
+      "intro": "These terms govern your use of the Menu Syria platform. By using it — as a business owner, an agent, or a customer — you agree to what follows.",
+      "sections": [
+        {
+          "id": "acceptance",
+          "title": "Accepting these terms",
+          "paragraphs": [
+            "Menu Syria lets restaurants build a digital menu that opens from a QR code and from a link you can share anywhere, and lets merchants build an online store in their own brand, with management for orders arriving through the app or WhatsApp.",
+            "Using the platform or creating an account on it means you accept these terms. If you do not accept them, the option available to you is not to use the platform."
+          ],
+          "bullets": []
+        },
+        {
+          "id": "accounts",
+          "title": "Your account",
+          "paragraphs": [
+            "You are responsible for the accuracy of the details you register, for protecting your password and the verification code sent to you, and for everything done from your account.",
+            "Tell us immediately if you notice unauthorised use of your account, so we can stop it and secure the account."
+          ],
+          "bullets": []
+        },
+        {
+          "id": "subscriptions",
+          "title": "Subscriptions and payment",
+          "paragraphs": [
+            "Plans and their prices are shown on the platform, and a subscription runs from the date it is activated."
+          ],
+          "bullets": [
+            "You can subscribe directly through the platform, or through the approved agent in your region.",
+            "If a subscription ends without renewal, the public pages of your menu or store stop working, and your data stays stored for a reasonable period so you can renew without losing it.",
+            "Prices may change in future; a change does not apply to a running subscription before its term ends."
+          ]
+        },
+        {
+          "id": "content",
+          "title": "Your business's content",
+          "paragraphs": [
+            "You own what you upload: your items, their prices and photos, your business description and your logo. You grant us the right to display it on the platform as far as running and presenting your service requires.",
+            "You alone are responsible for that content being accurate: prices, ingredients, allergen information, and opening hours. The platform does not review content and does not warrant that it is correct.",
+            "We reserve the right to remove content that is unlawful, impersonates someone else, or is abusive, and to suspend an account that does so repeatedly."
+          ],
+          "bullets": []
+        },
+        {
+          "id": "orders",
+          "title": "Orders and the platform's role",
+          "paragraphs": [
+            "The platform is a tool for presenting and managing orders, not a party to the sale. The contract is between the customer and the business directly.",
+            "Fulfilment, quality, delivery, returns and invoices are the business's responsibility alone, and any dispute over an order is settled between the customer and the business.",
+            "We step in as the platform's operator by making order records available to those involved where needed, not by ruling on the dispute."
+          ],
+          "bullets": []
+        },
+        {
+          "id": "agents",
+          "title": "Agents",
+          "paragraphs": [
+            "An agent is an approved local partner — usually a food content creator in their region — who helps businesses subscribe and set up their menu or store, and introduces them to their own audience.",
+            "An agent is not our employee and does not represent us in commitments beyond what the platform itself states. Any promise or arrangement outside the published plans does not bind us."
+          ],
+          "bullets": []
+        },
+        {
+          "id": "acceptable-use",
+          "title": "Acceptable use",
+          "paragraphs": [
+            "Users of the platform may not:"
+          ],
+          "bullets": [
+            "Impersonate another business or person, or present misleading information.",
+            "Try to reach accounts or data that are not yours, or probe the system for vulnerabilities without written permission.",
+            "Use the platform for unlawful activity or to offer prohibited goods.",
+            "Scrape the platform's data automatically, or load its servers with abnormal traffic."
+          ]
+        },
+        {
+          "id": "ip",
+          "title": "Intellectual property",
+          "paragraphs": [
+            "The Menu Syria name, logo, platform design and code are ours, and a subscription grants you no right in them beyond using the service as it is.",
+            "Your content stays yours, and you can withdraw it by closing your account."
+          ],
+          "bullets": []
+        },
+        {
+          "id": "liability",
+          "title": "Limits of liability",
+          "paragraphs": [
+            "We provide the service as well as we can, but we do not guarantee it runs entirely without interruption — it may stop for maintenance or for a fault outside our control.",
+            "We are not liable for indirect damages, lost profits, or losses arising from content a business published or from a dispute between a customer and a business.",
+            "In all cases our liability to you does not exceed what you paid the platform in the three months before the incident."
+          ],
+          "bullets": []
+        },
+        {
+          "id": "termination",
+          "title": "Ending the service",
+          "paragraphs": [
+            "You can close your account whenever you want, from your dashboard settings or by writing to us.",
+            "We can suspend an account that breaches these terms, after warning you where a warning is possible and appropriate."
+          ],
+          "bullets": []
+        },
+        {
+          "id": "changes",
+          "title": "Changes and governing law",
+          "paragraphs": [
+            "We may amend these terms, and we will announce material changes before they take effect. Continuing to use the platform afterwards means you accept them.",
+            "These terms are governed by the laws in force in the Syrian Arab Republic, and the courts of Damascus have jurisdiction over any dispute not settled amicably."
+          ],
+          "bullets": []
+        }
+      ]
+    }
+  },
+  "offers": {
+    "title": "Offers",
+    "manageTitle": "Manage offers",
+    "hint": "Meal deals and their prices",
+    "hintStore": "Product bundles and their prices",
+    "newOffer": "New offer",
+    "editOffer": "Edit offer",
+    "deleteOffer": "Delete offer",
+    "duplicateOffer": "Duplicate offer",
+    "offerName": "Offer name",
+    "offerNamePlaceholder": "e.g. Family feast",
+    "offerDescription": "Offer description",
+    "offerDescriptionPlaceholder": "Say what makes it worth taking, in two lines",
+    "offerImages": "Offer photos",
+    "imagesHint": "The first photo is the cover",
+    "includes": "What's included",
+    "includesHint": "List what the offer contains, item by item",
+    "addInclude": "Add an item",
+    "includePlaceholder": "e.g. 1 kg mixed grill",
+    "originalPrice": "Price before the offer",
+    "price": "Offer price",
+    "priceHint": "What the customer actually pays",
+    "startsAt": "Starts",
+    "endsAt": "Ends",
+    "endsAtHint": "Leave empty to run until you stop it",
+    "isActive": "Offer is live",
+    "isActiveHint": "Pause it without deleting it",
+    "badge": "Offer badge",
+    "badgeNone": "No badge",
+    "badgeLimited": "Limited time",
+    "badgeBestValue": "Best value",
+    "badgeNew": "New",
+    "stateLive": "Live",
+    "statePaused": "Paused",
+    "stateUpcoming": "Not started",
+    "stateExpired": "Ended",
+    "pause": "Pause",
+    "activate": "Activate",
+    "saved": "Offer saved",
+    "deleted": "Offer deleted",
+    "searchOffers": "Search offers",
+    "noOffers": "No offers yet",
+    "noOffersBody": "Create your first offer and it appears on your menu straight away.",
+    "noOffersBodyStore": "Create your first offer and it appears in your store straight away.",
+    "noResults": "No offer by that name",
+    "saveOffer": "Save offer",
+    "offerCount": "{count} offers",
+    "discount": "{percent}% off",
+    "was": "was",
+    "validUntil": "Valid until {date}",
+    "noEndDate": "Valid until further notice",
+    "viewOffer": "Offer details",
+    "storefrontTitle": "Special offers",
+    "storefrontBody": "{count} available right now",
+    "includesTitle": "The offer includes",
+    "orderOffer": "Order this offer",
+    "offersFrom": "Offers from",
+    "stateEndingSoon": "Ending soon",
+    "typeGeneric": "Special offer",
+    "browseTitle": "Featured offers",
+    "browseBody": "This restaurant is running several offers that may suit you",
+    "browseBodyStore": "This store is running several offers that may suit you",
+    "browseCta": "Browse offers",
+    "panelTitle": "Available offers"
+  },
+  "userHome": {
+    "offersTitle": "Latest offers",
+    "offersBody": "Running now at restaurants and stores on the platform",
+    "noOffers": "No offers running right now",
+    "quickAccess": "Quick access",
+    "restaurantsHint": "Browse restaurants and order",
+    "storesHint": "Shop the online stores",
+    "favoritesHint": "What you saved for later",
+    "ordersHint": "Your past orders and their status",
+    "notificationsHint": "The latest alerts on your account",
+    "profileHint": "Your details and account settings",
+    "featuredStores": "Featured stores",
+    "featuredRestaurants": "Featured restaurants",
+    "offersEyebrow": "Offers",
+    "quickAccessEyebrow": "Shortcuts",
+    "quickAccessBody": "The places you go most, one tap away",
+    "storesEyebrow": "Shop",
+    "storesBody": "Syrian online stores selling in their own brand and managing orders here",
+    "restaurantsEyebrow": "Order",
+    "restaurantsBody": "Restaurants showing their digital menu and taking orders by app or WhatsApp"
   }
 }

@@ -156,6 +156,42 @@ export interface StoreProduct extends CatalogItem {
   storeId: string;
 }
 
+/** How an offer is flagged on the storefront; the copy lives in the dictionary. */
+export type OfferBadge = "limited" | "bestValue" | "new";
+
+/**
+ * A promotional bundle a business publishes — a meal deal on a restaurant's
+ * menu, a product bundle in a store. The same shape serves both, exactly as
+ * `CatalogItem` does, so the storefront renders one component either way.
+ *
+ * Both prices are absolute rather than a percentage: the discount is derived
+ * for display (see `offerDiscount`), never stored, so the two can never
+ * disagree about what the customer actually pays.
+ */
+export interface Offer {
+  id: string;
+  /** the restaurant or store publishing it */
+  businessId: string;
+  name: LocalizedText;
+  description: LocalizedText;
+  /** cover first; the modal shows the rest as a gallery */
+  images: string[];
+  /** what the bundle contains — dishes for a menu, products for a store */
+  includes: LocalizedText[];
+  /** what the same items cost bought separately, shown struck through */
+  originalPrice: number;
+  /** what the customer pays for the bundle */
+  price: number;
+  /** ISO date the offer opens */
+  startsAt: string;
+  /** ISO date it closes; omitted means it runs until the owner stops it */
+  endsAt?: string;
+  /** the owner's on/off switch — an expired offer is a different thing */
+  isActive: boolean;
+  badge?: OfferBadge;
+  sortOrder: number;
+}
+
 export interface Review {
   id: string;
   restaurantId: string;
@@ -181,7 +217,6 @@ export interface Agent {
   referralCode: string;
   commissionRate: number;
 }
-
 
 export type OrderStatus = "new" | "preparing" | "ready";
 
@@ -250,10 +285,7 @@ export interface RestaurantAnalytics {
 
 /** What a notification is about; the copy for each lives in the dictionary. */
 export type NotificationKind =
-  | "expiringSoon"
-  | "expired"
-  | "renewed"
-  | "joined";
+  "expiringSoon" | "expired" | "renewed" | "joined";
 
 export interface AppNotification {
   id: string;
@@ -265,4 +297,29 @@ export interface AppNotification {
   createdAt: string;
   /** where reading it should take you */
   href?: string;
+}
+
+/** Roles the console can list and act on. Mirrors the auth store's UserRole. */
+export type PlatformRole = "user" | "owner" | "agent" | "waiter" | "admin";
+
+export interface PlatformUser {
+  id: string;
+  name: string;
+  phone: string;
+  role: PlatformRole;
+  governorateId?: string;
+  joinedAt: string;
+  status: "active" | "banned";
+}
+
+/** A subscription tier the platform sells. */
+export interface Plan {
+  id: string;
+  name: LocalizedText;
+  /** SYP per month */
+  priceMonthly: number;
+  features: LocalizedText[];
+  /** how many businesses are on it right now */
+  subscriberCount: number;
+  isPopular?: boolean;
 }

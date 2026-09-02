@@ -2,93 +2,249 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useMemo, useState } from "react";
 
-import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, Store } from "lucide-react";
+import { Eye, Power, Store } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { getAdminAgents } from "@/features/admin/services";
-import { getGovernorates } from "@/features/marketing/services";
+import { AdminFilterBar } from "@/features/admin/components/admin-filter-bar";
+import { AdminPageHeader } from "@/features/admin/components/admin-page-header";
+import { RowActions, type RowAction } from "@/components/shared/row-actions";
+import { AdminSelect } from "@/features/admin/components/admin-select";
+import { AdminViewToggle } from "@/features/admin/components/admin-view-toggle";
 import { useI18n } from "@/i18n/client";
-import { queryKeys } from "@/lib/api/query-keys";
-import type { SubscriptionStatus } from "@/lib/types";
+import { toast } from "@/lib/toast";
+import type { Agent, Governorate, Region } from "@/lib/types";
+import { cn } from "@/lib/utils";
+import { useUiStore } from "@/stores/ui-store";
 
-export function AdminAgentsList() {
+const ALL = "all";
+
+/** the agent network as the console sees it: who they are, where, how many
+ * businesses they carry, and the controls over their account */
+export function AdminAgentsList({
+  agents,
+  governorates,
+  regions,
+}: {
+  agents: Agent[];
+  governorates: Governorate[];
+  regions: Region[];
+}) {
   const { t, lang } = useI18n();
-  const Chevron = lang === "ar" ? ChevronLeft : ChevronRight;
+  const view = useUiStore((s) => s.adminListView);
+  const setView = useUiStore((s) => s.setAdminListView);
 
-  const { data: agents } = useQuery({
-    queryKey: queryKeys.admin.agents,
-    queryFn: getAdminAgents,
-  });
-  const { data: governorates } = useQuery({
-    queryKey: queryKeys.governorates,
-    queryFn: getGovernorates,
-  });
+  const [query, setQuery] = useState("");
+  const [governorateId, setGovernorateId] = useState(ALL);
+  const [regionId, setRegionId] = useState(ALL);
+  const [disabled, setDisabled] = useState<string[]>([]);
 
-  if (!agents) {
-    return (
-      <div className="space-y-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-24 rounded-2xl" />
-        ))}
-      </div>
+  const base = `/${lang}/admin`;
+
+  const hasFilters =
+    query.trim() !== "" || governorateId !== ALL || regionId !== ALL;
+
+  const clear = () => {
+    setQuery("");
+    setGovernorateId(ALL);
+    setRegionId(ALL);
+  };
+
+  const regionChoices = useMemo(
+    () =>
+      regions.filter(
+        (r) => governorateId === ALL || r.governorateId === governorateId,
+      ),
+    [regions, governorateId],
+  );
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return agents.filter((agent) => {
+      if (governorateId !== ALL && agent.governorateId !== governorateId)
+        return false;
+      if (regionId !== ALL && agent.regionId !== regionId) return false;
+      if (
+        q &&
+        !agent.name.ar.toLowerCase().includes(q) &&
+        !agent.name.en.toLowerCase().includes(q)
+      )
+        return false;
+      return true;
+    });
+  }, [agents, query, governorateId, regionId]);
+
+  const placeOf = (agent: Agent) =>
+    [
+      governorates.find((g) => g.id === agent.governorateId)?.name[lang],
+      regions.find((r) => r.id === agent.regionId)?.name[lang],
+    ]
+      .filter(Boolean)
+      .join(lang === "ar" ? "، " : ", ");
+
+  const toggleAccount = (agent: Agent) => {
+    const isOff = disabled.includes(agent.id);
+    setDisabled((prev) =>
+      isOff ? prev.filter((id) => id !== agent.id) : [...prev, agent.id],
     );
-  }
-
-  const statusStyle: Record<SubscriptionStatus, string> = {
-    active: "bg-success/10 text-success",
-    expired: "bg-destructive/10 text-destructive",
-    pending: "bg-zest-soft text-zest-soft-foreground",
+    toast.success(isOff ? t.admin.accountEnabled : t.admin.accountDisabled);
   };
 
-  const statusLabel: Record<SubscriptionStatus, string> = {
-    active: t.common.active,
-    expired: t.common.expired,
-    pending: t.common.pending,
-  };
+  const actionsFor = (agent: Agent): RowAction[] => [
+    {
+      label: t.admin.viewProfile,
+      icon: Eye,
+      render: <Link href={`${base}/agents/${agent.id}`} />,
+    },
+    {
+      label: disabled.includes(agent.id)
+        ? t.admin.enableAccount
+        : t.admin.disableAccount,
+      icon: Power,
+      onSelect: () => toggleAccount(agent),
+      danger: !disabled.includes(agent.id),
+    },
+  ];
+
+  const projects = (agent: Agent) => (
+    <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+      <Store className="size-3.5 shrink-0" />
+      {agent.restaurantsCount} {t.home.agentRestaurantsCount}
+    </p>
+  );
 
   return (
-    <ul className="space-y-4">
-      {agents.map((agent) => (
-        <li key={agent.id}>
-          <Link
-            href={`/${lang}/admin/agents/${agent.id}`}
-            className="flex items-center gap-4 rounded-2xl border border-border/60 bg-card p-4 transition-colors hover:border-primary/40"
-          >
-            <Image
-              src={agent.photoUrl}
-              alt=""
-              width={56}
-              height={56}
-              className="size-14 rounded-full object-cover"
-            />
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2.5">
-                <h3 className="font-heading font-bold">{agent.name[lang]}</h3>
-                <Badge className={statusStyle[agent.status]}>
-                  {statusLabel[agent.status]}
-                </Badge>
+    <div className="space-y-5">
+      <AdminPageHeader
+        title={t.admin.agents}
+        count={agents.length}
+        action={<AdminViewToggle view={view} onChange={setView} />}
+      />
+
+      <AdminFilterBar
+        query={query}
+        onQueryChange={setQuery}
+        placeholder={t.agentsPage.searchPlaceholder}
+        hasFilters={hasFilters}
+        onClear={clear}
+      >
+        <AdminSelect
+          value={governorateId}
+          onChange={(value) => {
+            setGovernorateId(value);
+            setRegionId(ALL);
+          }}
+          label={t.admin.filterByGovernorate}
+          items={{
+            [ALL]: t.agentsPage.allGovernorates,
+            ...Object.fromEntries(
+              governorates.map((g) => [g.id, g.name[lang]]),
+            ),
+          }}
+        />
+        <AdminSelect
+          value={regionId}
+          onChange={setRegionId}
+          label={t.admin.filterByRegion}
+          items={{
+            [ALL]: t.admin.allRegions,
+            ...Object.fromEntries(
+              regionChoices.map((r) => [r.id, r.name[lang]]),
+            ),
+          }}
+        />
+      </AdminFilterBar>
+
+      <p
+        className="text-sm font-semibold text-muted-foreground"
+        aria-live="polite"
+      >
+        {filtered.length}
+      </p>
+
+      {filtered.length === 0 ? (
+        <p className="rounded-2xl border border-dashed border-border p-14 text-center text-sm text-muted-foreground">
+          {t.admin.noResults}
+        </p>
+      ) : view === "grid" ? (
+        <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {filtered.map((agent) => (
+            <li
+              key={agent.id}
+              className="group flex items-start gap-3 rounded-2xl border border-border/60 bg-card p-4 transition-colors duration-200 hover:border-primary/35"
+            >
+              <Image
+                src={agent.photoUrl}
+                alt=""
+                width={56}
+                height={56}
+                className="size-14 shrink-0 rounded-full border-2 border-berry-soft object-cover"
+              />
+              <div className="min-w-0 flex-1">
+                <Link
+                  href={`${base}/agents/${agent.id}`}
+                  className="block truncate text-sm font-bold group-hover:text-primary"
+                >
+                  {agent.name[lang]}
+                </Link>
+                <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                  {placeOf(agent)}
+                </p>
+                <div className="mt-1.5">{projects(agent)}</div>
+                {disabled.includes(agent.id) && (
+                  <Badge className="mt-2 bg-destructive/10 text-destructive">
+                    {t.admin.statusBanned}
+                  </Badge>
+                )}
               </div>
-              <p className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-semibold text-muted-foreground">
-                <span>
-                  {governorates?.find((g) => g.id === agent.governorateId)
-                    ?.name[lang] ?? agent.governorateId}
-                </span>
-                <span className="flex items-center gap-1">
-                  <Store className="size-3.5" />
-                  {agent.restaurantsCount} {t.home.agentRestaurantsCount}
-                </span>
-                <span dir="ltr">
-                  {t.admin.commissionRate}: {agent.commissionRate * 100}%
-                </span>
-              </p>
-            </div>
-            <Chevron className="size-5 shrink-0 text-muted-foreground" />
-          </Link>
-        </li>
-      ))}
-    </ul>
+              <RowActions actions={actionsFor(agent)} />
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <ul className="space-y-2.5">
+          {filtered.map((agent) => (
+            <li
+              key={agent.id}
+              className="flex flex-wrap items-center gap-3 rounded-2xl border border-border/60 bg-card p-3.5"
+            >
+              <Image
+                src={agent.photoUrl}
+                alt=""
+                width={48}
+                height={48}
+                className="size-12 shrink-0 rounded-full border-2 border-berry-soft object-cover"
+              />
+              <div className="min-w-0 flex-1">
+                <Link
+                  href={`${base}/agents/${agent.id}`}
+                  className="block truncate text-sm font-bold hover:text-primary"
+                >
+                  {agent.name[lang]}
+                </Link>
+                <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                  {placeOf(agent)}
+                </p>
+              </div>
+              <div className="shrink-0">{projects(agent)}</div>
+              <Badge
+                className={cn(
+                  "shrink-0",
+                  disabled.includes(agent.id)
+                    ? "bg-destructive/10 text-destructive"
+                    : "bg-success/10 text-success",
+                )}
+              >
+                {disabled.includes(agent.id)
+                  ? t.admin.statusBanned
+                  : t.admin.statusActive}
+              </Badge>
+              <RowActions actions={actionsFor(agent)} />
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }

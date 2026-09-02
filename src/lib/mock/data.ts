@@ -4,11 +4,14 @@ import type {
   Governorate,
   MenuCategory,
   MenuItem,
+  Offer,
   Order,
+  Plan,
+  PlatformUser,
   Region,
   Restaurant,
-  Review,
   RestaurantAnalytics,
+  Review,
   Store,
   StoreCategory,
   StoreProduct,
@@ -37,17 +40,57 @@ export const governorates: Governorate[] = [
 ];
 
 export const regions: Region[] = [
-  { id: "bab-touma", governorateId: "damascus", name: { ar: "باب توما", en: "Bab Touma" } },
-  { id: "mazzeh", governorateId: "damascus", name: { ar: "المزة", en: "Mazzeh" } },
-  { id: "shaalan", governorateId: "damascus", name: { ar: "الشعلان", en: "Shaalan" } },
-  { id: "azizieh", governorateId: "aleppo", name: { ar: "العزيزية", en: "Azizieh" } },
-  { id: "jamiliyeh", governorateId: "aleppo", name: { ar: "الجميلية", en: "Jamiliyeh" } },
-  { id: "west-corniche", governorateId: "latakia", name: { ar: "الكورنيش الغربي", en: "West Corniche" } },
-  { id: "slaibeh", governorateId: "latakia", name: { ar: "الصليبة", en: "Slaibeh" } },
-  { id: "dablan", governorateId: "homs", name: { ar: "الدبلان", en: "Dablan" } },
+  {
+    id: "bab-touma",
+    governorateId: "damascus",
+    name: { ar: "باب توما", en: "Bab Touma" },
+  },
+  {
+    id: "mazzeh",
+    governorateId: "damascus",
+    name: { ar: "المزة", en: "Mazzeh" },
+  },
+  {
+    id: "shaalan",
+    governorateId: "damascus",
+    name: { ar: "الشعلان", en: "Shaalan" },
+  },
+  {
+    id: "azizieh",
+    governorateId: "aleppo",
+    name: { ar: "العزيزية", en: "Azizieh" },
+  },
+  {
+    id: "jamiliyeh",
+    governorateId: "aleppo",
+    name: { ar: "الجميلية", en: "Jamiliyeh" },
+  },
+  {
+    id: "west-corniche",
+    governorateId: "latakia",
+    name: { ar: "الكورنيش الغربي", en: "West Corniche" },
+  },
+  {
+    id: "slaibeh",
+    governorateId: "latakia",
+    name: { ar: "الصليبة", en: "Slaibeh" },
+  },
+  {
+    id: "dablan",
+    governorateId: "homs",
+    name: { ar: "الدبلان", en: "Dablan" },
+  },
   { id: "waer", governorateId: "homs", name: { ar: "الوعر", en: "Al-Waer" } },
-  { id: "sea-corniche", governorateId: "tartus", name: { ar: "الكورنيش البحري", en: "Sea Corniche" } },
-  { id: "hama-center", governorateId: "hama", name: { ar: "وسط المدينة", en: "City Center" } },
+  {
+    id: "sea-corniche",
+    governorateId: "tartus",
+    name: { ar: "الكورنيش البحري", en: "Sea Corniche" },
+  },
+  {
+    id: "hama-center",
+    governorateId: "hama",
+    name: { ar: "وسط المدينة", en: "City Center" },
+  },
 ];
 
 export const restaurants: Restaurant[] = [
@@ -164,7 +207,7 @@ export const restaurants: Restaurant[] = [
     governorateId: "homs",
     regionId: "dablan",
     address: { ar: "شارع الدبلان، حمص", en: "Al-Dablan Street, Homs" },
-    location: { lat: 34.7308, lng: 36.7090 },
+    location: { lat: 34.7308, lng: 36.709 },
     phone: "+963 31 247 5566",
     whatsapp: "+963 988 321 654",
     instagram: "wanes.corner",
@@ -211,7 +254,7 @@ export const restaurants: Restaurant[] = [
     governorateId: "tartus",
     regionId: "sea-corniche",
     address: { ar: "الكورنيش البحري، طرطوس", en: "Sea Corniche, Tartus" },
-    location: { lat: 34.8890, lng: 35.8866 },
+    location: { lat: 34.889, lng: 35.8866 },
     phone: "+963 43 221 9900",
     whatsapp: "+963 932 555 777",
     theme: { primaryColor: "#155e75", secondaryColor: "#fb923c" },
@@ -223,11 +266,36 @@ export const restaurants: Restaurant[] = [
 ];
 
 export const menuCategories: MenuCategory[] = [
-  { id: "c1", restaurantId: "r1", name: { ar: "المقبلات", en: "Appetizers" }, sortOrder: 1 },
-  { id: "c2", restaurantId: "r1", name: { ar: "الأطباق الرئيسية", en: "Mains" }, sortOrder: 2 },
-  { id: "c3", restaurantId: "r1", name: { ar: "المشاوي", en: "Grills" }, sortOrder: 3 },
-  { id: "c4", restaurantId: "r1", name: { ar: "الحلويات", en: "Desserts" }, sortOrder: 4 },
-  { id: "c5", restaurantId: "r1", name: { ar: "المشروبات", en: "Beverages" }, sortOrder: 5 },
+  {
+    id: "c1",
+    restaurantId: "r1",
+    name: { ar: "المقبلات", en: "Appetizers" },
+    sortOrder: 1,
+  },
+  {
+    id: "c2",
+    restaurantId: "r1",
+    name: { ar: "الأطباق الرئيسية", en: "Mains" },
+    sortOrder: 2,
+  },
+  {
+    id: "c3",
+    restaurantId: "r1",
+    name: { ar: "المشاوي", en: "Grills" },
+    sortOrder: 3,
+  },
+  {
+    id: "c4",
+    restaurantId: "r1",
+    name: { ar: "الحلويات", en: "Desserts" },
+    sortOrder: 4,
+  },
+  {
+    id: "c5",
+    restaurantId: "r1",
+    name: { ar: "المشروبات", en: "Beverages" },
+    sortOrder: 5,
+  },
 ];
 
 export const menuItems: MenuItem[] = [
@@ -260,9 +328,21 @@ export const menuItems: MenuItem[] = [
         selectionType: "multiple",
         required: false,
         options: [
-          { id: "op1", name: { ar: "لحمة مقلية", en: "Fried lamb bits" }, priceDelta: 15000 },
-          { id: "op2", name: { ar: "صنوبر", en: "Pine nuts" }, priceDelta: 8000 },
-          { id: "op3", name: { ar: "خبز إضافي", en: "Extra bread" }, priceDelta: 3000 },
+          {
+            id: "op1",
+            name: { ar: "لحمة مقلية", en: "Fried lamb bits" },
+            priceDelta: 15000,
+          },
+          {
+            id: "op2",
+            name: { ar: "صنوبر", en: "Pine nuts" },
+            priceDelta: 8000,
+          },
+          {
+            id: "op3",
+            name: { ar: "خبز إضافي", en: "Extra bread" },
+            priceDelta: 3000,
+          },
         ],
       },
     ],
@@ -329,8 +409,16 @@ export const menuItems: MenuItem[] = [
         selectionType: "multiple",
         required: false,
         options: [
-          { id: "op4", name: { ar: "لحم إضافي", en: "Extra lamb" }, priceDelta: 35000 },
-          { id: "op5", name: { ar: "لبن خيار", en: "Cucumber yogurt" }, priceDelta: 10000 },
+          {
+            id: "op4",
+            name: { ar: "لحم إضافي", en: "Extra lamb" },
+            priceDelta: 35000,
+          },
+          {
+            id: "op5",
+            name: { ar: "لبن خيار", en: "Cucumber yogurt" },
+            priceDelta: 10000,
+          },
         ],
       },
     ],
@@ -396,9 +484,21 @@ export const menuItems: MenuItem[] = [
         selectionType: "multiple",
         required: false,
         options: [
-          { id: "op6", name: { ar: "صحن حمص", en: "Hummus plate" }, priceDelta: 20000 },
-          { id: "op7", name: { ar: "بطاطا مقلية", en: "French fries" }, priceDelta: 12000 },
-          { id: "op8", name: { ar: "حجم عائلي (×2)", en: "Family size (×2)" }, priceDelta: 120000 },
+          {
+            id: "op6",
+            name: { ar: "صحن حمص", en: "Hummus plate" },
+            priceDelta: 20000,
+          },
+          {
+            id: "op7",
+            name: { ar: "بطاطا مقلية", en: "French fries" },
+            priceDelta: 12000,
+          },
+          {
+            id: "op8",
+            name: { ar: "حجم عائلي (×2)", en: "Family size (×2)" },
+            priceDelta: 120000,
+          },
         ],
       },
     ],
@@ -449,8 +549,16 @@ export const menuItems: MenuItem[] = [
         selectionType: "multiple",
         required: false,
         options: [
-          { id: "op9", name: { ar: "قشطة إضافية", en: "Extra cream" }, priceDelta: 8000 },
-          { id: "op10", name: { ar: "فستق مضاعف", en: "Double pistachio" }, priceDelta: 12000 },
+          {
+            id: "op9",
+            name: { ar: "قشطة إضافية", en: "Extra cream" },
+            priceDelta: 8000,
+          },
+          {
+            id: "op10",
+            name: { ar: "فستق مضاعف", en: "Double pistachio" },
+            priceDelta: 12000,
+          },
         ],
       },
     ],
@@ -659,8 +767,18 @@ export const orders: Order[] = [
     restaurantId: "r1",
     tableNumber: 4,
     lines: [
-      { itemId: "m1", name: { ar: "حمص بيروتي", en: "Beiruti Hummus" }, quantity: 2, price: 25000 },
-      { itemId: "m7", name: { ar: "مشاوي مشكلة ياسمين", en: "Yasmeen Mixed Grill" }, quantity: 1, price: 145000 },
+      {
+        itemId: "m1",
+        name: { ar: "حمص بيروتي", en: "Beiruti Hummus" },
+        quantity: 2,
+        price: 25000,
+      },
+      {
+        itemId: "m7",
+        name: { ar: "مشاوي مشكلة ياسمين", en: "Yasmeen Mixed Grill" },
+        quantity: 1,
+        price: 145000,
+      },
     ],
     total: 195000,
     status: "new",
@@ -672,7 +790,12 @@ export const orders: Order[] = [
     restaurantId: "r1",
     customerName: "أبو محمد",
     lines: [
-      { itemId: "m4", name: { ar: "كبسة ياسمين الملكية", en: "Royal Yasmeen Kabseh" }, quantity: 2, price: 95000 },
+      {
+        itemId: "m4",
+        name: { ar: "كبسة ياسمين الملكية", en: "Royal Yasmeen Kabseh" },
+        quantity: 2,
+        price: 95000,
+      },
     ],
     notes: "بدون مكسرات",
     total: 190000,
@@ -685,8 +808,18 @@ export const orders: Order[] = [
     restaurantId: "r1",
     tableNumber: 9,
     lines: [
-      { itemId: "m8", name: { ar: "كباب كرزية", en: "Cherry Kebab" }, quantity: 1, price: 110000 },
-      { itemId: "m11", name: { ar: "عصير ليمون بالنعناع", en: "Mint Lemonade" }, quantity: 3, price: 15000 },
+      {
+        itemId: "m8",
+        name: { ar: "كباب كرزية", en: "Cherry Kebab" },
+        quantity: 1,
+        price: 110000,
+      },
+      {
+        itemId: "m11",
+        name: { ar: "عصير ليمون بالنعناع", en: "Mint Lemonade" },
+        quantity: 3,
+        price: 15000,
+      },
     ],
     total: 155000,
     status: "preparing",
@@ -698,8 +831,18 @@ export const orders: Order[] = [
     restaurantId: "r1",
     tableNumber: 2,
     lines: [
-      { itemId: "m9", name: { ar: "كنافة نابلسية", en: "Nabulsi Knafeh" }, quantity: 2, price: 38000 },
-      { itemId: "m12", name: { ar: "قهوة عربية بالهيل", en: "Arabic Cardamom Coffee" }, quantity: 2, price: 12000 },
+      {
+        itemId: "m9",
+        name: { ar: "كنافة نابلسية", en: "Nabulsi Knafeh" },
+        quantity: 2,
+        price: 38000,
+      },
+      {
+        itemId: "m12",
+        name: { ar: "قهوة عربية بالهيل", en: "Arabic Cardamom Coffee" },
+        quantity: 2,
+        price: 12000,
+      },
     ],
     total: 100000,
     status: "ready",
@@ -714,24 +857,137 @@ export const waiters: Waiter[] = [
 ];
 
 export const diningTables: DiningTable[] = [
-  { id: "tb1", number: 1, shape: "square", seats: 4, isOccupied: false, x: 12, y: 18 },
-  { id: "tb2", number: 2, shape: "round", seats: 2, isOccupied: true, waiterId: "w1", x: 38, y: 15 },
-  { id: "tb3", number: 3, shape: "square", seats: 6, isOccupied: false, x: 64, y: 20 },
-  { id: "tb4", number: 4, shape: "round", seats: 4, isOccupied: true, waiterId: "w2", x: 86, y: 16 },
-  { id: "tb5", number: 5, shape: "square", seats: 4, isOccupied: false, x: 14, y: 55 },
-  { id: "tb6", number: 6, shape: "round", seats: 8, isOccupied: false, x: 40, y: 58 },
-  { id: "tb7", number: 7, shape: "square", seats: 2, isOccupied: false, x: 66, y: 55 },
-  { id: "tb8", number: 8, shape: "round", seats: 4, isOccupied: false, x: 87, y: 58 },
-  { id: "tb9", number: 9, shape: "square", seats: 6, isOccupied: true, waiterId: "w3", x: 25, y: 85 },
-  { id: "tb10", number: 10, shape: "round", seats: 4, isOccupied: false, x: 60, y: 86 },
+  {
+    id: "tb1",
+    number: 1,
+    shape: "square",
+    seats: 4,
+    isOccupied: false,
+    x: 12,
+    y: 18,
+  },
+  {
+    id: "tb2",
+    number: 2,
+    shape: "round",
+    seats: 2,
+    isOccupied: true,
+    waiterId: "w1",
+    x: 38,
+    y: 15,
+  },
+  {
+    id: "tb3",
+    number: 3,
+    shape: "square",
+    seats: 6,
+    isOccupied: false,
+    x: 64,
+    y: 20,
+  },
+  {
+    id: "tb4",
+    number: 4,
+    shape: "round",
+    seats: 4,
+    isOccupied: true,
+    waiterId: "w2",
+    x: 86,
+    y: 16,
+  },
+  {
+    id: "tb5",
+    number: 5,
+    shape: "square",
+    seats: 4,
+    isOccupied: false,
+    x: 14,
+    y: 55,
+  },
+  {
+    id: "tb6",
+    number: 6,
+    shape: "round",
+    seats: 8,
+    isOccupied: false,
+    x: 40,
+    y: 58,
+  },
+  {
+    id: "tb7",
+    number: 7,
+    shape: "square",
+    seats: 2,
+    isOccupied: false,
+    x: 66,
+    y: 55,
+  },
+  {
+    id: "tb8",
+    number: 8,
+    shape: "round",
+    seats: 4,
+    isOccupied: false,
+    x: 87,
+    y: 58,
+  },
+  {
+    id: "tb9",
+    number: 9,
+    shape: "square",
+    seats: 6,
+    isOccupied: true,
+    waiterId: "w3",
+    x: 25,
+    y: 85,
+  },
+  {
+    id: "tb10",
+    number: 10,
+    shape: "round",
+    seats: 4,
+    isOccupied: false,
+    x: 60,
+    y: 86,
+  },
 ];
 
 export const agentTransactions: Transaction[] = [
-  { id: "tx1", date: "2026-07-08", restaurantName: { ar: "بيت الياسمين", en: "Yasmeen House" }, type: "commission", amount: 450000 },
-  { id: "tx2", date: "2026-07-05", restaurantName: { ar: "مائدة الشام", en: "Levant Table" }, type: "commission", amount: 300000 },
-  { id: "tx3", date: "2026-06-30", restaurantName: { ar: "—", en: "—" }, type: "payout", amount: -1200000 },
-  { id: "tx4", date: "2026-06-22", restaurantName: { ar: "زاوية ونس", en: "Wanes Corner" }, type: "commission", amount: 350000 },
-  { id: "tx5", date: "2026-06-15", restaurantName: { ar: "لؤلؤة طرطوس", en: "Pearl of Tartus" }, type: "commission", amount: 500000 },
+  {
+    id: "tx1",
+    date: "2026-07-08",
+    restaurantName: { ar: "بيت الياسمين", en: "Yasmeen House" },
+    type: "commission",
+    amount: 450000,
+  },
+  {
+    id: "tx2",
+    date: "2026-07-05",
+    restaurantName: { ar: "مائدة الشام", en: "Levant Table" },
+    type: "commission",
+    amount: 300000,
+  },
+  {
+    id: "tx3",
+    date: "2026-06-30",
+    restaurantName: { ar: "—", en: "—" },
+    type: "payout",
+    amount: -1200000,
+  },
+  {
+    id: "tx4",
+    date: "2026-06-22",
+    restaurantName: { ar: "زاوية ونس", en: "Wanes Corner" },
+    type: "commission",
+    amount: 350000,
+  },
+  {
+    id: "tx5",
+    date: "2026-06-15",
+    restaurantName: { ar: "لؤلؤة طرطوس", en: "Pearl of Tartus" },
+    type: "commission",
+    amount: 500000,
+  },
 ];
 
 export const restaurantAnalytics: RestaurantAnalytics = {
@@ -785,7 +1041,10 @@ export const stores: Store[] = [
     category: { ar: "أزياء وملابس", en: "Fashion & Apparel" },
     governorateId: "damascus",
     regionId: "shaalan",
-    address: { ar: "الشعلان، شارع الحمرا، دمشق", en: "Shaalan, Hamra Street, Damascus" },
+    address: {
+      ar: "الشعلان، شارع الحمرا، دمشق",
+      en: "Shaalan, Hamra Street, Damascus",
+    },
     location: { lat: 33.5171, lng: 36.2894 },
     phone: "+963 11 333 4455",
     whatsapp: "+963 940 111 222",
@@ -813,7 +1072,10 @@ export const stores: Store[] = [
     category: { ar: "إلكترونيات", en: "Electronics" },
     governorateId: "aleppo",
     regionId: "jamiliyeh",
-    address: { ar: "الجميلية، شارع القوتلي، حلب", en: "Jamiliyeh, Quwatli Street, Aleppo" },
+    address: {
+      ar: "الجميلية، شارع القوتلي، حلب",
+      en: "Jamiliyeh, Quwatli Street, Aleppo",
+    },
     location: { lat: 36.2085, lng: 37.1479 },
     phone: "+963 21 445 6677",
     whatsapp: "+963 951 333 444",
@@ -840,7 +1102,10 @@ export const stores: Store[] = [
     category: { ar: "هدايا وتحف", en: "Gifts & Crafts" },
     governorateId: "latakia",
     regionId: "slaibeh",
-    address: { ar: "الصليبة، سوق البازار، اللاذقية", en: "Slaibeh, Bazaar Market, Latakia" },
+    address: {
+      ar: "الصليبة، سوق البازار، اللاذقية",
+      en: "Slaibeh, Bazaar Market, Latakia",
+    },
     location: { lat: 35.5308, lng: 35.7906 },
     phone: "+963 41 332 2110",
     whatsapp: "+963 963 555 666",
@@ -868,7 +1133,10 @@ export const stores: Store[] = [
     category: { ar: "عطور", en: "Perfumes" },
     governorateId: "damascus",
     regionId: "bab-touma",
-    address: { ar: "باب توما، سوق العطارين، دمشق القديمة", en: "Bab Touma, Perfumers' Souq, Old Damascus" },
+    address: {
+      ar: "باب توما، سوق العطارين، دمشق القديمة",
+      en: "Bab Touma, Perfumers' Souq, Old Damascus",
+    },
     location: { lat: 33.5145, lng: 36.3162 },
     phone: "+963 11 541 7788",
     whatsapp: "+963 933 777 888",
@@ -882,9 +1150,24 @@ export const stores: Store[] = [
 ];
 
 export const storeCategories: StoreCategory[] = [
-  { id: "sc1", storeId: "s1", name: { ar: "تيشيرتات", en: "T-Shirts" }, sortOrder: 1 },
-  { id: "sc2", storeId: "s1", name: { ar: "قمصان", en: "Shirts" }, sortOrder: 2 },
-  { id: "sc3", storeId: "s1", name: { ar: "إكسسوارات", en: "Accessories" }, sortOrder: 3 },
+  {
+    id: "sc1",
+    storeId: "s1",
+    name: { ar: "تيشيرتات", en: "T-Shirts" },
+    sortOrder: 1,
+  },
+  {
+    id: "sc2",
+    storeId: "s1",
+    name: { ar: "قمصان", en: "Shirts" },
+    sortOrder: 2,
+  },
+  {
+    id: "sc3",
+    storeId: "s1",
+    name: { ar: "إكسسوارات", en: "Accessories" },
+    sortOrder: 3,
+  },
 ];
 
 export const storeProducts: StoreProduct[] = [
@@ -916,7 +1199,11 @@ export const storeProducts: StoreProduct[] = [
         required: true,
         options: [
           { id: "po1", name: { ar: "قياس L", en: "Size L" }, priceDelta: 0 },
-          { id: "po2", name: { ar: "قياس XL", en: "Size XL" }, priceDelta: 10000 },
+          {
+            id: "po2",
+            name: { ar: "قياس XL", en: "Size XL" },
+            priceDelta: 10000,
+          },
         ],
       },
       {
@@ -925,7 +1212,11 @@ export const storeProducts: StoreProduct[] = [
         selectionType: "multiple",
         required: false,
         options: [
-          { id: "po3", name: { ar: "تطريز اسمك", en: "Name embroidery" }, priceDelta: 35000 },
+          {
+            id: "po3",
+            name: { ar: "تطريز اسمك", en: "Name embroidery" },
+            priceDelta: 35000,
+          },
         ],
       },
     ],
@@ -956,7 +1247,11 @@ export const storeProducts: StoreProduct[] = [
         required: true,
         options: [
           { id: "po4", name: { ar: "قياس L", en: "Size L" }, priceDelta: 0 },
-          { id: "po5", name: { ar: "قياس XL", en: "Size XL" }, priceDelta: 10000 },
+          {
+            id: "po5",
+            name: { ar: "قياس XL", en: "Size XL" },
+            priceDelta: 10000,
+          },
         ],
       },
     ],
@@ -988,7 +1283,11 @@ export const storeProducts: StoreProduct[] = [
         options: [
           { id: "po6", name: { ar: "قياس M", en: "Size M" }, priceDelta: 0 },
           { id: "po7", name: { ar: "قياس L", en: "Size L" }, priceDelta: 0 },
-          { id: "po8", name: { ar: "قياس XL", en: "Size XL" }, priceDelta: 15000 },
+          {
+            id: "po8",
+            name: { ar: "قياس XL", en: "Size XL" },
+            priceDelta: 15000,
+          },
         ],
       },
     ],
@@ -1047,7 +1346,11 @@ export const storeProducts: StoreProduct[] = [
         selectionType: "single",
         required: true,
         options: [
-          { id: "po9", name: { ar: "بني غامق", en: "Dark brown" }, priceDelta: 0 },
+          {
+            id: "po9",
+            name: { ar: "بني غامق", en: "Dark brown" },
+            priceDelta: 0,
+          },
           { id: "po10", name: { ar: "أسود", en: "Black" }, priceDelta: 0 },
         ],
       },
@@ -1112,5 +1415,256 @@ export const reviews: Review[] = [
       en: "Good food, but prices went up recently.",
     },
     date: "2026-05-28",
+  },
+];
+
+/** Console-only directory of everyone with an account on the platform. */
+export const platformUsers: PlatformUser[] = [
+  {
+    id: "u1",
+    name: "أحمد الحموي",
+    phone: "+963 991 100 201",
+    role: "agent",
+    governorateId: "damascus",
+    joinedAt: "2025-03-14",
+    status: "active",
+  },
+  {
+    id: "u2",
+    name: "ليلى العلي",
+    phone: "+963 992 220 118",
+    role: "owner",
+    governorateId: "damascus",
+    joinedAt: "2025-05-02",
+    status: "active",
+  },
+  {
+    id: "u3",
+    name: "سامر خوري",
+    phone: "+963 933 410 907",
+    role: "owner",
+    governorateId: "aleppo",
+    joinedAt: "2025-06-21",
+    status: "active",
+  },
+  {
+    id: "u4",
+    name: "رنا حداد",
+    phone: "+963 944 771 330",
+    role: "user",
+    governorateId: "latakia",
+    joinedAt: "2025-07-09",
+    status: "active",
+  },
+  {
+    id: "u5",
+    name: "عمر الشامي",
+    phone: "+963 988 512 664",
+    role: "waiter",
+    governorateId: "damascus",
+    joinedAt: "2025-08-01",
+    status: "active",
+  },
+  {
+    id: "u6",
+    name: "نور الدين",
+    phone: "+963 955 300 442",
+    role: "user",
+    governorateId: "homs",
+    joinedAt: "2025-09-17",
+    status: "banned",
+  },
+  {
+    id: "u7",
+    name: "هبة منصور",
+    phone: "+963 966 880 175",
+    role: "agent",
+    governorateId: "latakia",
+    joinedAt: "2025-10-05",
+    status: "active",
+  },
+  {
+    id: "u8",
+    name: "كريم سعيد",
+    phone: "+963 977 640 903",
+    role: "owner",
+    governorateId: "tartus",
+    joinedAt: "2025-11-28",
+    status: "active",
+  },
+];
+
+/** Subscription tiers the platform sells to businesses. */
+export const plans: Plan[] = [
+  {
+    id: "p1",
+    name: { ar: "الأساسية", en: "Basic" },
+    priceMonthly: 150000,
+    subscriberCount: 128,
+    features: [
+      { ar: "منيو رقمي برمز QR", en: "Digital menu with QR" },
+      { ar: "حتى 50 منتجاً", en: "Up to 50 items" },
+      { ar: "طلبات عبر واتساب", en: "Orders over WhatsApp" },
+    ],
+  },
+  {
+    id: "p2",
+    name: { ar: "الاحترافية", en: "Professional" },
+    priceMonthly: 280000,
+    subscriberCount: 264,
+    isPopular: true,
+    features: [
+      { ar: "كل مزايا الأساسية", en: "Everything in Basic" },
+      { ar: "منتجات بلا حد", en: "Unlimited items" },
+      {
+        ar: "طلبات من التطبيق وواتساب",
+        en: "Orders from the app and WhatsApp",
+      },
+      { ar: "تحليلات ولوحة تحكم", en: "Analytics and dashboard" },
+    ],
+  },
+  {
+    id: "p3",
+    name: { ar: "المتكاملة", en: "Complete" },
+    priceMonthly: 450000,
+    subscriberCount: 71,
+    features: [
+      { ar: "كل مزايا الاحترافية", en: "Everything in Professional" },
+      { ar: "إدارة صالة وطاولات", en: "Floor and table management" },
+      { ar: "حسابات نوادل متعددة", en: "Multiple waiter accounts" },
+      { ar: "دعم مخصّص", en: "Dedicated support" },
+    ],
+  },
+];
+
+/**
+ * Promotional bundles. Restaurants bundle dishes, stores bundle products —
+ * one array either way, keyed by `businessId`, exactly like the catalog.
+ */
+export const offers: Offer[] = [
+  {
+    id: "of1",
+    businessId: "r1",
+    name: { ar: "وجبة العائلة", en: "Family feast" },
+    description: {
+      ar: "وجبة كاملة تكفي أربعة أشخاص: مشاوٍ مشكّلة مع المقبّلات والخبز والمشروبات. تُحضَّر طازجة عند الطلب.",
+      en: "A full spread for four: mixed grill with mezze, bread and drinks. Prepared fresh to order.",
+    },
+    images: [
+      img("photo-1504674900247-0877df9cc836", 1200),
+      img("photo-1541014741259-de529411b96a", 1200),
+      img("photo-1555939594-58d7cb561ad1", 1200),
+    ],
+    includes: [
+      { ar: "مشاوٍ مشكّلة ١ كغ", en: "1 kg mixed grill" },
+      { ar: "أربعة أطباق مقبّلات", en: "Four mezze plates" },
+      { ar: "خبز تنّور طازج", en: "Fresh tannour bread" },
+      { ar: "أربعة مشروبات غازية", en: "Four soft drinks" },
+    ],
+    originalPrice: 320000,
+    price: 245000,
+    startsAt: "2026-08-01",
+    endsAt: "2026-12-31",
+    isActive: true,
+    badge: "bestValue",
+    sortOrder: 1,
+  },
+  {
+    id: "of2",
+    businessId: "r1",
+    name: { ar: "فطور الجمعة", en: "Friday breakfast" },
+    description: {
+      ar: "فطور شامي لشخصين: فتّة وحمّص وفول وبيض بالعوامة، مع الشاي على البيت.",
+      en: "A Damascene breakfast for two: fatteh, hummus, foul and eggs, with tea on the house.",
+    },
+    images: [
+      img("photo-1533089860892-a7c6f0a88666", 1200),
+      img("photo-1525351484163-7529414344d8", 1200),
+    ],
+    includes: [
+      { ar: "فتّة حمّص", en: "Hummus fatteh" },
+      { ar: "فول مدمّس", en: "Foul medames" },
+      { ar: "بيض بالعوامة", en: "Eggs with awarma" },
+      { ar: "شاي أو قهوة", en: "Tea or coffee" },
+    ],
+    originalPrice: 145000,
+    price: 99000,
+    startsAt: "2026-08-15",
+    isActive: true,
+    badge: "limited",
+    sortOrder: 2,
+  },
+  {
+    id: "of3",
+    businessId: "r2",
+    name: { ar: "عرض الشاورما المزدوج", en: "Double shawarma deal" },
+    description: {
+      ar: "ساندويشتا شاورما مع بطاطا ومشروب — العرض ساري كل يوم بعد الرابعة عصراً.",
+      en: "Two shawarma sandwiches with fries and a drink — every day after 4pm.",
+    },
+    images: [
+      img("photo-1529006557810-274b9b2fc783", 1200),
+      img("photo-1561651823-34feb02250e4", 1200),
+    ],
+    includes: [
+      { ar: "ساندويشتا شاورما دجاج", en: "Two chicken shawarma sandwiches" },
+      { ar: "بطاطا مقلية وسط", en: "Medium fries" },
+      { ar: "مشروب غازي", en: "Soft drink" },
+    ],
+    originalPrice: 85000,
+    price: 62000,
+    startsAt: "2026-07-01",
+    isActive: true,
+    badge: "new",
+    sortOrder: 1,
+  },
+  {
+    id: "of4",
+    businessId: "s1",
+    name: { ar: "إطلالة الشتاء", en: "Winter look" },
+    description: {
+      ar: "ثلاث قطع تنسّق معاً: معطف صوف وكنزة قطنية ووشاح، بخصم عن شرائها منفردة.",
+      en: "Three pieces styled together: a wool coat, a cotton knit and a scarf, priced below buying them separately.",
+    },
+    images: [
+      img("photo-1591047139829-d91aecb6caea", 1200),
+      img("photo-1434389677669-e08b4cac3105", 1200),
+    ],
+    includes: [
+      { ar: "معطف صوف", en: "Wool coat" },
+      { ar: "كنزة قطنية", en: "Cotton knit" },
+      { ar: "وشاح منسوج", en: "Woven scarf" },
+    ],
+    originalPrice: 1250000,
+    price: 950000,
+    startsAt: "2026-08-20",
+    endsAt: "2026-11-30",
+    isActive: true,
+    badge: "bestValue",
+    sortOrder: 1,
+  },
+  {
+    id: "of5",
+    businessId: "s2",
+    name: { ar: "حزمة المكتب المنزلي", en: "Home office bundle" },
+    description: {
+      ar: "كل ما يلزم لمساحة عمل مرتّبة: لوحة مفاتيح وفأرة لاسلكية وحامل شاشة، مع كفالة سنة.",
+      en: "Everything a tidy desk needs: a wireless keyboard, a mouse and a monitor stand, with a one-year warranty.",
+    },
+    images: [
+      img("photo-1587829741301-dc798b83add3", 1200),
+      img("photo-1527864550417-7fd91fc51a46", 1200),
+    ],
+    includes: [
+      { ar: "لوحة مفاتيح لاسلكية", en: "Wireless keyboard" },
+      { ar: "فأرة لاسلكية", en: "Wireless mouse" },
+      { ar: "حامل شاشة معدني", en: "Metal monitor stand" },
+      { ar: "كفالة سنة", en: "One-year warranty" },
+    ],
+    originalPrice: 890000,
+    price: 690000,
+    startsAt: "2026-08-05",
+    isActive: true,
+    sortOrder: 1,
   },
 ];

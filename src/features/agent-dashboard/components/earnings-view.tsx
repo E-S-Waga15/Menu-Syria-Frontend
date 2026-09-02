@@ -3,11 +3,16 @@
 import { useQuery } from "@tanstack/react-query";
 import {
   Banknote,
+  Bell,
   CalendarDays,
   Copy,
   HandCoins,
   Hourglass,
   Link2,
+  PackagePlus,
+  ShoppingBag,
+  Store,
+  UtensilsCrossed,
 } from "lucide-react";
 import { toast } from "@/lib/toast";
 
@@ -19,6 +24,10 @@ import {
   getMyAgentProfile,
   getMyTransactions,
 } from "@/features/agent-dashboard/services";
+import {
+  QuickAccess,
+  type QuickAccessItem,
+} from "@/components/shared/quick-access";
 import { StatCard } from "@/features/restaurant-dashboard/components/stat-card";
 import { useI18n } from "@/i18n/client";
 import { queryKeys } from "@/lib/api/query-keys";
@@ -38,13 +47,50 @@ export function AgentEarningsView() {
 
   if (!agent || !transactions) {
     return (
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-32 rounded-2xl" />
+          <Skeleton key={i} className="h-24 rounded-2xl" />
         ))}
       </div>
     );
   }
+
+  const base = `/${lang}/agent`;
+
+  // the two directories the agent works out of, the two accounts they can
+  // open, and the queue that tells them which subscription is due
+  const quickAccess: QuickAccessItem[] = [
+    {
+      href: `${base}/restaurants`,
+      label: t.agent.myRestaurants,
+      hint: t.agent.myRestaurantsHint,
+      icon: Store,
+    },
+    {
+      href: `${base}/stores`,
+      label: t.agent.myStores,
+      hint: t.agent.myStoresHint,
+      icon: ShoppingBag,
+    },
+    {
+      href: `${base}/register/restaurant`,
+      label: t.agent.addRestaurant,
+      hint: t.agent.registerRestaurantHint,
+      icon: UtensilsCrossed,
+    },
+    {
+      href: `${base}/register/store`,
+      label: t.agent.addStore,
+      hint: t.agent.registerStoreHint,
+      icon: PackagePlus,
+    },
+    {
+      href: `${base}/notifications`,
+      label: t.notifications.title,
+      hint: t.agent.notificationsHint,
+      icon: Bell,
+    },
+  ];
 
   const referralUrl = `https://menusyria.com/r/${agent.referralCode}`;
 
@@ -55,7 +101,7 @@ export function AgentEarningsView() {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         <StatCard
           label={t.agent.totalEarnings}
           value={formatPrice(4850000, t.common.currency)}
@@ -80,6 +126,8 @@ export function AgentEarningsView() {
           icon={CalendarDays}
         />
       </div>
+
+      <QuickAccess title={t.agent.quickAccess} items={quickAccess} />
 
       {/* referral link */}
       <section className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-primary/25 bg-berry-soft/30 p-5 dark:bg-berry-soft/20">

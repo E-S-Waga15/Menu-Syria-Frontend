@@ -42,9 +42,14 @@ function DialogOverlay({
 function DialogContent({
   className,
   children,
-  showCloseButton = true,
+  showCloseButton = false,
   ...props
 }: DialogPrimitive.Popup.Props & {
+  /**
+   * A floating close button in the corner. Off by default: <DialogHeader />
+   * carries the close now, so a dialog with a header would otherwise show two.
+   * Turn it on only for a dialog that deliberately has no header.
+   */
   showCloseButton?: boolean
 }) {
   return (
@@ -83,13 +88,62 @@ function DialogContent({
   )
 }
 
-function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
+/**
+ * The bar every dialog is topped by: its title on one side, its close on the
+ * other, pinned while the body scrolls underneath.
+ *
+ * The negative margins pull it back through <DialogContent />'s `p-4` so it
+ * spans the popup edge to edge — content then passes *beneath* it rather than
+ * beside it. A dialog whose content is unpadded (a full-bleed image gallery,
+ * say) cancels them with `mx-0 mt-0`.
+ *
+ * `sticky` needs the popup itself to be the scroll container, which is what
+ * every scrolling dialog here already does with `overflow-y-auto`.
+ */
+function DialogHeader({
+  className,
+  children,
+  showClose = true,
+  flush = false,
+  ...props
+}: React.ComponentProps<"div"> & {
+  showClose?: boolean
+  /** set this on a dialog whose <DialogContent /> is `p-0` — see below */
+  flush?: boolean
+}) {
   return (
     <div
       data-slot="dialog-header"
-      className={cn("flex flex-col gap-2", className)}
+      className={cn(
+        "sticky z-20 flex items-center justify-between gap-3 rounded-t-xl border-b border-border/60 bg-popover px-4 py-3",
+        // The sticky offset has to mirror whatever padding sits above the bar,
+        // or the bar pins in the wrong place: too low and a sliver of
+        // scrolling content shows above it, too high and its own top is
+        // clipped. The two cases are the padded popup (`p-4`, pulled back
+        // through with negative margins) and the flush one (`p-0`), so the
+        // offset and the margins are set together and can never disagree.
+        flush ? "top-0" : "-top-4 -mx-4 -mt-4",
+        className
+      )}
       {...props}
-    />
+    >
+      <div className="flex min-w-0 flex-col gap-1">{children}</div>
+      {showClose && (
+        <DialogPrimitive.Close
+          data-slot="dialog-header-close"
+          render={
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="-me-1.5 shrink-0 text-muted-foreground hover:text-foreground"
+            />
+          }
+        >
+          <XIcon />
+          <span className="sr-only">Close</span>
+        </DialogPrimitive.Close>
+      )}
+    </div>
   )
 }
 
@@ -125,7 +179,10 @@ function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props) {
     <DialogPrimitive.Title
       data-slot="dialog-title"
       className={cn(
-        "font-heading text-base leading-none font-medium",
+        // `truncate` clips to the line box, so the line height has to leave
+        // room for descenders — `leading-none` cropped the tails off Arabic
+        // letters like ي and ج in every dialog header.
+        "truncate font-heading text-base leading-normal font-bold",
         className
       )}
       {...props}

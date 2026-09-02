@@ -42,7 +42,7 @@ export function SiteHeader() {
   }, []);
 
   const links = [
-    { href: `/${lang}#services`, label: t.nav.services },
+    { href: `/${lang}`, label: t.nav.home },
     { href: `/${lang}/restaurants`, label: t.nav.restaurants },
     { href: `/${lang}/stores`, label: t.nav.stores },
     { href: `/${lang}/agents`, label: t.nav.agents },
@@ -131,7 +131,10 @@ export function SiteHeader() {
         {/* opens from the inline-start edge — the side the trigger sits on:
             right in Arabic, left in English. Driven by `dir`, not a hardcoded
             "ar", so any future RTL locale is covered too. */}
-        <SheetContent side={dir === "rtl" ? "right" : "left"}>
+        <SheetContent
+          side={dir === "rtl" ? "right" : "left"}
+          showCloseButton={false}
+        >
           <SheetHeader>
             <SheetTitle>{t.common.brand}</SheetTitle>
           </SheetHeader>

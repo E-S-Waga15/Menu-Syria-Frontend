@@ -14,7 +14,12 @@ import {
   CarouselPrevious,
   type CarouselApi,
 } from "@/components/ui/carousel";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   formatPrice,
   type StorefrontCopy,
@@ -135,6 +140,10 @@ export function DishModal({
           } as React.CSSProperties
         }
       >
+        <DialogHeader flush>
+          <DialogTitle>{item.name[lang]}</DialogTitle>
+        </DialogHeader>
+
         {/* image slider — embla handles touch drag natively on mobile */}
         <div className="relative">
           <Carousel
@@ -197,14 +206,9 @@ export function DishModal({
 
         <div className="space-y-5 p-5" dir={dir}>
           <div>
-            <div className="flex items-start justify-between gap-3">
-              <DialogTitle className="font-heading text-xl font-bold">
-                {item.name[lang]}
-              </DialogTitle>
-              <p className="shrink-0 text-lg font-bold text-[var(--menu-primary)]">
-                {formatPrice(item.price, t.common.currency)}
-              </p>
-            </div>
+            <p className="text-xl font-bold text-[var(--menu-primary)]">
+              {formatPrice(item.price, t.common.currency)}
+            </p>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
               {item.description[lang]}
             </p>

@@ -193,8 +193,10 @@ export function CartSheet({
         // inset-x-0, and margin composes with that); from `sm` it goes back to
         // a centred, edge-anchored sheet
         className="mx-3 mb-3 max-h-[88dvh] overflow-y-auto rounded-3xl pb-6 scrollbar-none sm:mx-auto sm:mb-0 sm:max-w-2xl sm:rounded-b-none sm:rounded-t-3xl"
+        // the header carries the close now, so the floating one would double it
+        showCloseButton={false}
       >
-        <SheetHeader className="pb-0">
+        <SheetHeader className="rounded-t-3xl">
           <SheetTitle className="text-lg">{copy.yourOrder}</SheetTitle>
         </SheetHeader>
 

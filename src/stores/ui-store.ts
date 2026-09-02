@@ -21,6 +21,9 @@ interface UiState {
    * subscriptions and editing a menu are different jobs */
   agentListView: CatalogView;
   setAgentListView: (view: CatalogView) => void;
+  /** the console's directory pages */
+  adminListView: CatalogView;
+  setAdminListView: (view: CatalogView) => void;
 }
 
 export const useUiStore = create<UiState>()(
@@ -34,6 +37,8 @@ export const useUiStore = create<UiState>()(
       setCatalogView: (view) => set({ catalogView: view }),
       agentListView: "grid",
       setAgentListView: (view) => set({ agentListView: view }),
+      adminListView: "grid",
+      setAdminListView: (view) => set({ adminListView: view }),
     }),
     {
       name: "menu-syria-ui",
@@ -41,6 +46,7 @@ export const useUiStore = create<UiState>()(
       partialize: (state) => ({
         catalogView: state.catalogView,
         agentListView: state.agentListView,
+        adminListView: state.adminListView,
       }),
     },
   ),

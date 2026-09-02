@@ -18,14 +18,14 @@ export function StatCard({
   hint?: string;
 }) {
   return (
-    <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-soft transition-shadow hover:shadow-lifted">
-      <div className="flex items-start justify-between gap-3">
+    <div className="rounded-2xl border border-border/60 bg-card p-3.5 md:p-4">
+      <div className="flex items-start justify-between gap-2.5">
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-muted-foreground">
+          <p className="truncate text-xs font-semibold text-muted-foreground">
             {label}
           </p>
           <p
-            className="mt-2 font-heading text-2xl font-bold tracking-tight md:text-3xl"
+            className="mt-1.5 font-heading text-lg font-bold tracking-tight md:text-2xl"
             dir="ltr"
           >
             {value}
@@ -36,13 +36,13 @@ export function StatCard({
         </div>
         <span
           className={cn(
-            "flex size-11 shrink-0 items-center justify-center rounded-xl",
+            "flex size-9 shrink-0 items-center justify-center rounded-xl md:size-10",
             accent === "berry" && "bg-berry-soft text-berry-soft-foreground",
             accent === "zest" && "bg-zest-soft text-zest-soft-foreground",
             accent === "neutral" && "bg-surface-container text-foreground/70",
           )}
         >
-          <Icon className="size-5.5" strokeWidth={1.7} />
+          <Icon className="size-4.5 md:size-5" strokeWidth={1.7} />
         </span>
       </div>
     </div>

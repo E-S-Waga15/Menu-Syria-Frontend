@@ -3,12 +3,7 @@
 import Image from "next/image";
 
 import { useQuery } from "@tanstack/react-query";
-import {
-  ArrowDownCircle,
-  ArrowUpCircle,
-  Percent,
-  Wallet,
-} from "lucide-react";
+import { ArrowDownCircle, ArrowUpCircle, Percent, Wallet } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -71,10 +66,11 @@ export function AdminAgentLedger({ agentId }: { agentId: string }) {
           className="size-16 rounded-full object-cover"
         />
         <div className="flex-1">
-          <h1 className="font-heading text-xl font-bold">
-            {agent.name[lang]}
-          </h1>
-          <p className="mt-1 text-sm font-semibold text-muted-foreground" dir="ltr">
+          <h1 className="font-heading text-xl font-bold">{agent.name[lang]}</h1>
+          <p
+            className="mt-1 text-sm font-semibold text-muted-foreground"
+            dir="ltr"
+          >
             {agent.phone} · {agent.referralCode}
           </p>
         </div>
@@ -160,8 +156,7 @@ export function AdminAgentLedger({ agentId }: { agentId: string }) {
                 {formatPrice(tx.amount, t.common.currency)}
               </p>
               <p className="mt-0.5 text-xs font-semibold text-muted-foreground">
-                {tx.restaurantName[lang]} ·{" "}
-                <span dir="ltr">{tx.date}</span>
+                {tx.restaurantName[lang]} · <span dir="ltr">{tx.date}</span>
               </p>
             </li>
           ))}

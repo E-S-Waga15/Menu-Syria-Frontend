@@ -12,6 +12,14 @@ export const queryKeys = {
     tables: (id: string) => ["restaurants", id, "tables"] as const,
     waiters: (id: string) => ["restaurants", id, "waiters"] as const,
   },
+  offers: {
+    /** everything a business has published, dashboard view */
+    byBusiness: (businessId: string) => ["offers", businessId] as const,
+    /** only what a customer should see on that storefront */
+    live: (businessId: string) => ["offers", businessId, "live"] as const,
+    /** the cross-business mix on the signed-in customer's home page */
+    featured: ["offers", "featured"] as const,
+  },
   agents: {
     all: ["agents"] as const,
     byGovernorate: (governorateId: string) =>

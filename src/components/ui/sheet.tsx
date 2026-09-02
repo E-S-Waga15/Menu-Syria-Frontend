@@ -80,13 +80,50 @@ function SheetContent({
   )
 }
 
-function SheetHeader({ className, ...props }: React.ComponentProps<"div">) {
+/**
+ * The bar a sheet is topped by: its title on one side, its close on the other,
+ * pinned while the body scrolls underneath — the same treatment
+ * <DialogHeader /> gets, so a sheet and a dialog behave alike.
+ *
+ * `sticky` needs the popup itself to be the scroll container, which is what
+ * every scrolling sheet here already does with `overflow-y-auto`. The popup
+ * carries no top padding of its own, so `top-0` pins the bar flush to its
+ * edge; a sheet that adds one cancels it the way the dialog header does.
+ */
+function SheetHeader({
+  className,
+  children,
+  showClose = true,
+  ...props
+}: React.ComponentProps<"div"> & {
+  showClose?: boolean
+}) {
   return (
     <div
       data-slot="sheet-header"
-      className={cn("flex flex-col gap-0.5 p-4", className)}
+      className={cn(
+        "sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-border/60 bg-popover p-4",
+        className
+      )}
       {...props}
-    />
+    >
+      <div className="flex min-w-0 flex-col gap-0.5">{children}</div>
+      {showClose && (
+        <SheetPrimitive.Close
+          data-slot="sheet-header-close"
+          render={
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="-me-1.5 shrink-0 text-muted-foreground hover:text-foreground"
+            />
+          }
+        >
+          <XIcon />
+          <span className="sr-only">Close</span>
+        </SheetPrimitive.Close>
+      )}
+    </div>
   )
 }
 

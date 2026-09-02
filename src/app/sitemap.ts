@@ -11,7 +11,7 @@ import { SITE_URL } from "@/lib/seo/site";
 function localized(
   path: string,
   priority: number,
-  changeFrequency: "daily" | "weekly" | "monthly",
+  changeFrequency: "daily" | "weekly" | "monthly" | "yearly",
 ): MetadataRoute.Sitemap {
   return locales.map((lang) => ({
     url: `${SITE_URL}/${lang}${path}`,
@@ -39,6 +39,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...localized("/stores", 0.9, "daily"),
     ...localized("/agents", 0.8, "weekly"),
     ...localized("/about", 0.7, "monthly"),
+    ...localized("/privacy", 0.3, "yearly"),
+    ...localized("/terms", 0.3, "yearly"),
     ...localized("/login", 0.3, "monthly"),
     ...localized("/register/restaurant", 0.6, "monthly"),
     ...localized("/register/agent", 0.5, "monthly"),

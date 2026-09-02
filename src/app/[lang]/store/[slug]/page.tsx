@@ -58,6 +58,7 @@ export default async function PublicStorePage({
         governorateName={catalog.governorateName}
         regionName={catalog.regionName}
         aboutHref={`/${lang}/store/${slug}/about`}
+        offersHref={`/${lang}/store/${slug}/offers`}
         copy={t.storeFront}
       />
     </>

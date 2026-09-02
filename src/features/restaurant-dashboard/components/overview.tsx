@@ -3,8 +3,25 @@
 import Image from "next/image";
 
 import { useQuery } from "@tanstack/react-query";
-import { Banknote, Eye, Receipt, TrendingUp } from "lucide-react";
+import {
+  Banknote,
+  ChartNoAxesCombined,
+  Eye,
+  QrCode,
+  Receipt,
+  Settings,
+  ShoppingBag,
+  Table2,
+  Tag,
+  TrendingUp,
+  UtensilsCrossed,
+} from "lucide-react";
 
+import {
+  QuickAccess,
+  type QuickAccessItem,
+} from "@/components/shared/quick-access";
+import { useAuthStore } from "@/features/auth/store";
 import { StatCard } from "@/features/restaurant-dashboard/components/stat-card";
 import {
   getMyAnalytics,
@@ -20,6 +37,12 @@ const RESTAURANT_ID = "r1";
 
 export function DashboardOverview() {
   const { t, lang } = useI18n();
+  // the same flag the shell navigates by, so the tiles and the sidebar never
+  // disagree about whether this account is a restaurant or a store
+  const isStore = useAuthStore(
+    (s) => (s.session?.businessType ?? "restaurant") === "store",
+  );
+  const base = `/${lang}/dashboard`;
 
   const { data: analytics } = useQuery({
     queryKey: queryKeys.restaurants.analytics(RESTAURANT_ID),
@@ -33,13 +56,64 @@ export function DashboardOverview() {
 
   if (!analytics) {
     return (
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-32 rounded-2xl" />
+          <Skeleton key={i} className="h-24 rounded-2xl" />
         ))}
       </div>
     );
   }
+
+  // mirrors the sidebar, minus the page the reader is already on. Dining
+  // tables are restaurant-only, exactly as in the shell's nav.
+  const quickAccess: QuickAccessItem[] = [
+    {
+      href: `${base}/menu`,
+      label: isStore ? t.dashboard.myProducts : t.dashboard.myMenu,
+      hint: isStore ? t.dashboard.productsHint : t.dashboard.menuHint,
+      icon: isStore ? ShoppingBag : UtensilsCrossed,
+    },
+    {
+      href: `${base}/offers`,
+      label: t.offers.title,
+      hint: isStore ? t.offers.hintStore : t.offers.hint,
+      icon: Tag,
+    },
+    {
+      href: `${base}/orders`,
+      label: t.dashboard.orders,
+      hint: t.dashboard.ordersHint,
+      icon: Receipt,
+    },
+    ...(isStore
+      ? []
+      : [
+          {
+            href: `${base}/tables`,
+            label: t.dashboard.tables,
+            hint: t.dashboard.tablesHint,
+            icon: Table2,
+          },
+        ]),
+    {
+      href: `${base}/analytics`,
+      label: t.dashboard.analytics,
+      hint: t.dashboard.analyticsHint,
+      icon: ChartNoAxesCombined,
+    },
+    {
+      href: `${base}/qr`,
+      label: t.dashboard.qrCode,
+      hint: isStore ? t.dashboard.qrStoreHint : t.dashboard.qrHint,
+      icon: QrCode,
+    },
+    {
+      href: `${base}/settings`,
+      label: t.dashboard.settings,
+      hint: isStore ? t.dashboard.settingsStoreHint : t.dashboard.settingsHint,
+      icon: Settings,
+    },
+  ];
 
   const statusStyle = {
     new: "bg-berry-soft text-berry-soft-foreground",
@@ -55,7 +129,7 @@ export function DashboardOverview() {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         <StatCard
           label={t.dashboard.todayOrders}
           value={String(analytics.todayOrders)}
@@ -82,9 +156,11 @@ export function DashboardOverview() {
         />
       </div>
 
+      <QuickAccess title={t.dashboard.quickAccess} items={quickAccess} />
+
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.4fr_1fr]">
         {/* recent orders */}
-        <section className="rounded-2xl border border-border/60 bg-card p-5 shadow-soft">
+        <section className="rounded-2xl border border-border/60 bg-card p-5">
           <h2 className="font-heading text-lg font-semibold">
             {t.dashboard.orders}
           </h2>
@@ -118,7 +194,7 @@ export function DashboardOverview() {
         </section>
 
         {/* best seller */}
-        <section className="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-soft">
+        <section className="overflow-hidden rounded-2xl border border-border/60 bg-card">
           <div className="relative h-44">
             <Image
               src={analytics.bestSeller.imageUrl}
@@ -127,7 +203,7 @@ export function DashboardOverview() {
               sizes="(max-width: 1024px) 100vw, 33vw"
               className="object-cover"
             />
-            <span className="absolute start-4 top-4 rounded-full bg-zest px-3 py-1 text-xs font-bold text-zest-foreground shadow-soft">
+            <span className="absolute start-4 top-4 rounded-full bg-zest px-3 py-1 text-xs font-bold text-zest-foreground">
               {t.dashboard.bestSeller}
             </span>
           </div>

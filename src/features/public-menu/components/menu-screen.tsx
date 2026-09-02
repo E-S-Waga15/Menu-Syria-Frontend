@@ -5,15 +5,20 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { useQuery } from "@tanstack/react-query";
+
 import { Armchair, Info, MapPin, Phone, Search, Star } from "lucide-react";
 
 import { LanguageSwitcher } from "@/components/shared/language-switcher";
 import { FloatingCartBar } from "@/features/public-menu/components/cart";
+import { StorefrontOffers } from "@/features/offers/components/storefront-offers";
+import { getLiveOffers } from "@/features/offers/services";
 import { CategoryMenu } from "@/features/public-menu/components/category-menu";
 import { DishCard } from "@/features/public-menu/components/dish-card";
 import { getSupportedFulfillment } from "@/features/public-menu/lib/fulfillment";
 import type { StorefrontCopy } from "@/features/public-menu/lib/format";
 import { useI18n } from "@/i18n/client";
+import { queryKeys } from "@/lib/api/query-keys";
 import type {
   Business,
   CatalogItem,
@@ -66,6 +71,7 @@ export function MenuScreen({
   governorateName,
   regionName,
   aboutHref,
+  offersHref,
   copy,
   tableParam,
 }: {
@@ -77,6 +83,8 @@ export function MenuScreen({
   governorateName: LocalizedText;
   regionName: LocalizedText;
   aboutHref: string;
+  /** the storefront's own offers page — the strip links there */
+  offersHref: string;
   copy: StorefrontCopy;
   /** the `?t=` table id, read server-side — present only for a real table QR */
   tableParam?: string;
@@ -96,6 +104,13 @@ export function MenuScreen({
         ? "pickup"
         : "delivery",
   );
+
+  // offers are fetched client-side: they change on the owner's schedule, not
+  // the page's, and the catalog below must not wait on them to paint
+  const { data: offers } = useQuery({
+    queryKey: queryKeys.offers.live(business.id),
+    queryFn: () => getLiveOffers(business.id),
+  });
 
   const [search, setSearch] = useState("");
   const [compact, setCompact] = useState(false);
@@ -339,6 +354,14 @@ export function MenuScreen({
           query !== "" && (compact ? "pt-28" : "pt-56"),
         )}
       >
+        {query === "" && (
+          <StorefrontOffers
+            offers={offers ?? []}
+            isStore={!("cuisine" in business)}
+            offersHref={offersHref}
+          />
+        )}
+
         {query !== "" ? (
           <section>
             <div className="grid grid-cols-2 gap-3.5 md:grid-cols-3 md:gap-5 lg:grid-cols-4">

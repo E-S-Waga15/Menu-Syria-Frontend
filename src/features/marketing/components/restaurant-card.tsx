@@ -2,8 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 
-import { MapPin, Star } from "lucide-react";
+import { MapPin, Star, Store } from "lucide-react";
 
 import { FavoriteButton } from "@/components/shared/favorite-button";
 import { useI18n } from "@/i18n/client";
@@ -21,6 +22,11 @@ export function RestaurantCard({
 }) {
   const { lang } = useI18n();
 
+  const [failed, setFailed] = useState(false);
+  const cover = failed
+    ? undefined
+    : (restaurant.coverImages[0] ?? restaurant.logoUrl);
+
   return (
     <article className="group relative transform-gpu overflow-hidden rounded-2xl border border-border/60 bg-card transition-[translate,scale,border-color] duration-300 ease-smooth hover:-translate-y-1 hover:border-primary/35">
       <Link
@@ -28,13 +34,20 @@ export function RestaurantCard({
         className="block outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
       >
         <div className="relative aspect-[8/3] overflow-hidden">
-          <Image
-            src={restaurant.coverImages[0] ?? restaurant.logoUrl}
-            alt={restaurant.name[lang]}
-            fill
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            className="transform-gpu object-cover transition-transform duration-500 ease-smooth group-hover:scale-105"
-          />
+          {cover ? (
+            <Image
+              src={cover}
+              alt={restaurant.name[lang]}
+              fill
+              sizes="(max-width: 640px) 75vw, (max-width: 1024px) 50vw, 33vw"
+              onError={() => setFailed(true)}
+              className="transform-gpu object-cover transition-transform duration-500 ease-smooth group-hover:scale-105"
+            />
+          ) : (
+            <span className="flex size-full items-center justify-center bg-berry-soft text-berry-soft-foreground">
+              <Store className="size-8" />
+            </span>
+          )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent" />
           {/* glass rating chip */}
           <span className="absolute bottom-2.5 start-2.5 flex items-center gap-1.5 rounded-full border border-white/25 bg-white/20 px-2.5 py-1 text-xs font-bold text-white backdrop-blur-md">

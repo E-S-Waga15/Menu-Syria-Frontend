@@ -59,6 +59,7 @@ export default async function PublicMenuPage({
         governorateName={menu.governorateName}
         regionName={menu.regionName}
         aboutHref={`/${lang}/menu/${slug}/about`}
+        offersHref={`/${lang}/menu/${slug}/offers`}
         copy={t.menu}
         tableParam={typeof tableParam === "string" ? tableParam : undefined}
       />
