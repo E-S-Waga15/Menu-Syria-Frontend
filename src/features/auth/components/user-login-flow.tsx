@@ -30,8 +30,11 @@ import {
 } from "@/features/auth/schemas";
 import { useAuthStore } from "@/features/auth/store";
 import { fmt, useI18n } from "@/i18n/client";
+import { requestOtp, verifyOtp as verifyOtpApi } from "@/features/auth/api";
+import { ApiError, IS_MOCK } from "@/lib/api/client";
+import { toast } from "@/lib/toast";
 
-const RESEND_SECONDS = 45;
+const RESEND_SECONDS = 60;
 
 /**
  * Customer sign-in: phone → OTP, then the same role-resolution step the
@@ -44,12 +47,13 @@ export function UserLoginFlow() {
   const { t, lang } = useI18n();
   const router = useRouter();
   const knownPhones = useAuthStore((s) => s.knownPhones);
-  const { resolveRoles, modalRoles, selectRole, closeModal } =
+  const { resolveRoles, finishFromBackend, modalRoles, selectRole, closeModal } =
     useRoleResolution();
 
   const [step, setStep] = useState<"phone" | "otp">("phone");
   const [phone, setPhone] = useState("");
   const [seconds, setSeconds] = useState(RESEND_SECONDS);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   const phoneForm = useForm<PhoneFormValues>({
     resolver: zodResolver(phoneFormSchema(t.validation)),
@@ -69,25 +73,62 @@ export function UserLoginFlow() {
 
   const fullPhone = `+963 ${phone.trim()}`;
 
-  const requestCode = (values: PhoneFormValues) => {
-    setPhone(values.phone);
-    setStep("otp");
-    setSeconds(RESEND_SECONDS);
+  const requestCode = async (values: PhoneFormValues) => {
+    setApiError(null);
+    try {
+      await requestOtp(`+963${values.phone.trim()}`);
+      setPhone(values.phone);
+      setStep("otp");
+      setSeconds(RESEND_SECONDS);
+    } catch (err) {
+      const msg = err instanceof ApiError ? err.message : t.auth.genericError;
+      setApiError(msg);
+    }
   };
 
-  const verify = () => {
-    const directoryRoles = lookupRolesByPhone(fullPhone);
-    const roles =
-      knownPhones.includes(fullPhone) &&
-      !directoryRoles.some((r) => r.role === "user")
-        ? [...directoryRoles, { role: "user" as const, label: t.auth.roleUser }]
-        : directoryRoles;
+  const verify = async () => {
+    setApiError(null);
+    const otpCode = otpForm.getValues("otp");
+    try {
+      const result = await verifyOtpApi(`+963${phone.trim()}`, otpCode);
 
-    const result = resolveRoles(fullPhone, roles);
-    if (result === "none") {
-      router.push(
-        `/${lang}/register/user?phone=${encodeURIComponent(fullPhone)}`,
-      );
+      if (result.isNewUser) {
+        // New phone — send to profile completion, carrying the signup token
+        router.push(
+          `/${lang}/register/user?phone=${encodeURIComponent(fullPhone)}&signupToken=${encodeURIComponent(result.signupToken)}`,
+        );
+        return;
+      }
+
+      // Existing user — log straight in
+      if (IS_MOCK) {
+        // In mock mode fall back to the mock directory so knownPhones merging works
+        const directoryRoles = lookupRolesByPhone(fullPhone);
+        const roles =
+          knownPhones.includes(fullPhone) &&
+            !directoryRoles.some((r) => r.role === "user")
+            ? [...directoryRoles, { role: "user" as const, label: t.auth.roleUser }]
+            : directoryRoles;
+        const resolved = resolveRoles(fullPhone, roles);
+        if (resolved === "none") {
+          router.push(
+            `/${lang}/register/user?phone=${encodeURIComponent(fullPhone)}&signupToken=mock-signup-token`,
+          );
+        }
+        return;
+      }
+
+      finishFromBackend(result.accessToken, result.refreshToken, result.user, fullPhone);
+    } catch (err) {
+      if (
+        err instanceof ApiError &&
+        (err.status === 400 || err.status === 410)
+      ) {
+        otpForm.setError("otp", { message: t.auth.otpInvalid ?? "Invalid code" });
+      } else {
+        const msg = err instanceof ApiError ? err.message : t.auth.genericError;
+        toast.error(msg);
+      }
     }
   };
 
@@ -145,6 +186,12 @@ export function UserLoginFlow() {
                   </p>
                 )}
               </div>
+
+              {apiError && (
+                <p className="text-center text-sm font-semibold text-destructive">
+                  {apiError}
+                </p>
+              )}
 
               <div className="rounded-xl border border-primary/60 bg-primary/5 p-4">
                 <p className="text-sm font-medium text-primary">
@@ -223,7 +270,18 @@ export function UserLoginFlow() {
                 ) : (
                   <button
                     type="button"
-                    onClick={() => setSeconds(RESEND_SECONDS)}
+                    onClick={async () => {
+                      try {
+                        await requestOtp(`963${phone.trim()}`);
+                        setSeconds(RESEND_SECONDS);
+                      } catch (err) {
+                        const msg =
+                          err instanceof ApiError
+                            ? err.message
+                            : t.auth.genericError;
+                        toast.error(msg);
+                      }
+                    }}
                     className="font-semibold text-primary hover:underline"
                   >
                     {t.auth.otpResend}

@@ -26,10 +26,29 @@ export async function apiFetch<T>(
   path: string,
   { body, headers, ...init }: RequestOptions = {},
 ): Promise<T> {
+  const authHeaders: HeadersInit = {};
+  if (typeof window !== "undefined") {
+    const persistedSession = window.localStorage.getItem("menu-syria-session");
+    if (persistedSession) {
+      try {
+        const parsed = JSON.parse(persistedSession) as {
+          state?: { accessToken?: string | null };
+        };
+        const accessToken = parsed.state?.accessToken;
+        if (accessToken) {
+          authHeaders.Authorization = `Bearer ${accessToken}`;
+        }
+      } catch {
+        // Ignore an unreadable persisted session and make the request unauthenticated.
+      }
+    }
+  }
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     headers: {
       "Content-Type": "application/json",
+      ...authHeaders,
       ...headers,
     },
     body: body !== undefined ? JSON.stringify(body) : undefined,

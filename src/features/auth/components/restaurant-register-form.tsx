@@ -34,8 +34,9 @@ import {
   registerWizardSchema,
   type RegisterWizardValues,
 } from "@/features/auth/schemas";
-import { useAuthStore } from "@/features/auth/store";
-import { getGovernorates } from "@/features/marketing/services";
+import { getGovernorates, getRegions } from "@/features/marketing/services";
+import { submitRegistrationRequest } from "@/features/auth/api";
+import { ApiError } from "@/lib/api/client";
 import { useI18n } from "@/i18n/client";
 import { queryKeys } from "@/lib/api/query-keys";
 import { cn } from "@/lib/utils";
@@ -53,7 +54,7 @@ const colorPresets: { primary: string; secondary: string }[] = [
 const stepFields: (keyof RegisterWizardValues)[][] = [
   ["name"],
   ["primaryColor", "secondaryColor"],
-  ["governorateId"],
+  ["governorateId", "regionId"],
   ["whatsapp"],
 ];
 
@@ -81,8 +82,6 @@ export function RestaurantRegisterForm({
 
   const { t, lang } = useI18n();
   const router = useRouter();
-  const login = useAuthStore((s) => s.login);
-
   const [step, setStep] = useState(0);
   const [mapOpen, setMapOpen] = useState(false);
 
@@ -102,6 +101,7 @@ export function RestaurantRegisterForm({
       primaryColor: "#850036",
       secondaryColor: "#fe9800",
       governorateId: "",
+      regionId: "",
       address: "",
       lat: null,
       lng: null,
@@ -115,15 +115,32 @@ export function RestaurantRegisterForm({
     mode: "onTouched",
   });
 
-  const [primaryColor, secondaryColor, lat, lng, governorateId] = useWatch({
+  const [primaryColor, secondaryColor, lat, lng, governorateId, regionId] = useWatch({
     control,
-    name: ["primaryColor", "secondaryColor", "lat", "lng", "governorateId"],
+    name: [
+      "primaryColor",
+      "secondaryColor",
+      "lat",
+      "lng",
+      "governorateId",
+      "regionId",
+    ],
   });
 
   const { data: governorates } = useQuery({
     queryKey: queryKeys.governorates,
     queryFn: getGovernorates,
   });
+  const { data: regions } = useQuery({
+    queryKey: queryKeys.regions,
+    queryFn: getRegions,
+  });
+
+  const regionItems = Object.fromEntries(
+    (regions ?? [])
+      .filter((region) => region.governorateId === governorateId)
+      .map((region) => [region.id, region.name[lang]]),
+  );
 
   const Icon = copy ? ShoppingBag : UtensilsCrossed;
   const steps = [
@@ -138,15 +155,32 @@ export function RestaurantRegisterForm({
     if (valid) setStep((s) => s + 1);
   };
 
-  const submit = (values: RegisterWizardValues) => {
-    login({
-      identifier: values.whatsapp,
-      role: "owner",
-      name: values.name,
-      businessType: copy ? "store" : "restaurant",
-    });
-    toast.success(t.auth.applicationSent);
-    router.push(`/${lang}/dashboard`);
+  const submit = async (values: RegisterWizardValues) => {
+    try {
+      await submitRegistrationRequest({
+        districtId: values.regionId,
+        applicantName: values.name.trim(),
+        phone: values.whatsapp,
+        type: copy ? "store" : "restaurant",
+        referralCode: values.referral.trim() || undefined,
+        notes: [
+          values.cuisine && `Cuisine: ${values.cuisine}`,
+          values.description && `Description: ${values.description}`,
+          values.address && `Address: ${values.address}`,
+          values.lat !== null && values.lng !== null
+            ? `Location: ${values.lat}, ${values.lng}`
+            : "",
+          values.instagram && `Instagram: ${values.instagram}`,
+          values.facebook && `Facebook: ${values.facebook}`,
+        ]
+          .filter(Boolean)
+          .join("\n"),
+      });
+      toast.success(t.auth.applicationSent);
+      router.push(`/${lang}`);
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.message : t.auth.genericError);
+    }
   };
 
   return (
@@ -388,15 +422,24 @@ export function RestaurantRegisterForm({
                   triggerClassName="h-11"
                   governorateValue={governorateId}
                   onGovernorateChange={(v) =>
-                    setValue("governorateId", v, { shouldValidate: true })
+                  (setValue("governorateId", v, { shouldValidate: true }),
+                    setValue("regionId", "", { shouldValidate: true }))
                   }
                   governorateItems={Object.fromEntries(
                     (governorates ?? []).map((g) => [g.id, g.name[lang]]),
                   )}
                   governorateAriaLabel={t.auth.governorateLabel}
                   governorateInvalid={!!errors.governorateId}
+                  regionValue={regionId}
+                  onRegionChange={(v) =>
+                    setValue("regionId", v, { shouldValidate: true })
+                  }
+                  regionItems={regionItems}
+                  regionAriaLabel={t.agentsPage.region}
+                  regionDisabled={!governorateId}
                 />
                 <FieldError message={errors.governorateId?.message} />
+                <FieldError message={errors.regionId?.message} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="r-address">{t.auth.addressLabel}</Label>

@@ -30,6 +30,8 @@ import {
 import { getGovernorates, getRegions } from "@/features/marketing/services";
 import { useI18n } from "@/i18n/client";
 import { queryKeys } from "@/lib/api/query-keys";
+import { submitRegistrationRequest } from "@/features/auth/api";
+import { ApiError } from "@/lib/api/client";
 
 export function AgentRegisterForm() {
   const { t, lang } = useI18n();
@@ -86,9 +88,26 @@ export function AgentRegisterForm() {
     regionChoices.map((r) => [r.id, r.name[lang]]),
   );
 
-  const submit = async () => {
-    toast.success(t.auth.applicationSent);
-    router.push(`/${lang}`);
+  const submit = async (values: AgentRegisterValues) => {
+    try {
+      await submitRegistrationRequest({
+        districtId: values.regionId,
+        applicantName: values.name.trim(),
+        phone: values.phone,
+        type: "agent",
+        notes: [
+          values.bio && `Bio: ${values.bio}`,
+          values.instagram && `Instagram: ${values.instagram}`,
+          values.facebook && `Facebook: ${values.facebook}`,
+        ]
+          .filter(Boolean)
+          .join("\n"),
+      });
+      toast.success(t.auth.applicationSent);
+      router.push(`/${lang}`);
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.message : t.auth.genericError);
+    }
   };
 
   return (

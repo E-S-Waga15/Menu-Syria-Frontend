@@ -50,8 +50,11 @@ import {
 import { useAuthStore, type UserRole } from "@/features/auth/store";
 import { fmt, useI18n } from "@/i18n/client";
 import { cn } from "@/lib/utils";
+import { requestOtp, verifyOtp as verifyOtpApi, loginWithCredentials } from "@/features/auth/api";
+import { ApiError } from "@/lib/api/client";
 
-const RESEND_SECONDS = 45;
+
+const RESEND_SECONDS = 60;
 
 type CredentialsRole = Extract<UserRole, "owner" | "agent" | "waiter">;
 type Method = "phone" | "credentials";
@@ -67,8 +70,9 @@ export function LoginScreen() {
   const { t, lang } = useI18n();
   const router = useRouter();
   const login = useAuthStore((s) => s.login);
+  const setTokens = useAuthStore((s) => s.setTokens);
   const roleMeta = getRoleMeta(t);
-  const { resolve, modalRoles, selectRole, closeModal } = useRoleResolution();
+  const { finishFromBackend, modalRoles, selectRole, closeModal } = useRoleResolution();
 
   const [method, setMethod] = useState<Method>("phone");
   const [step, setStep] = useState<"phone" | "otp">("phone");
@@ -101,17 +105,42 @@ export function LoginScreen() {
   const credentialRoles: CredentialsRole[] = ["owner", "agent", "waiter"];
   const fullPhone = `+963 ${phone.trim()}`;
 
-  const requestCode = (values: PhoneFormValues) => {
-    setPhone(values.phone);
-    setStep("otp");
-    setSeconds(RESEND_SECONDS);
+  const requestCode = async (values: PhoneFormValues) => {
     setNotFound(false);
+    try {
+      await requestOtp(`963${values.phone.trim()}`);
+      setPhone(values.phone);
+      setStep("otp");
+      setSeconds(RESEND_SECONDS);
+    } catch (err) {
+      const msg = err instanceof ApiError ? err.message : t.auth.genericError;
+      toast.error(msg);
+    }
   };
 
-  const verifyOtp = () => {
+  const verifyOtp = async () => {
     setNotFound(false);
-    const result = resolve(fullPhone);
-    if (result === "none") setNotFound(true);
+    const otpCode = otpForm.getValues("otp");
+    const fullPhone = `+963 ${phone.trim()}`;
+    try {
+      const result = await verifyOtpApi(`963${phone.trim()}`, otpCode);
+      if (result.isNewUser) {
+        // Business logins should already exist — treat new phone as not found
+        setNotFound(true);
+        return;
+      }
+      finishFromBackend(result.accessToken, result.refreshToken, result.user, fullPhone);
+    } catch (err) {
+      if (
+        err instanceof ApiError &&
+        (err.status === 400 || err.status === 410)
+      ) {
+        otpForm.setError("otp", { message: t.auth.otpInvalid ?? "Invalid code" });
+      } else {
+        const msg = err instanceof ApiError ? err.message : t.auth.genericError;
+        toast.error(msg);
+      }
+    }
   };
 
   /** flip between the two entry methods, rewinding the phone flow so the
@@ -123,19 +152,30 @@ export function LoginScreen() {
     otpForm.reset();
   };
 
-  const submitCredentials = (values: CredentialsValues) => {
-    const meta = roleMeta[credRole];
-    login({
-      identifier: values.username.trim(),
-      role: credRole,
-      name: meta.label,
-      // the mocked username/password path has no real profile lookup to
-      // derive this from — restaurant is the reasonable default
-      businessType: credRole === "owner" ? "restaurant" : undefined,
-    });
-    toast.success(fmt(t.auth.welcomeBack, { name: meta.label }));
-    router.push(destinationForRole(lang, credRole));
+  const submitCredentials = async (values: CredentialsValues) => {
+    try {
+      const result = await loginWithCredentials(values.username.trim(), values.password);
+      setTokens(result.accessToken, result.refreshToken);
+      login({
+        identifier: values.username.trim(),
+        role: result.user.frontendRole,
+        name: result.user.name,
+        businessType: result.user.businessType ?? undefined,
+      });
+      toast.success(fmt(t.auth.welcomeBack, { name: result.user.name }));
+      router.push(destinationForRole(lang, result.user.frontendRole));
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        credentialsForm.setError("password", {
+          message: t.auth.invalidCredentials ?? "Invalid username or password",
+        });
+      } else {
+        const msg = err instanceof ApiError ? err.message : t.auth.genericError;
+        toast.error(msg);
+      }
+    }
   };
+
 
   const otpStep = method === "phone" && step === "otp";
 
@@ -336,7 +376,18 @@ export function LoginScreen() {
                       ) : (
                         <button
                           type="button"
-                          onClick={() => setSeconds(RESEND_SECONDS)}
+                          onClick={async () => {
+                            try {
+                              await requestOtp(`963${phone.trim()}`);
+                              setSeconds(RESEND_SECONDS);
+                            } catch (err) {
+                              const msg =
+                                err instanceof ApiError
+                                  ? err.message
+                                  : t.auth.genericError;
+                              toast.error(msg);
+                            }
+                          }}
                           className="font-semibold text-primary hover:underline"
                         >
                           {t.auth.otpResend}

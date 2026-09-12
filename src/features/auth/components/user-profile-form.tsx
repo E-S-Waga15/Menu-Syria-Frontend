@@ -22,6 +22,8 @@ import {
 import { useAuthStore } from "@/features/auth/store";
 import { fmt, useI18n } from "@/i18n/client";
 import { cn } from "@/lib/utils";
+import { registerWithOtp } from "@/features/auth/api";
+import { ApiError } from "@/lib/api/client";
 
 /** First-visit account creation — photo is the only optional field. */
 export function UserProfileForm() {
@@ -29,8 +31,10 @@ export function UserProfileForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const phone = searchParams.get("phone") ?? "";
+  const signupToken = searchParams.get("signupToken") ?? "";
 
   const login = useAuthStore((s) => s.login);
+  const setTokens = useAuthStore((s) => s.setTokens);
   const markKnown = useAuthStore((s) => s.markKnown);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
@@ -51,16 +55,37 @@ export function UserProfileForm() {
   ];
 
   const submit = async (values: UserProfileValues) => {
-    markKnown(phone);
-    login({
-      identifier: phone,
-      role: "user",
-      name: values.name.trim(),
-      avatarUrl: avatarUrl ?? undefined,
-    });
-    toast.success(fmt(t.auth.welcomeBack, { name: values.name.trim() }));
-    router.push(`/${lang}/profile`);
+    const name = values.name.trim();
+    try {
+      if (signupToken) {
+        // Real backend registration
+        const result = await registerWithOtp(signupToken, name);
+        setTokens(result.accessToken, result.refreshToken);
+        login({
+          identifier: phone || result.user.email || String(result.user.id),
+          role: "user",
+          name: result.user.name,
+          avatarUrl: avatarUrl ?? undefined,
+        });
+        markKnown(phone);
+      } else {
+        // Mock / development fallback (no backend running)
+        markKnown(phone);
+        login({
+          identifier: phone,
+          role: "user",
+          name,
+          avatarUrl: avatarUrl ?? undefined,
+        });
+      }
+      toast.success(fmt(t.auth.welcomeBack, { name }));
+      router.push(`/${lang}/profile`);
+    } catch (err) {
+      const msg = err instanceof ApiError ? err.message : t.auth.genericError;
+      toast.error(msg);
+    }
   };
+
 
   return (
     <div className="w-full max-w-lg">

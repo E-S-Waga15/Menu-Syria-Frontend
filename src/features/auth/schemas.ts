@@ -45,6 +45,7 @@ export const registerWizardSchema = (v: ValidationMessages) =>
     primaryColor: z.string(),
     secondaryColor: z.string(),
     governorateId: z.string().min(1, v.governorateRequired),
+    regionId: z.string().min(1, v.regionRequired),
     address: z.string(),
     lat: z.number().nullable(),
     lng: z.number().nullable(),

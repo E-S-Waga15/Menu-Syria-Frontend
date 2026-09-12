@@ -16,9 +16,14 @@ interface Session {
 
 interface AuthState {
   session: Session | null;
+  /** JWT tokens issued by the backend */
+  accessToken: string | null;
+  refreshToken: string | null;
   /** phones that completed profile signup — OTP alone logs them straight in */
   knownPhones: string[];
   login: (session: Session) => void;
+  /** Store tokens separately so they can be updated on refresh without touching session */
+  setTokens: (accessToken: string, refreshToken: string) => void;
   logout: () => void;
   markKnown: (phone: string) => void;
 }
@@ -27,9 +32,13 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       session: null,
+      accessToken: null,
+      refreshToken: null,
       knownPhones: [],
       login: (session) => set({ session }),
-      logout: () => set({ session: null }),
+      setTokens: (accessToken, refreshToken) =>
+        set({ accessToken, refreshToken }),
+      logout: () => set({ session: null, accessToken: null, refreshToken: null }),
       markKnown: (phone) =>
         set((state) => ({
           knownPhones: state.knownPhones.includes(phone)

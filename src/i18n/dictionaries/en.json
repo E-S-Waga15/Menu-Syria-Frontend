@@ -401,6 +401,8 @@
     "adminTitle": "Platform administration",
     "adminBody": "This gate is reserved for the Menu Syria admin team",
     "invalidCredentials": "Invalid credentials",
+    "genericError": "Something went wrong. Please try again.",
+    "otpInvalid": "Invalid or expired code",
     "roleUser": "Customer",
     "roleUserDesc": "Save favorites and rate restaurants & stores",
     "roleOwner": "Restaurant or store",
