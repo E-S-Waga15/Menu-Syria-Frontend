@@ -22,26 +22,37 @@ interface RequestOptions extends Omit<RequestInit, "body"> {
   body?: unknown;
 }
 
+/** localStorage key the zustand-persisted auth store writes. */
+const SESSION_STORAGE_KEY = "menu-syria-session";
+
+/**
+ * Reads the access token persisted by the auth store. Browser-only: on the
+ * server (SSR) there is no localStorage, so callers there must thread a
+ * token explicitly — see `server-auth.ts` for the cookie-backed variant.
+ */
+export function getStoredAccessToken(): string | null {
+  if (typeof window === "undefined") return null;
+  const persistedSession = window.localStorage.getItem(SESSION_STORAGE_KEY);
+  if (!persistedSession) return null;
+  try {
+    const parsed = JSON.parse(persistedSession) as {
+      state?: { accessToken?: string | null };
+    };
+    return parsed.state?.accessToken ?? null;
+  } catch {
+    // Ignore an unreadable persisted session and make the request unauthenticated.
+    return null;
+  }
+}
+
 export async function apiFetch<T>(
   path: string,
   { body, headers, ...init }: RequestOptions = {},
 ): Promise<T> {
   const authHeaders: HeadersInit = {};
-  if (typeof window !== "undefined") {
-    const persistedSession = window.localStorage.getItem("menu-syria-session");
-    if (persistedSession) {
-      try {
-        const parsed = JSON.parse(persistedSession) as {
-          state?: { accessToken?: string | null };
-        };
-        const accessToken = parsed.state?.accessToken;
-        if (accessToken) {
-          authHeaders.Authorization = `Bearer ${accessToken}`;
-        }
-      } catch {
-        // Ignore an unreadable persisted session and make the request unauthenticated.
-      }
-    }
+  const accessToken = getStoredAccessToken();
+  if (accessToken) {
+    authHeaders.Authorization = `Bearer ${accessToken}`;
   }
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -72,9 +83,12 @@ export function mockDelay<T>(data: T, ms = 350): Promise<T> {
  * restaurant by slug, a store catalog, an agent…) route through this so a
  * missing row becomes a clean 404 page rather than a 500.
  */
-export async function apiGetOrUndefined<T>(path: string): Promise<T | undefined> {
+export async function apiGetOrUndefined<T>(
+  path: string,
+  options: RequestOptions = {},
+): Promise<T | undefined> {
   try {
-    return await apiFetch<T>(path);
+    return await apiFetch<T>(path, options);
   } catch (err) {
     if (err instanceof ApiError && err.status === 404) return undefined;
     throw err;

@@ -1,7 +1,15 @@
 import { AdminSubscriptionsList } from "@/features/admin/components/subscriptions-list";
+import { fetchAdminPage } from "@/features/admin/server";
 import { getAdminSubscriptions } from "@/features/admin/services";
 
-export default async function AdminSubscriptionsPage() {
-  const rows = await getAdminSubscriptions();
+export default async function AdminSubscriptionsPage({
+  params,
+}: PageProps<"/[lang]/admin/subscriptions">) {
+  const { lang } = await params;
+
+  const rows = await fetchAdminPage(lang, (accessToken) =>
+    getAdminSubscriptions({ accessToken }),
+  );
+
   return <AdminSubscriptionsList rows={rows} />;
 }

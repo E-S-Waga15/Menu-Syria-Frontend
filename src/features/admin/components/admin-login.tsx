@@ -17,9 +17,11 @@ import {
   type AdminLoginValues,
 } from "@/features/auth/schemas";
 import { useAuthStore } from "@/features/auth/store";
+import { loginWithCredentials } from "@/features/auth/api";
+import { ApiError, IS_MOCK } from "@/lib/api/client";
 import { fmt, useI18n } from "@/i18n/client";
 
-// Mock console credentials — replaced by the real auth API later
+// Mock console credentials — only used while the backend is not connected
 const ADMIN_USERNAME = "MenuSyria";
 const ADMIN_PASSWORD = "msms1515@";
 
@@ -27,34 +29,72 @@ export function AdminLogin() {
   const { t, lang } = useI18n();
   const router = useRouter();
   const login = useAuthStore((s) => s.login);
+  const setTokens = useAuthStore((s) => s.setTokens);
 
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<AdminLoginValues>({
     resolver: zodResolver(adminLoginSchema(t.validation)),
-    // seeded with the console credentials while auth is mocked, so the
-    // portal is usable without them being written down somewhere else
-    defaultValues: { username: ADMIN_USERNAME, password: ADMIN_PASSWORD },
+    // seeded with the mock credentials while the backend is not connected,
+    // so the console stays usable without them written down somewhere else
+    defaultValues: IS_MOCK
+      ? { username: ADMIN_USERNAME, password: ADMIN_PASSWORD }
+      : { username: "", password: "" },
     mode: "onTouched",
   });
 
-  const submit = (values: AdminLoginValues) => {
-    if (
-      values.username.trim() !== ADMIN_USERNAME ||
-      values.password !== ADMIN_PASSWORD
-    ) {
-      toast.error(t.auth.invalidCredentials);
+  const submit = async (values: AdminLoginValues) => {
+    // No backend yet: the console opens on the seeded mock credentials.
+    if (IS_MOCK) {
+      if (
+        values.username.trim() !== ADMIN_USERNAME ||
+        values.password !== ADMIN_PASSWORD
+      ) {
+        toast.error(t.auth.invalidCredentials);
+        return;
+      }
+      login({
+        identifier: values.username.trim(),
+        role: "admin",
+        name: t.auth.roleAdmin,
+      });
+      toast.success(fmt(t.auth.welcomeBack, { name: t.auth.roleAdmin }));
+      router.push(`/${lang}/admin`);
       return;
     }
-    login({
-      identifier: values.username.trim(),
-      role: "admin",
-      name: t.auth.roleAdmin,
-    });
-    toast.success(fmt(t.auth.welcomeBack, { name: t.auth.roleAdmin }));
-    router.push(`/${lang}/admin`);
+
+    try {
+      const result = await loginWithCredentials(
+        values.username.trim(),
+        values.password,
+      );
+      // The credentials endpoint serves every role; only a console account
+      // may pass. Rejected users get the same message as a wrong password,
+      // so the form never confirms which identifiers exist.
+      if (result.user.frontendRole !== "admin") {
+        toast.error(t.auth.invalidCredentials);
+        return;
+      }
+      // setTokens also mirrors the access token into the session cookie the
+      // console's server components read for their SSR fetches.
+      setTokens(result.accessToken, result.refreshToken);
+      login({
+        identifier: values.username.trim(),
+        role: "admin",
+        name: result.user.name,
+      });
+      toast.success(fmt(t.auth.welcomeBack, { name: result.user.name }));
+      router.push(`/${lang}/admin`);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        toast.error(t.auth.invalidCredentials);
+      } else {
+        const msg = err instanceof ApiError ? err.message : t.auth.genericError;
+        toast.error(msg);
+      }
+    }
   };
 
   return (
@@ -119,7 +159,11 @@ export function AdminLogin() {
                 <FieldError message={errors.password?.message} />
               </div>
 
-              <Button type="submit" className="h-12 w-full text-base">
+              <Button
+                type="submit"
+                className="h-12 w-full text-base"
+                disabled={isSubmitting}
+              >
                 {t.auth.signIn}
               </Button>
             </form>

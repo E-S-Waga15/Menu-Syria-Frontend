@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { AdminBusinessDetail } from "@/features/admin/components/business-detail";
+import { fetchAdminPage } from "@/features/admin/server";
 import { getAdminBusiness } from "@/features/admin/services";
 import { getGovernorates, getRegions } from "@/features/marketing/services";
 import { isLocale } from "@/i18n/config";
@@ -12,7 +13,7 @@ export default async function AdminBusinessPage({
   if (!isLocale(lang)) notFound();
 
   const [found, governorates, regions] = await Promise.all([
-    getAdminBusiness(id),
+    fetchAdminPage(lang, (accessToken) => getAdminBusiness(id, { accessToken })),
     getGovernorates(),
     getRegions(),
   ]);

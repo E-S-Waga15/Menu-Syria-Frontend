@@ -1,4 +1,4 @@
-import { apiFetch, IS_MOCK, mockDelay } from "@/lib/api/client";
+import { apiFetch, apiGetOrUndefined, IS_MOCK, mockDelay } from "@/lib/api/client";
 import {
   agentTransactions,
   agents,
@@ -17,6 +17,19 @@ import type {
   Transaction,
 } from "@/lib/types";
 
+/**
+ * Extra auth the console's server components thread in: server-side
+ * fetches read the session cookie (see `features/admin/server.ts`),
+ * while client components skip this and let `apiFetch` attach the
+ * localStorage token itself.
+ */
+export type AdminAuth = { accessToken?: string | null };
+
+/** Authorization header for an explicitly-provided token, if any. */
+function authHeaders({ accessToken }: AdminAuth): HeadersInit {
+  return accessToken ? { Authorization: `Bearer ${accessToken}` } : {};
+}
+
 export interface AdminStats {
   totalRestaurants: number;
   totalAgents: number;
@@ -24,7 +37,9 @@ export interface AdminStats {
   activeSubscriptions: number;
 }
 
-export async function getAdminStats(): Promise<AdminStats> {
+export async function getAdminStats(
+  auth: AdminAuth = {},
+): Promise<AdminStats> {
   if (IS_MOCK)
     return mockDelay({
       totalRestaurants: 642,
@@ -32,44 +47,52 @@ export async function getAdminStats(): Promise<AdminStats> {
       monthlyRevenue: 128500000,
       activeSubscriptions: 587,
     });
-  return apiFetch("/admin/stats");
+  return apiFetch("/admin/stats", { headers: authHeaders(auth) });
 }
 
-export async function getAdminRestaurants(): Promise<Restaurant[]> {
+export async function getAdminRestaurants(
+  auth: AdminAuth = {},
+): Promise<Restaurant[]> {
   if (IS_MOCK) return mockDelay(restaurants);
-  return apiFetch("/admin/restaurants");
+  return apiFetch("/admin/restaurants", { headers: authHeaders(auth) });
 }
 
-export async function getAdminAgents(): Promise<Agent[]> {
+export async function getAdminAgents(auth: AdminAuth = {}): Promise<Agent[]> {
   if (IS_MOCK) return mockDelay(agents);
-  return apiFetch("/admin/agents");
+  return apiFetch("/admin/agents", { headers: authHeaders(auth) });
 }
 
 export async function getAdminAgentById(
   id: string,
+  auth: AdminAuth = {},
 ): Promise<Agent | undefined> {
   if (IS_MOCK) return mockDelay(agents.find((a) => a.id === id));
-  return apiFetch(`/admin/agents/${id}`);
+  return apiGetOrUndefined(`/admin/agents/${id}`, { headers: authHeaders(auth) });
 }
 
-export async function getAdminAgentLedger(id: string): Promise<Transaction[]> {
+export async function getAdminAgentLedger(
+  id: string,
+  auth: AdminAuth = {},
+): Promise<Transaction[]> {
   if (IS_MOCK) return mockDelay(agentTransactions);
-  return apiFetch(`/admin/agents/${id}/ledger`);
+  return apiFetch(`/admin/agents/${id}/ledger`, { headers: authHeaders(auth) });
 }
 
-export async function getAdminStores(): Promise<Store[]> {
+export async function getAdminStores(auth: AdminAuth = {}): Promise<Store[]> {
   if (IS_MOCK) return mockDelay(stores);
-  return apiFetch("/admin/stores");
+  return apiFetch("/admin/stores", { headers: authHeaders(auth) });
 }
 
-export async function getAdminUsers(): Promise<PlatformUser[]> {
+export async function getAdminUsers(
+  auth: AdminAuth = {},
+): Promise<PlatformUser[]> {
   if (IS_MOCK) return mockDelay(platformUsers);
-  return apiFetch("/admin/users");
+  return apiFetch("/admin/users", { headers: authHeaders(auth) });
 }
 
-export async function getAdminPlans(): Promise<Plan[]> {
+export async function getAdminPlans(auth: AdminAuth = {}): Promise<Plan[]> {
   if (IS_MOCK) return mockDelay(plans);
-  return apiFetch("/admin/plans");
+  return apiFetch("/admin/plans", { headers: authHeaders(auth) });
 }
 
 /**
@@ -79,12 +102,12 @@ export async function getAdminPlans(): Promise<Plan[]> {
  * business's plan dates, so the console reads them off the businesses rather
  * than keeping a second list that could disagree.
  */
-export async function getAdminSubscriptions(): Promise<
-  { business: Business; kind: "restaurant" | "store" }[]
-> {
+export async function getAdminSubscriptions(
+  auth: AdminAuth = {},
+): Promise<{ business: Business; kind: "restaurant" | "store" }[]> {
   const [restaurantList, storeList] = await Promise.all([
-    getAdminRestaurants(),
-    getAdminStores(),
+    getAdminRestaurants(auth),
+    getAdminStores(auth),
   ]);
 
   return [
@@ -97,10 +120,13 @@ export async function getAdminSubscriptions(): Promise<
 }
 
 /** one business by id, whichever kind it is — the console addresses by id */
-export async function getAdminBusiness(id: string) {
+export async function getAdminBusiness(
+  id: string,
+  auth: AdminAuth = {},
+) {
   const [restaurantList, storeList] = await Promise.all([
-    getAdminRestaurants(),
-    getAdminStores(),
+    getAdminRestaurants(auth),
+    getAdminStores(auth),
   ]);
 
   const restaurant = restaurantList.find((r) => r.id === id);

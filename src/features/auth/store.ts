@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+import { clearSessionCookie, writeSessionCookie } from "@/lib/session-cookie";
+
 export type UserRole = "user" | "owner" | "agent" | "waiter" | "admin";
 export type BusinessType = "restaurant" | "store";
 
@@ -36,9 +38,18 @@ export const useAuthStore = create<AuthState>()(
       refreshToken: null,
       knownPhones: [],
       login: (session) => set({ session }),
-      setTokens: (accessToken, refreshToken) =>
-        set({ accessToken, refreshToken }),
-      logout: () => set({ session: null, accessToken: null, refreshToken: null }),
+      // Tokens live outside the persisted session so they can be updated on
+      // refresh; the access token is mirrored into a cookie so server
+      // components (admin console, owner dashboard) can authenticate their
+      // SSR-time fetches, where localStorage is out of reach.
+      setTokens: (accessToken, refreshToken) => {
+        set({ accessToken, refreshToken });
+        if (accessToken) writeSessionCookie(accessToken);
+      },
+      logout: () => {
+        set({ session: null, accessToken: null, refreshToken: null });
+        clearSessionCookie();
+      },
       markKnown: (phone) =>
         set((state) => ({
           knownPhones: state.knownPhones.includes(phone)
