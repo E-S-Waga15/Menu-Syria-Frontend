@@ -38,11 +38,11 @@ export function AgentEarningsView() {
 
   const { data: agent } = useQuery({
     queryKey: queryKeys.agents.detail("me"),
-    queryFn: getMyAgentProfile,
+    queryFn: () => getMyAgentProfile(),
   });
   const { data: transactions } = useQuery({
     queryKey: queryKeys.agents.transactions("me"),
-    queryFn: getMyTransactions,
+    queryFn: () => getMyTransactions(),
   });
 
   if (!agent || !transactions) {

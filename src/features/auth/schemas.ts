@@ -17,14 +17,14 @@ export type OtpFormValues = z.infer<ReturnType<typeof otpFormSchema>>;
 
 export const credentialsSchema = (v: ValidationMessages) =>
   z.object({
-    username: z.string().trim().min(3, v.usernameMin),
+    email: z.string().trim().min(1, v.required).email(v.emailInvalid),
     password: z.string().min(4, v.passwordMin),
   });
 export type CredentialsValues = z.infer<ReturnType<typeof credentialsSchema>>;
 
 export const adminLoginSchema = (v: ValidationMessages) =>
   z.object({
-    username: z.string().trim().min(1, v.required),
+    email: z.string().trim().min(1, v.required).email(v.emailInvalid),
     password: z.string().min(1, v.required),
   });
 export type AdminLoginValues = z.infer<ReturnType<typeof adminLoginSchema>>;

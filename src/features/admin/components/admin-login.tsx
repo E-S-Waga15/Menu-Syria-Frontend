@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Lock, ShieldCheck, UserRound } from "lucide-react";
+import { Lock, Mail, ShieldCheck } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { toast } from "@/lib/toast";
 
@@ -21,8 +21,9 @@ import { loginWithCredentials } from "@/features/auth/api";
 import { ApiError, IS_MOCK } from "@/lib/api/client";
 import { fmt, useI18n } from "@/i18n/client";
 
-// Mock console credentials — only used while the backend is not connected
-const ADMIN_USERNAME = "MenuSyria";
+// Mock console credentials — only used while the backend is not connected.
+// Email-shaped so the shared email validation accepts them.
+const ADMIN_EMAIL = "admin@menusyria.com";
 const ADMIN_PASSWORD = "msms1515@";
 
 export function AdminLogin() {
@@ -40,8 +41,8 @@ export function AdminLogin() {
     // seeded with the mock credentials while the backend is not connected,
     // so the console stays usable without them written down somewhere else
     defaultValues: IS_MOCK
-      ? { username: ADMIN_USERNAME, password: ADMIN_PASSWORD }
-      : { username: "", password: "" },
+      ? { email: ADMIN_EMAIL, password: ADMIN_PASSWORD }
+      : { email: "", password: "" },
     mode: "onTouched",
   });
 
@@ -49,14 +50,14 @@ export function AdminLogin() {
     // No backend yet: the console opens on the seeded mock credentials.
     if (IS_MOCK) {
       if (
-        values.username.trim() !== ADMIN_USERNAME ||
+        values.email.trim() !== ADMIN_EMAIL ||
         values.password !== ADMIN_PASSWORD
       ) {
         toast.error(t.auth.invalidCredentials);
         return;
       }
       login({
-        identifier: values.username.trim(),
+        identifier: values.email.trim(),
         role: "admin",
         name: t.auth.roleAdmin,
       });
@@ -67,7 +68,7 @@ export function AdminLogin() {
 
     try {
       const result = await loginWithCredentials(
-        values.username.trim(),
+        values.email.trim(),
         values.password,
       );
       // The credentials endpoint serves every role; only a console account
@@ -81,7 +82,7 @@ export function AdminLogin() {
       // console's server components read for their SSR fetches.
       setTokens(result.accessToken, result.refreshToken);
       login({
-        identifier: values.username.trim(),
+        identifier: values.email.trim(),
         role: "admin",
         name: result.user.name,
       });
@@ -128,19 +129,20 @@ export function AdminLogin() {
               className="mt-6 space-y-5"
             >
               <div className="space-y-2">
-                <Label htmlFor="admin-user">{t.auth.usernameLabel}</Label>
+                <Label htmlFor="admin-email">{t.auth.emailLabel}</Label>
                 <div className="relative">
-                  <UserRound className="absolute start-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Mail className="absolute start-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
-                    id="admin-user"
-                    autoComplete="username"
-                    placeholder={t.auth.usernamePlaceholder}
-                    aria-invalid={!!errors.username}
+                    id="admin-email"
+                    type="email"
+                    autoComplete="email"
+                    placeholder={t.auth.emailPlaceholder}
+                    aria-invalid={!!errors.email}
                     className="h-12 ps-10"
-                    {...register("username")}
+                    {...register("email")}
                   />
                 </div>
-                <FieldError message={errors.username?.message} />
+                <FieldError message={errors.email?.message} />
               </div>
 
               <div className="space-y-2">

@@ -144,9 +144,10 @@ export async function registerWithOtp(
   });
 }
 
-/** Login with username/email + password (credentials flow). */
+/** Login with email + password. The backend resolves the role from the user
+ * record — the client never picks one. */
 export async function loginWithCredentials(
-  identifier: string,
+  email: string,
   password: string,
 ): Promise<AuthResponse> {
   if (IS_MOCK) {
@@ -155,8 +156,8 @@ export async function loginWithCredentials(
       refreshToken: "mock-refresh-token",
       user: {
         id: "mock-user-id",
-        email: identifier,
-        name: identifier,
+        email,
+        name: email,
         frontendRole: "owner",
         businessName: null,
         businessType: "restaurant",
@@ -165,6 +166,6 @@ export async function loginWithCredentials(
   }
   return apiFetch("/auth/login", {
     method: "POST",
-    body: { username: identifier, password },
+    body: { email, password },
   });
 }

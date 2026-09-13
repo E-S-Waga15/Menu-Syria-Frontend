@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { AgentDashboardShell } from "@/features/agent-dashboard/components/shell";
+import { fetchAgentPage } from "@/features/agent-dashboard/server";
 import {
   getMyReferredRestaurants,
   getMyReferredStores,
@@ -17,8 +18,10 @@ export default async function AgentLayout({
   // fetched here rather than per page: the bell sits in the shell, so its
   // count has to be right on every agent screen, not just the list ones
   const [restaurants, stores] = await Promise.all([
-    getMyReferredRestaurants(),
-    getMyReferredStores(),
+    fetchAgentPage(lang, (accessToken) =>
+      getMyReferredRestaurants({ accessToken }),
+    ),
+    fetchAgentPage(lang, (accessToken) => getMyReferredStores({ accessToken })),
   ]);
 
   return (

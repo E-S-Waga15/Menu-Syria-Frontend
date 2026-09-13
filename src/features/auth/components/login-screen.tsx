@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,13 +9,12 @@ import {
   Handshake,
   KeyRound,
   Lock,
+  Mail,
   Phone,
   ShieldCheck,
   ShoppingBag,
-  UserRound,
   UtensilsCrossed,
-} from "lucide-react";
-import { Controller, useForm } from "react-hook-form";
+} from "lucide-react";import { Controller, useForm } from "react-hook-form";
 import { toast } from "@/lib/toast";
 
 import { AuthBrandPanel } from "@/components/shared/auth-brand-panel";
@@ -35,10 +33,6 @@ import {
   InputOTPSlot,
 } from "@/components/ui/input-otp";
 import { Label } from "@/components/ui/label";
-import { RolePickerModal } from "@/features/auth/components/role-picker-modal";
-import { useRoleResolution } from "@/features/auth/hooks/use-role-resolution";
-import { destinationForRole } from "@/features/auth/lib/destinations";
-import { getRoleMeta } from "@/features/auth/role-meta";
 import {
   credentialsSchema,
   otpFormSchema,
@@ -47,39 +41,31 @@ import {
   type OtpFormValues,
   type PhoneFormValues,
 } from "@/features/auth/schemas";
-import { useAuthStore, type UserRole } from "@/features/auth/store";
-import { fmt, useI18n } from "@/i18n/client";
-import { cn } from "@/lib/utils";
 import { requestOtp, verifyOtp as verifyOtpApi, loginWithCredentials } from "@/features/auth/api";
+import { useRoleResolution } from "@/features/auth/hooks/use-role-resolution";
 import { ApiError } from "@/lib/api/client";
+import { fmt, useI18n } from "@/i18n/client";
 
 
 const RESEND_SECONDS = 60;
 
-type CredentialsRole = Extract<UserRole, "owner" | "agent" | "waiter">;
 type Method = "phone" | "credentials";
 
 /**
- * Business sign-in (owner / agent / waiter): one unified phone+OTP entry —
- * the role is resolved from the phone number after verification, not
- * picked upfront. A username+password fallback stays available; since that
- * path has no phone to resolve a role from, it keeps a small manual role
- * picker of its own.
+ * Business sign-in (restaurant & store owners, agents, waiters): one unified
+ * phone+OTP entry, with an email+password fallback. Neither method asks for a
+ * role — after verification the backend's user record decides which dashboard
+ * the visitor lands on.
  */
 export function LoginScreen() {
   const { t, lang } = useI18n();
-  const router = useRouter();
-  const login = useAuthStore((s) => s.login);
-  const setTokens = useAuthStore((s) => s.setTokens);
-  const roleMeta = getRoleMeta(t);
-  const { finishFromBackend, modalRoles, selectRole, closeModal } = useRoleResolution();
+  const { finishFromBackend } = useRoleResolution();
 
   const [method, setMethod] = useState<Method>("phone");
   const [step, setStep] = useState<"phone" | "otp">("phone");
   const [phone, setPhone] = useState("");
   const [seconds, setSeconds] = useState(RESEND_SECONDS);
   const [notFound, setNotFound] = useState(false);
-  const [credRole, setCredRole] = useState<CredentialsRole>("owner");
 
   const phoneForm = useForm<PhoneFormValues>({
     resolver: zodResolver(phoneFormSchema(t.validation)),
@@ -92,7 +78,7 @@ export function LoginScreen() {
   });
   const credentialsForm = useForm<CredentialsValues>({
     resolver: zodResolver(credentialsSchema(t.validation)),
-    defaultValues: { username: "", password: "" },
+    defaultValues: { email: "", password: "" },
     mode: "onTouched",
   });
 
@@ -102,7 +88,6 @@ export function LoginScreen() {
     return () => clearInterval(id);
   }, [method, step, seconds]);
 
-  const credentialRoles: CredentialsRole[] = ["owner", "agent", "waiter"];
   const fullPhone = `+963 ${phone.trim()}`;
 
   const requestCode = async (values: PhoneFormValues) => {
@@ -154,20 +139,22 @@ export function LoginScreen() {
 
   const submitCredentials = async (values: CredentialsValues) => {
     try {
-      const result = await loginWithCredentials(values.username.trim(), values.password);
-      setTokens(result.accessToken, result.refreshToken);
-      login({
-        identifier: values.username.trim(),
-        role: result.user.frontendRole,
-        name: result.user.name,
-        businessType: result.user.businessType ?? undefined,
-      });
-      toast.success(fmt(t.auth.welcomeBack, { name: result.user.name }));
-      router.push(destinationForRole(lang, result.user.frontendRole));
+      const result = await loginWithCredentials(
+        values.email.trim(),
+        values.password,
+      );
+      // Same handshake as the OTP path: the backend's user record decides
+      // which dashboard the visitor lands on — the form never asks for a role.
+      finishFromBackend(
+        result.accessToken,
+        result.refreshToken,
+        result.user,
+        values.email.trim(),
+      );
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
         credentialsForm.setError("password", {
-          message: t.auth.invalidCredentials ?? "Invalid username or password",
+          message: t.auth.invalidCredentials,
         });
       } else {
         const msg = err instanceof ApiError ? err.message : t.auth.genericError;
@@ -176,55 +163,7 @@ export function LoginScreen() {
     }
   };
 
-
   const otpStep = method === "phone" && step === "otp";
-
-  /** the credentials role picker, rendered on the berry panel — white-on-berry
-   * instead of the soft chips it used inside the card */
-  const rolePicker = (
-    <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-1">
-      {credentialRoles.map((r) => {
-        const meta = roleMeta[r];
-        const isActive = r === credRole;
-        return (
-          <button
-            key={r}
-            type="button"
-            onClick={() => setCredRole(r)}
-            aria-pressed={isActive}
-            className={cn(
-              "flex items-center gap-3 rounded-2xl border p-3 text-start transition-[border-color,background-color,color] duration-200 ease-smooth",
-              isActive
-                ? "border-white bg-white text-berry"
-                : "border-white/20 bg-white/10 text-white hover:bg-white/20",
-            )}
-          >
-            <span
-              className={cn(
-                "flex size-9 shrink-0 items-center justify-center rounded-xl transition-colors duration-200",
-                isActive
-                  ? "bg-berry-soft text-berry-soft-foreground"
-                  : "bg-white/15 text-white",
-              )}
-            >
-              <meta.icon className="size-4" />
-            </span>
-            <span className="min-w-0">
-              <span className="block text-sm font-bold">{meta.label}</span>
-              <span
-                className={cn(
-                  "block truncate text-xs",
-                  isActive ? "text-berry/70" : "text-white/70",
-                )}
-              >
-                {meta.desc}
-              </span>
-            </span>
-          </button>
-        );
-      })}
-    </div>
-  );
 
   return (
     <div className="w-full max-w-5xl">
@@ -234,12 +173,10 @@ export function LoginScreen() {
           title={t.auth.loginTitle}
           subtitle={
             method === "credentials"
-              ? t.auth.panelChooseRole
+              ? t.auth.panelEmailAutoRole
               : t.auth.panelAutoRole
           }
-        >
-          {method === "credentials" && rolePicker}
-        </AuthBrandPanel>
+        />
 
         <div className="flex flex-col p-6 sm:p-8 lg:p-10">
           {/* the fields take the free height and stay optically centred against
@@ -404,24 +341,21 @@ export function LoginScreen() {
                   className="animate-fade-up space-y-5"
                 >
                   <div className="space-y-2">
-                    <Label htmlFor="username">{t.auth.usernameLabel}</Label>
+                    <Label htmlFor="email">{t.auth.emailLabel}</Label>
                     <div className="relative">
-                      <UserRound className="absolute start-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                      <Mail className="absolute start-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                       <Input
-                        id="username"
-                        autoComplete="username"
-                        placeholder={t.auth.usernamePlaceholder}
-                        aria-invalid={
-                          !!credentialsForm.formState.errors.username
-                        }
+                        id="email"
+                        type="email"
+                        autoComplete="email"
+                        placeholder={t.auth.emailPlaceholder}
+                        aria-invalid={!!credentialsForm.formState.errors.email}
                         className="h-12 ps-10"
-                        {...credentialsForm.register("username")}
+                        {...credentialsForm.register("email")}
                       />
                     </div>
                     <FieldError
-                      message={
-                        credentialsForm.formState.errors.username?.message
-                      }
+                      message={credentialsForm.formState.errors.email?.message}
                     />
                   </div>
 
@@ -534,12 +468,6 @@ export function LoginScreen() {
           </div>
         </div>
       </div>
-
-      <RolePickerModal
-        roles={modalRoles}
-        onSelect={selectRole}
-        onOpenChange={(open) => !open && closeModal()}
-      />
     </div>
   );
 }
