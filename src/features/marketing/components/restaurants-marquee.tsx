@@ -26,13 +26,19 @@ function MarqueeRow({
           tabIndex={ariaHidden ? -1 : undefined}
           className="flex items-center gap-3 opacity-50 grayscale transition-[opacity,filter] duration-300 hover:opacity-100 hover:grayscale-0"
         >
-          <Image
-            src={restaurant.logoUrl}
-            alt=""
-            width={44}
-            height={44}
-            className="size-11 rounded-full object-cover"
-          />
+          {restaurant.logoUrl ? (
+            <Image
+              src={restaurant.logoUrl}
+              alt=""
+              width={44}
+              height={44}
+              className="size-11 rounded-full object-cover"
+            />
+          ) : (
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-berry-soft text-xs font-bold uppercase text-berry-soft-foreground">
+              {restaurant.name[lang].charAt(0)}
+            </span>
+          )}
           <span className="whitespace-nowrap font-heading text-lg font-semibold">
             {restaurant.name[lang]}
           </span>

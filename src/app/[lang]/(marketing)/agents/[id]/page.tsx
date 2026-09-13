@@ -143,14 +143,20 @@ export default async function AgentDetailsPage({
       <div className="flex flex-col items-center gap-6 text-center md:flex-row md:items-end md:gap-8 md:text-start">
         <div className="relative shrink-0">
           {/* decorative: the name is the heading right beside it */}
-          <Image
-            src={agent.photoUrl}
-            alt=""
-            width={224}
-            height={224}
-            priority
-            className="size-40 rounded-3xl border-4 border-berry-soft object-cover md:size-48"
-          />
+          {agent.photoUrl ? (
+            <Image
+              src={agent.photoUrl}
+              alt=""
+              width={224}
+              height={224}
+              priority
+              className="size-40 rounded-3xl border-4 border-berry-soft object-cover md:size-48"
+            />
+          ) : (
+            <span className="flex size-40 items-center justify-center rounded-3xl border-4 border-berry-soft bg-berry-soft text-4xl font-bold text-berry-soft-foreground md:size-48">
+              {agent.name[lang].charAt(0)}
+            </span>
+          )}
           <span className="absolute -bottom-2 -end-2 flex size-10 items-center justify-center rounded-2xl bg-primary text-white">
             <BadgeCheck className="size-5" />
           </span>

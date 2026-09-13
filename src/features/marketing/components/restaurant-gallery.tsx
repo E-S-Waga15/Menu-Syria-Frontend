@@ -29,6 +29,26 @@ export function RestaurantGallery({ images }: { images: string[] }) {
 
   const many = images.length > 1;
 
+  // no photos uploaded yet — a flat hero reads better than an empty slider
+  if (images.length === 0) {
+    return (
+      <div className="relative flex h-[42vh] w-full items-center justify-center bg-berry-soft text-berry-soft-foreground md:h-[56vh]">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          aria-hidden
+          className="size-16"
+        >
+          <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+          <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+          <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+        </svg>
+      </div>
+    );
+  }
+
   // mirror embla's position so the dashes can follow it. No initial read:
   // embla starts on slide 0 and so does this state.
   useEffect(() => {

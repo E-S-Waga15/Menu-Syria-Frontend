@@ -1,4 +1,4 @@
-import { apiFetch, IS_MOCK, mockDelay } from "@/lib/api/client";
+import { apiFetch, apiGetOrUndefined, IS_MOCK, mockDelay } from "@/lib/api/client";
 import {
   agents,
   governorates,
@@ -29,7 +29,7 @@ export async function getRestaurantBySlug(
 ): Promise<Restaurant | undefined> {
   if (IS_MOCK)
     return mockDelay(restaurants.find((r) => r.slug === slug));
-  return apiFetch(`/restaurants/${slug}`);
+  return apiGetOrUndefined(`/restaurants/${slug}`);
 }
 
 export async function getRegions(): Promise<Region[]> {
@@ -44,7 +44,7 @@ export async function getAgents(): Promise<Agent[]> {
 
 export async function getAgentById(id: string): Promise<Agent | undefined> {
   if (IS_MOCK) return mockDelay(agents.find((a) => a.id === id), 150);
-  return apiFetch(`/agents/${id}`);
+  return apiGetOrUndefined(`/agents/${id}`);
 }
 
 /** Restaurants subscribed through this agent */

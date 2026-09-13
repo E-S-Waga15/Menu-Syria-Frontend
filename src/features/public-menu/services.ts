@@ -1,4 +1,4 @@
-import { apiFetch, IS_MOCK, mockDelay } from "@/lib/api/client";
+import { apiFetch, apiGetOrUndefined, IS_MOCK, mockDelay } from "@/lib/api/client";
 import {
   governorates,
   menuCategories,
@@ -48,5 +48,68 @@ export async function getPublicMenu(
       regionName,
     });
   }
-  return apiFetch(`/menu/${slug}`);
+  return apiGetOrUndefined(`/menu/${slug}`);
+}
+
+// ---------------------------------------------------------------------------
+// Guest ordering
+// ---------------------------------------------------------------------------
+
+/**
+ * What the backend returns after a customer places an order through the
+ * platform (`POST /public/businesses/:slug/orders`). The `whatsappLink` is
+ * how the order physically reaches the business — the public endpoint both
+ * records the order and builds the message that hands it over.
+ */
+export interface ExternalOrderResponse {
+  id: string;
+  businessId: string;
+  status: string;
+  totalAmount: number;
+  customerName: string;
+  customerPhone: string;
+  notes: string | null;
+  createdAt: string;
+  items: {
+    itemId: string;
+    name: string;
+    quantity: number;
+    unitPrice: number;
+    lineTotal: number;
+  }[];
+  whatsappLink: string | null;
+}
+
+export interface ExternalOrderInput {
+  customerName: string;
+  customerPhone: string;
+  notes?: string;
+  /** real menu/catalog item UUIDs — offer bundles use synthetic `offer-` ids
+   * and cannot be submitted through this endpoint yet */
+  items: { itemId: string; quantity: number }[];
+}
+
+/** Place a guest order through the platform. */
+export async function placeExternalOrder(
+  slug: string,
+  input: ExternalOrderInput,
+): Promise<ExternalOrderResponse> {
+  if (IS_MOCK) {
+    return mockDelay<ExternalOrderResponse>({
+      id: "mock-order-id",
+      businessId: "",
+      status: "pending",
+      totalAmount: 0,
+      customerName: input.customerName,
+      customerPhone: input.customerPhone,
+      notes: input.notes ?? null,
+      createdAt: new Date().toISOString(),
+      items: [],
+      whatsappLink: null,
+    });
+  }
+  return apiFetch(`/public/businesses/${slug}/orders`, {
+    method: "POST",
+    body: input,
+  });
 }

@@ -59,16 +59,27 @@ export function DishCard({
       )}
     >
       <div className="relative aspect-[4/3] overflow-hidden">
-        <Image
-          src={item.imageUrl}
-          alt={item.name[lang]}
-          fill
-          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-          className={cn(
-            "transform-gpu object-cover transition-transform duration-500 ease-smooth group-hover:scale-105",
-            !item.isAvailable && "grayscale",
-          )}
-        />
+        {item.imageUrl ? (
+          <Image
+            src={item.imageUrl}
+            alt={item.name[lang]}
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            className={cn(
+              "transform-gpu object-cover transition-transform duration-500 ease-smooth group-hover:scale-105",
+              !item.isAvailable && "grayscale",
+            )}
+          />
+        ) : (
+          <span
+            className={cn(
+              "flex size-full items-center justify-center bg-berry-soft text-2xl font-bold text-berry-soft-foreground",
+              !item.isAvailable && "grayscale",
+            )}
+          >
+            {item.name[lang].charAt(0)}
+          </span>
+        )}
         {badgeLabel && item.isAvailable && (
           <span
             className={cn(

@@ -95,7 +95,9 @@ export function DishModal({
 
   if (!item) return null;
 
-  const images = item.images?.length ? item.images : [item.imageUrl];
+  const images = (item.images?.length ? item.images : [item.imageUrl]).filter(
+    (src) => src !== "",
+  );
   const unitPrice =
     item.price + selected.reduce((sum, o) => sum + o.priceDelta, 0);
 
@@ -146,6 +148,12 @@ export function DishModal({
 
         {/* image slider — embla handles touch drag natively on mobile */}
         <div className="relative">
+          {images.length === 0 && (
+            <div className="flex aspect-[4/3] w-full items-center justify-center bg-berry-soft text-4xl font-bold text-berry-soft-foreground">
+              {item.name[lang].charAt(0)}
+            </div>
+          )}
+          {images.length > 0 && (
           <Carousel
             opts={{ loop: images.length > 1 }}
             setApi={setApi}
@@ -178,6 +186,7 @@ export function DishModal({
               </>
             )}
           </Carousel>
+          )}
 
           {/* dashes: how many images there are, and which one you are on */}
           {images.length > 1 && (

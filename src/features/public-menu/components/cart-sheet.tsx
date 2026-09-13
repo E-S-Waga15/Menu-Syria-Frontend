@@ -7,6 +7,7 @@ import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 
 import { toast } from "@/lib/toast";
+import { ApiError } from "@/lib/api/client";
 
 import { WhatsAppIcon } from "@/components/shared/brand-icons";
 import { FieldError } from "@/components/shared/field-error";
@@ -28,6 +29,7 @@ import {
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuthStore } from "@/features/auth/store";
+import { placeExternalOrder } from "@/features/public-menu/services";
 import {
   buildWhatsAppOrderUrl,
   formatPrice,
@@ -168,12 +170,51 @@ export function CartSheet({
   /** WhatsApp hand-off: the link opens, we just log the order on the way out */
   const handleSend = () => recordOrder();
 
-  /** platform route: validate first, then log and close — nothing leaves the app */
-  const placeOrder = () => {
-    recordOrder();
-    toast.success(copy.orderPlacedTitle);
-    clear();
-    setOpen(false);
+  /**
+   * platform route: submit the order to the backend, then hand it over via
+   * the WhatsApp link the response carries — that is how the order
+   * physically reaches the business. An offer bundle in the cart (its
+   * synthetic `offer-` id has no catalog item behind it for the endpoint to
+   * validate) or a missing contact phone falls back to the direct WhatsApp
+   * link so no order is lost on its way out.
+   */
+  const placeOrder = async (values: CartDetailsValues) => {
+    const customerName = values.customerName.trim();
+    const customerPhone = values.phone?.trim() ?? "";
+    const canSubmitPlatform =
+      customerName &&
+      customerPhone &&
+      lines.every((line) => !line.item.id.startsWith("offer-"));
+
+    if (!canSubmitPlatform) {
+      recordOrder();
+      window.open(whatsappUrl, "_blank");
+      toast.success(copy.orderPlacedTitle);
+      clear();
+      setOpen(false);
+      return;
+    }
+
+    try {
+      const response = await placeExternalOrder(business.slug, {
+        customerName,
+        customerPhone,
+        notes: values.notes.trim() || undefined,
+        items: lines.map((line) => ({
+          itemId: line.item.id,
+          quantity: line.quantity,
+        })),
+      });
+
+      recordOrder();
+      if (response.whatsappLink) window.open(response.whatsappLink, "_blank");
+      toast.success(copy.orderPlacedTitle);
+      clear();
+      setOpen(false);
+    } catch (err) {
+      const msg = err instanceof ApiError ? t.auth.genericError : undefined;
+      toast.error(msg ?? t.auth.genericError);
+    }
   };
 
   const pickupTimeItems: Record<string, string> = {
@@ -225,13 +266,19 @@ export function CartSheet({
                     // the main hint that this line leads somewhere
                     className="group/line flex min-w-0 flex-1 cursor-pointer items-center gap-3 rounded-xl text-start outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
                   >
-                    <Image
-                      src={line.item.imageUrl}
-                      alt=""
-                      width={56}
-                      height={56}
-                      className="size-14 shrink-0 rounded-xl object-cover"
-                    />
+                    {line.item.imageUrl ? (
+                      <Image
+                        src={line.item.imageUrl}
+                        alt=""
+                        width={56}
+                        height={56}
+                        className="size-14 shrink-0 rounded-xl object-cover"
+                      />
+                    ) : (
+                      <span className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-berry-soft text-lg font-bold text-berry-soft-foreground">
+                        {line.item.name[lang].charAt(0)}
+                      </span>
+                    )}
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold transition-colors duration-200 group-hover/line:text-[var(--menu-primary)]">
                         {line.item.name[lang]}

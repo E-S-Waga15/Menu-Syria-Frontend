@@ -214,13 +214,19 @@ export function MenuScreen({
           >
             {/* identity row */}
             <div className="flex items-center gap-2.5 pt-2.5 sm:gap-3.5 sm:pt-3">
-              <Image
-                src={business.logoUrl}
-                alt=""
-                width={72}
-                height={72}
-                className="size-12 rounded-2xl border-2 border-[var(--menu-primary)]/20 object-cover sm:size-16 md:size-18"
-              />
+              {business.logoUrl ? (
+                <Image
+                  src={business.logoUrl}
+                  alt=""
+                  width={72}
+                  height={72}
+                  className="size-12 rounded-2xl border-2 border-[var(--menu-primary)]/20 object-cover sm:size-16 md:size-18"
+                />
+              ) : (
+                <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl border-2 border-[var(--menu-primary)]/20 bg-berry-soft text-sm font-bold text-berry-soft-foreground sm:size-16 md:size-18">
+                  {business.name[lang].charAt(0)}
+                </span>
+              )}
               <div className="min-w-0 flex-1">
                 <h1 className="truncate font-heading text-base font-bold sm:text-lg md:text-xl">
                   {business.name[lang]}

@@ -1,6 +1,12 @@
 import { apiFetch, IS_MOCK, mockDelay } from "@/lib/api/client";
 import { offers, restaurants, stores } from "@/lib/mock/data";
-import type { Business, CatalogItem, Offer } from "@/lib/types";
+import type {
+  Business,
+  CatalogItem,
+  LocalizedText,
+  Offer,
+  SubscriptionStatus,
+} from "@/lib/types";
 
 /**
  * Whether an offer should be visible to a customer right now.
@@ -82,6 +88,111 @@ export function offerAsCatalogItem(offer: Offer): CatalogItem {
   };
 }
 
+// ---------------------------------------------------------------------------
+// API adapters — the storefront's offer endpoints speak in the backend's
+// single-locale shape (plain strings, decimal prices returned as strings),
+// while the UI renders the bilingual domain model from `lib/types.ts`.
+// These mappers bridge the two without touching the components.
+// ---------------------------------------------------------------------------
+
+const toLocalized = (value: string): LocalizedText => ({ ar: value, en: value });
+
+interface RawOffer {
+  id: string;
+  businessId: string;
+  name: string;
+  description: string | null;
+  images: string[];
+  includes: string[];
+  originalPrice: number | string;
+  price: number | string;
+  startsAt: string;
+  endsAt?: string | null;
+  isActive: boolean;
+  badge?: Offer["badge"];
+  sortOrder: number;
+}
+
+/** Decimal columns arrive as strings ("40000.00") — coerce to numbers. */
+const toNumber = (value: number | string): number => Number(value);
+
+function normalizeOffer(raw: RawOffer): Offer {
+  return {
+    id: raw.id,
+    businessId: raw.businessId,
+    name: toLocalized(raw.name),
+    description: toLocalized(raw.description ?? ""),
+    images: raw.images ?? [],
+    includes: (raw.includes ?? []).map(toLocalized),
+    originalPrice: toNumber(raw.originalPrice),
+    price: toNumber(raw.price),
+    startsAt: raw.startsAt,
+    endsAt: raw.endsAt ?? undefined,
+    isActive: raw.isActive,
+    badge: raw.badge,
+    sortOrder: raw.sortOrder,
+  };
+}
+
+/** A raw business row as featured-offers returns it, mapped onto the
+ * storefront `Business` shape so offer banners can render name/logo/theme. */
+interface RawOfferBusiness {
+  id: string;
+  slug: string;
+  name: string;
+  logo?: string | null;
+  primaryColor?: string | null;
+  secondaryColor?: string | null;
+  address?: string | null;
+  description?: string | null;
+  district?: {
+    governorateId?: string;
+    districtName?: string;
+    governorate?: { governorateName?: string };
+  } | null;
+  districtId?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  status?: string;
+  businessType?: { name?: string; category?: string } | null;
+  restaurantProfile?: { cuisineType?: string | null } | null;
+}
+
+function isSubscriptionStatus(
+  value: string | undefined,
+): value is SubscriptionStatus {
+  return value === "active" || value === "expired" || value === "pending";
+}
+
+function normalizeOfferBusiness(raw: RawOfferBusiness): Business {
+  const name = toLocalized(raw.name);
+  return {
+    id: raw.id,
+    slug: raw.slug,
+    name,
+    description: toLocalized(raw.description ?? ""),
+    logoUrl: raw.logo ?? "",
+    coverImages: [],
+    governorateId: raw.district?.governorateId ?? raw.districtId ?? "",
+    regionId: raw.districtId ?? "",
+    address: toLocalized(raw.address ?? ""),
+    location: {
+      lat: Number(raw.latitude ?? 33.5138),
+      lng: Number(raw.longitude ?? 36.2765),
+    },
+    phone: "",
+    whatsapp: "",
+    theme: {
+      primaryColor: raw.primaryColor ?? "#141617",
+      secondaryColor: raw.secondaryColor ?? "#F5F5F7",
+    },
+    rating: 4.8,
+    isOpen: true,
+    status: isSubscriptionStatus(raw.status) ? raw.status : "active",
+    planExpiresAt: new Date(Date.now() + 30 * 86400000).toISOString(),
+  };
+}
+
 /** Every offer a business has, in the owner's own order — dashboard view. */
 export async function getBusinessOffers(businessId: string): Promise<Offer[]> {
   if (IS_MOCK) {
@@ -92,7 +203,8 @@ export async function getBusinessOffers(businessId: string): Promise<Offer[]> {
       250,
     );
   }
-  return apiFetch(`/businesses/${businessId}/offers`);
+  const raw = await apiFetch<RawOffer[]>(`/businesses/${businessId}/offers`);
+  return raw.map(normalizeOffer);
 }
 
 /** Only what a customer should see on the storefront. */
@@ -105,7 +217,10 @@ export async function getLiveOffers(businessId: string): Promise<Offer[]> {
       200,
     );
   }
-  return apiFetch(`/businesses/${businessId}/offers?live=1`);
+  const raw = await apiFetch<RawOffer[]>(
+    `/businesses/${businessId}/offers?live=1`,
+  );
+  return raw.map(normalizeOffer);
 }
 
 /**
@@ -154,5 +269,12 @@ export async function getFeaturedOffers(limit = 6): Promise<FeaturedOffer[]> {
       250,
     );
   }
-  return apiFetch(`/offers/featured?limit=${limit}`);
+  const raw = await apiFetch<
+    { offer: RawOffer; business: RawOfferBusiness; kind: "restaurant" | "store" }[]
+  >(`/offers/featured?limit=${limit}`);
+  return raw.map(({ offer, business, kind }) => ({
+    offer: normalizeOffer(offer),
+    business: normalizeOfferBusiness(business),
+    kind,
+  }));
 }

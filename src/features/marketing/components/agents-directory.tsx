@@ -167,13 +167,19 @@ export function AgentsDirectory({
               href={`/${lang}/agents/${agent.id}`}
               className="flex items-center gap-4 outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
             >
-              <Image
-                src={agent.photoUrl}
-                alt=""
-                width={64}
-                height={64}
-                className="size-16 shrink-0 rounded-full border-2 border-berry-soft object-cover"
-              />
+              {agent.photoUrl ? (
+                <Image
+                  src={agent.photoUrl}
+                  alt=""
+                  width={64}
+                  height={64}
+                  className="size-16 shrink-0 rounded-full border-2 border-berry-soft object-cover"
+                />
+              ) : (
+                <span className="flex size-16 shrink-0 items-center justify-center rounded-full border-2 border-berry-soft bg-berry-soft text-sm font-bold text-berry-soft-foreground">
+                  {agent.name[lang].charAt(0)}
+                </span>
+              )}
               <div className="min-w-0">
                 <h2 className="truncate font-heading font-semibold group-hover:text-primary">
                   {agent.name[lang]}
