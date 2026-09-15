@@ -22,45 +22,37 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
+import { useTableMutations } from "@/features/restaurant-dashboard/hooks/use-tables";
 import {
   getMyTables,
   getMyWaiters,
 } from "@/features/restaurant-dashboard/services";
 import { fmt, useI18n } from "@/i18n/client";
 import { queryKeys } from "@/lib/api/query-keys";
-import type { DiningTable } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export function TablesBoard() {
   const { t } = useI18n();
 
   const { data: tablesData } = useQuery({
-    queryKey: queryKeys.restaurants.tables("r1"),
+    queryKey: queryKeys.me.tables,
     queryFn: getMyTables,
   });
   const { data: waiters } = useQuery({
-    queryKey: queryKeys.restaurants.waiters("r1"),
+    queryKey: queryKeys.me.waiters,
     queryFn: getMyWaiters,
   });
 
-  const [tables, setTables] = useState<DiningTable[]>([]);
+  const { setOccupied, assignWaiter } = useTableMutations();
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  // Seed the editable copy when the query resolves (adjust-state-during-render pattern)
-  const [seeded, setSeeded] = useState<DiningTable[] | null>(null);
-  if (tablesData && tablesData !== seeded) {
-    setSeeded(tablesData);
-    setTables(tablesData);
-  }
+  // the cache is the source of truth; occupancy and waiter changes patch it
+  // optimistically and then reconcile with the server
+  const tables = tablesData ?? [];
 
   if (!tablesData) return <Skeleton className="h-[32rem] rounded-2xl" />;
 
   const selected = tables.find((table) => table.id === selectedId) ?? null;
-
-  const update = (id: string, patch: Partial<DiningTable>) =>
-    setTables((prev) =>
-      prev.map((table) => (table.id === id ? { ...table, ...patch } : table)),
-    );
 
   return (
     <div className="space-y-5">
@@ -138,12 +130,11 @@ export function TablesBoard() {
                   </span>
                   <Switch
                     checked={selected.isOccupied}
-                    onCheckedChange={(v) =>
-                      update(selected.id, {
-                        isOccupied: v,
-                        waiterId: v ? selected.waiterId : undefined,
-                      })
-                    }
+                    onCheckedChange={(v) => {
+                      // freeing a table releases its waiter in the same write,
+                      // so a table can never sit empty with someone assigned
+                      setOccupied(selected.id, v, v ? undefined : null);
+                    }}
                   />
                 </label>
 
@@ -152,7 +143,7 @@ export function TablesBoard() {
                   <Select
                     value={selected.waiterId ?? null}
                     onValueChange={(v) =>
-                      update(selected.id, { waiterId: v ?? undefined })
+                      assignWaiter(selected.id, v ?? undefined)
                     }
                     items={Object.fromEntries(
                       (waiters ?? []).map((w) => [w.id, w.name]),

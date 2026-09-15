@@ -68,7 +68,16 @@ export async function apiFetch<T>(
   if (!response.ok) {
     throw new ApiError(response.status, await response.text());
   }
-  return response.json() as Promise<T>;
+
+  // Every DELETE in the API answers 204/205 with no body. `response.json()`
+  // rejects on an empty body, which would surface a successful delete as a
+  // failed mutation, so the empty cases return early instead of parsing.
+  if (response.status === 204 || response.status === 205) {
+    return undefined as T;
+  }
+
+  const raw = await response.text();
+  return (raw === "" ? undefined : JSON.parse(raw)) as T;
 }
 
 /** Simulates network latency so loading states stay honest during mock mode. */

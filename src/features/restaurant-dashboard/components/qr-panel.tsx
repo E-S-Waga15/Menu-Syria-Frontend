@@ -17,7 +17,7 @@ export function QrPanel() {
   const qrWrapRef = useRef<HTMLDivElement>(null);
 
   const { data: restaurant } = useQuery({
-    queryKey: queryKeys.restaurants.detail("yasmeen-house"),
+    queryKey: queryKeys.me.business,
     queryFn: getMyRestaurant,
   });
 

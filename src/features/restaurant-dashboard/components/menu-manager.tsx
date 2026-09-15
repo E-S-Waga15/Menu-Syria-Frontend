@@ -16,12 +16,17 @@ import {
   MenuItemRow,
 } from "@/features/restaurant-dashboard/components/menu-item-views";
 import { MenuItemsToolbar } from "@/features/restaurant-dashboard/components/menu-items-toolbar";
+import {
+  useCategoryMutations,
+  useItemMutations,
+} from "@/features/restaurant-dashboard/hooks/use-catalog";
+import { useBusinessId } from "@/features/restaurant-dashboard/hooks/use-my-business";
 import { getMyMenu } from "@/features/restaurant-dashboard/services";
 import { useI18n } from "@/i18n/client";
 import { queryKeys } from "@/lib/api/query-keys";
 import { toast } from "@/lib/toast";
 import { useUiStore } from "@/stores/ui-store";
-import type { MenuCategory, MenuItem } from "@/lib/types";
+import type { MenuItem } from "@/lib/types";
 
 /**
  * The catalogue screen: sections on top, items below.
@@ -39,27 +44,27 @@ export function MenuManager() {
   const isStore = businessType === "store";
 
   const { data } = useQuery({
-    queryKey: queryKeys.restaurants.menu("r1"),
+    queryKey: queryKeys.me.menu,
     queryFn: getMyMenu,
   });
 
   const [activeCategory, setActiveCategory] = useState<string>(ALL_CATEGORIES);
   const [query, setQuery] = useState("");
-  const [categories, setCategories] = useState<MenuCategory[]>([]);
-  const [items, setItems] = useState<MenuItem[]>([]);
   const [dragId, setDragId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<MenuItem | null>(null);
   const view = useUiStore((s) => s.catalogView);
   const setView = useUiStore((s) => s.setCatalogView);
 
-  // Seed the editable copy when the query resolves (adjust-state-during-render)
-  const [seeded, setSeeded] = useState<typeof data | null>(null);
-  if (data && data !== seeded) {
-    setSeeded(data);
-    setCategories(data.categories);
-    setItems(data.items);
-  }
+  // The cached list is now the single source of truth: every write patches it
+  // optimistically and refetches behind itself, so keeping a second editable
+  // copy here would just be one more thing that can disagree with the server.
+  const categories = data?.categories ?? [];
+  const items = data?.items ?? [];
+  const businessId = useBusinessId(items[0]?.restaurantId);
+
+  const categoryMutations = useCategoryMutations(businessId);
+  const itemMutations = useItemMutations(businessId);
 
   if (!data) {
     return (
@@ -95,31 +100,30 @@ export function MenuManager() {
   const canReorder = activeCategory !== ALL_CATEGORIES && !normalisedQuery;
 
   const toggleAvailability = (id: string, value: boolean) =>
-    setItems((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, isAvailable: value } : i)),
-    );
+    itemMutations.setAvailability(id, value);
 
-  const removeItem = (id: string) =>
-    setItems((prev) => prev.filter((i) => i.id !== id));
+  const removeItem = (id: string) => itemMutations.remove(id);
 
   const onDropOn = (targetId: string) => {
     if (!dragId || dragId === targetId || !canReorder) return;
-    setItems((prev) => {
-      const inCategory = prev
-        .filter((i) => i.categoryId === activeCategory)
-        .sort((a, b) => a.sortOrder - b.sortOrder);
-      const ids = inCategory.map((i) => i.id);
-      const from = ids.indexOf(dragId);
-      const to = ids.indexOf(targetId);
-      if (from === -1 || to === -1) return prev;
+    const inCategory = [...items]
+      .filter((i) => i.categoryId === activeCategory)
+      .sort((a, b) => a.sortOrder - b.sortOrder);
+    const from = inCategory.findIndex((i) => i.id === dragId);
+    const to = inCategory.findIndex((i) => i.id === targetId);
+    if (from !== -1 && to !== -1) {
       const reordered = [...inCategory];
       const [moved] = reordered.splice(from, 1);
       if (moved) reordered.splice(to, 0, moved);
-      const orderById = new Map(reordered.map((i, index) => [i.id, index]));
-      return prev.map((i) =>
-        orderById.has(i.id) ? { ...i, sortOrder: orderById.get(i.id)! } : i,
+      // positions are 1-based so a brand-new item (whose order is "after the
+      // last one") sorts alongside the ones that were dragged
+      itemMutations.reorder(
+        reordered.map((item, index) => ({
+          id: item.id,
+          sortOrder: index + 1,
+        })),
       );
-    });
+    }
     setDragId(null);
   };
 
@@ -135,52 +139,17 @@ export function MenuManager() {
   };
 
   // --- category CRUD ---
-  const addCategory = (name: string) => {
-    const id = `c${Date.now()}`;
-    setCategories((prev) => [
-      ...prev,
-      {
-        id,
-        restaurantId: "r1",
-        name: { ar: name, en: name },
-        sortOrder: prev.length,
-      },
-    ]);
-  };
-
-  const renameCategory = (id: string, name: string) =>
-    setCategories((prev) =>
-      prev.map((c) =>
-        c.id === id ? { ...c, name: { ar: name, en: name } } : c,
-      ),
-    );
-
+  // The guard stays here rather than only on the server: the button is already
+  // disabled in the manager, and a 409 round-trip to say the same thing would
+  // be a slower way to tell the owner what they can already see.
   const deleteCategory = (id: string) => {
     if (itemCountFor(id) > 0) {
       toast.error(t.dashboard.cannotDeleteCategory);
       return;
     }
-    setCategories((prev) => prev.filter((c) => c.id !== id));
+    categoryMutations.remove(id);
     if (activeCategory === id) setActiveCategory(ALL_CATEGORIES);
   };
-
-  const reorderCategory = (id: string, direction: "up" | "down") =>
-    setCategories((prev) => {
-      const sorted = [...prev].sort((a, b) => a.sortOrder - b.sortOrder);
-      const index = sorted.findIndex((c) => c.id === id);
-      const swapWith = direction === "up" ? index - 1 : index + 1;
-      if (index === -1 || swapWith < 0 || swapWith >= sorted.length)
-        return prev;
-      const a = sorted[index]!;
-      const b = sorted[swapWith]!;
-      return prev.map((c) =>
-        c.id === a.id
-          ? { ...c, sortOrder: b.sortOrder }
-          : c.id === b.id
-            ? { ...c, sortOrder: a.sortOrder }
-            : c,
-      );
-    });
 
   const viewProps = (item: MenuItem) => ({
     item,
@@ -204,10 +173,10 @@ export function MenuManager() {
         onQueryChange={setQuery}
         itemCountFor={itemCountFor}
         totalCount={items.length}
-        onAddCategory={addCategory}
-        onRenameCategory={renameCategory}
+        onAddCategory={categoryMutations.create}
+        onRenameCategory={categoryMutations.rename}
         onDeleteCategory={deleteCategory}
-        onReorderCategory={reorderCategory}
+        onReorderCategory={categoryMutations.reorder}
       />
 
       <section className="space-y-4 border-t border-border/60 pt-6">
@@ -254,51 +223,20 @@ export function MenuManager() {
           // `nameText`/`descText`, which do not match `name`/`description` —
           // spreading them left the real fields untouched, so renaming an item
           // did nothing while quietly adding junk keys to it.
-          const gallery = dish.images?.length ? dish.images : undefined;
-          setItems((prev) =>
-            editing
-              ? prev.map((i) =>
-                  i.id === editing.id
-                    ? {
-                        ...i,
-                        name: {
-                          ar: dish.nameText ?? "",
-                          en: dish.nameText ?? "",
-                        },
-                        description: {
-                          ar: dish.descText ?? "",
-                          en: dish.descText ?? "",
-                        },
-                        price: dish.price ?? 0,
-                        optionGroups: dish.optionGroups,
-                        imageUrl: gallery?.[0] ?? i.imageUrl,
-                        images: gallery,
-                      }
-                    : i,
-                )
-              : [
-                  ...prev,
-                  {
-                    id: `m${Date.now()}`,
-                    // openEdit guarantees a real category before we get here
-                    categoryId: activeCategory,
-                    restaurantId: "r1",
-                    name: { ar: dish.nameText ?? "", en: dish.nameText ?? "" },
-                    description: {
-                      ar: dish.descText ?? "",
-                      en: dish.descText ?? "",
-                    },
-                    price: dish.price ?? 0,
-                    imageUrl:
-                      gallery?.[0] ??
-                      "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80",
-                    images: gallery,
-                    optionGroups: dish.optionGroups,
-                    isAvailable: true,
-                    sortOrder: 999,
-                  },
-                ],
-          );
+          const payload = {
+            name: dish.nameText ?? "",
+            description: dish.descText ?? "",
+            price: dish.price ?? 0,
+            optionGroups: dish.optionGroups ?? [],
+            // an empty gallery is meaningful: the owner took every photo off
+            images: dish.images ?? [],
+          };
+          if (editing) {
+            itemMutations.edit(editing.id, payload);
+          } else {
+            // openEdit guarantees a real category before we get here
+            itemMutations.create({ categoryId: activeCategory, ...payload });
+          }
           setDialogOpen(false);
           toast.success(t.common.done);
         }}

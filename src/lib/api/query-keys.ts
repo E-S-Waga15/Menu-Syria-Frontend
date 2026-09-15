@@ -12,6 +12,14 @@ export const queryKeys = {
     tables: (id: string) => ["restaurants", id, "tables"] as const,
     waiters: (id: string) => ["restaurants", id, "waiters"] as const,
   },
+  me: {
+    /** the signed-in user's own business profile */
+    business: ["me", "business"] as const,
+    menu: ["me", "menu"] as const,
+    orders: ["me", "orders"] as const,
+    tables: ["me", "tables"] as const,
+    waiters: ["me", "waiters"] as const,
+  },
   offers: {
     /** everything a business has published, dashboard view */
     byBusiness: (businessId: string) => ["offers", businessId] as const,

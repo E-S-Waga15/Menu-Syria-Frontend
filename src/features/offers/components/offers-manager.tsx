@@ -21,6 +21,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuthStore } from "@/features/auth/store";
 import { OfferCard } from "@/features/offers/components/offer-card";
 import { OfferDialog } from "@/features/offers/components/offer-dialog";
+import { useOfferMutations } from "@/features/offers/hooks/use-offers";
 import type { OfferValues } from "@/features/offers/schemas";
 import {
   getBusinessOffers,
@@ -28,14 +29,12 @@ import {
   offerState,
   type OfferState,
 } from "@/features/offers/services";
+import { useBusinessId } from "@/features/restaurant-dashboard/hooks/use-my-business";
 import { fmt, useI18n } from "@/i18n/client";
 import { queryKeys } from "@/lib/api/query-keys";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import type { Offer, OfferBadge } from "@/lib/types";
-
-/** the one business the mocked dashboard is signed in as */
-const BUSINESS_ID = "r1";
 
 /**
  * Create and manage the offers a restaurant or store publishes.
@@ -47,8 +46,8 @@ const BUSINESS_ID = "r1";
  * carries the name, the window and the price in normal flow, so an offer with
  * no photo yet is still a complete row rather than an empty frame.
  *
- * Edits stay local while the API is mocked, so the page behaves like the real
- * thing without pretending a write landed on a server.
+ * Writes go straight to the API (see `useOfferMutations`), which patches this
+ * list optimistically and puts it back if the server refuses.
  */
 export function OffersManager() {
   const { t } = useI18n();
@@ -56,18 +55,22 @@ export function OffersManager() {
     (s) => (s.session?.businessType ?? "restaurant") === "store",
   );
 
+  // offers hang off the business id, which the dashboard reads once and every
+  // page shares — so the list waits for it rather than guessing
+  const businessId = useBusinessId();
+
   const { data } = useQuery({
-    queryKey: queryKeys.offers.byBusiness(BUSINESS_ID),
-    queryFn: () => getBusinessOffers(BUSINESS_ID),
+    queryKey: queryKeys.offers.byBusiness(businessId),
+    queryFn: () => getBusinessOffers(businessId),
+    enabled: businessId !== "",
   });
 
-  const [rows, setRows] = useState<Offer[] | null>(null);
+  const mutations = useOfferMutations(businessId);
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Offer | null>(null);
 
-  // the fetched list seeds the editable copy exactly once
-  const offers = rows ?? data ?? null;
+  const offers = data ?? null;
 
   const query = search.trim().toLowerCase();
   const visible = useMemo(
@@ -115,68 +118,24 @@ export function OffersManager() {
   };
 
   const save = (values: OfferValues) => {
-    const includes = values.includes
-      .map((line) => line.trim())
-      .filter(Boolean)
-      .map((line) => ({ ar: line, en: line }));
-
-    setRows((prev) => {
-      const current = prev ?? data ?? [];
-      const next: Offer = {
-        id: editing?.id ?? `of${Date.now()}`,
-        businessId: BUSINESS_ID,
-        name: { ar: values.name, en: values.name },
-        description: { ar: values.description, en: values.description },
-        images: values.images,
-        includes,
-        originalPrice: Number(values.originalPrice) || 0,
-        price: Number(values.price) || 0,
-        startsAt: values.startsAt,
-        endsAt: values.endsAt || undefined,
-        isActive: values.isActive,
-        badge: values.badge === "none" ? undefined : values.badge,
-        sortOrder: editing?.sortOrder ?? current.length + 1,
-      };
-      return editing
-        ? current.map((o) => (o.id === editing.id ? next : o))
-        : [...current, next];
-    });
-
+    mutations.save(values, editing);
     setDialogOpen(false);
     setEditing(null);
     toast.success(t.offers.saved);
   };
 
-  const mutate = (id: string, change: (offer: Offer) => Offer) =>
-    setRows((prev) =>
-      (prev ?? data ?? []).map((o) => (o.id === id ? change(o) : o)),
-    );
-
   const toggleActive = (offer: Offer) => {
-    mutate(offer.id, (o) => ({ ...o, isActive: !o.isActive }));
+    mutations.toggleActive(offer);
     toast.success(t.offers.saved);
   };
 
   const duplicate = (offer: Offer) => {
-    setRows((prev) => {
-      const current = prev ?? data ?? [];
-      return [
-        ...current,
-        {
-          ...offer,
-          id: `of${Date.now()}`,
-          // a copy starts paused: publishing it is a decision, not a side
-          // effect of duplicating something that was already live
-          isActive: false,
-          sortOrder: current.length + 1,
-        },
-      ];
-    });
+    mutations.duplicate(offer);
     toast.success(t.offers.saved);
   };
 
   const remove = (offer: Offer) => {
-    setRows((prev) => (prev ?? data ?? []).filter((o) => o.id !== offer.id));
+    mutations.remove(offer);
     toast.success(t.offers.deleted);
   };
 

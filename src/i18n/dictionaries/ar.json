@@ -36,7 +36,8 @@
     "pending": "قيد الانتظار",
     "available": "متوفر",
     "unavailable": "غير متوفر",
-    "actions": "إجراءات"
+    "actions": "إجراءات",
+    "saveFailed": "تعذّر الحفظ. حاول مرة أخرى."
   },
   "seo": {
     "siteName": "منيو سوريا",

@@ -18,7 +18,7 @@ export function BusinessNotifications() {
   const { t, lang } = useI18n();
 
   const { data: business } = useQuery({
-    queryKey: queryKeys.restaurants.detail("yasmeen-house"),
+    queryKey: queryKeys.me.business,
     queryFn: getMyRestaurant,
   });
 

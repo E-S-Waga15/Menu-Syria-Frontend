@@ -36,7 +36,8 @@
     "pending": "Pending",
     "available": "Available",
     "unavailable": "Unavailable",
-    "actions": "Actions"
+    "actions": "Actions",
+    "saveFailed": "Couldn't save. Please try again."
   },
   "seo": {
     "siteName": "Menu Syria",

@@ -51,13 +51,31 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuthStore } from "@/features/auth/store";
 import { getGovernorates, getRegions } from "@/features/marketing/services";
+import { useBusinessProfileMutations } from "@/features/restaurant-dashboard/hooks/use-business-profile";
 import { getMyRestaurant } from "@/features/restaurant-dashboard/services";
+import type { BusinessProfileInput } from "@/features/restaurant-dashboard/services";
 import { fmt, useI18n } from "@/i18n/client";
 import { queryKeys } from "@/lib/api/query-keys";
 import type { Restaurant } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type I18n = ReturnType<typeof useI18n>;
+
+/** What a section calls to write its own fields. */
+type SaveProfile = (input: BusinessProfileInput) => void;
+
+/**
+ * The contact and the social section both own phone numbers, and the API
+ * replaces the whole list on write — so the list is built from the business's
+ * current values in one place. Without this, saving one section would silently
+ * drop the number the other section looks after.
+ */
+function phoneRows(phone: string, whatsapp: string) {
+  return [
+    phone ? { type: "mobile", number: phone } : null,
+    whatsapp ? { type: "whatsapp", number: whatsapp } : null,
+  ].filter((row): row is { type: string; number: string } => row !== null);
+}
 
 /** Card wrapper every section shares: a title, and a "⋯" menu that shows
  * "Edit" while at rest and swaps to "Save changes" / "Cancel" once the
@@ -172,11 +190,13 @@ function AccountInfoSection({
   isStore,
   t,
   lang,
+  save,
 }: {
   restaurant: Restaurant;
   isStore: boolean;
   t: I18n["t"];
   lang: I18n["lang"];
+  save: SaveProfile;
 }) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(restaurant.name[lang]);
@@ -195,8 +215,14 @@ function AccountInfoSection({
         setEditing(true);
       }}
       onSave={() => {
+        save({
+          name,
+          description,
+          // a store's "specialty" is its business type, which the platform
+          // assigns — only a food business has an editable cuisine
+          ...(isStore ? {} : { cuisineType: specialty }),
+        });
         setEditing(false);
-        toast.success(t.common.done);
       }}
       onCancel={() => {
         setName(snapshot.current.name);
@@ -249,10 +275,12 @@ function ContactInfoSection({
   restaurant,
   t,
   lang,
+  save,
 }: {
   restaurant: Restaurant;
   t: I18n["t"];
   lang: I18n["lang"];
+  save: SaveProfile;
 }) {
   const { data: governorates } = useQuery({
     queryKey: queryKeys.governorates,
@@ -302,8 +330,18 @@ function ContactInfoSection({
         setEditing(true);
       }}
       onSave={() => {
+        save({
+          address,
+          // the region is the district row the API stores; the governorate is
+          // derived from it, so it is not sent separately
+          districtId: regionId || undefined,
+          latitude: lat,
+          longitude: lng,
+          // the social section owns the WhatsApp number, so it is carried
+          // across rather than cleared by writing this section alone
+          phones: phoneRows(phone, restaurant.whatsapp),
+        });
         setEditing(false);
-        toast.success(t.common.done);
       }}
       onCancel={() => {
         setPhone(snapshot.current.phone);
@@ -435,9 +473,11 @@ function ContactInfoSection({
 function SocialMediaSection({
   restaurant,
   t,
+  save,
 }: {
   restaurant: Restaurant;
   t: I18n["t"];
+  save: SaveProfile;
 }) {
   const [editing, setEditing] = useState(false);
   const [whatsapp, setWhatsapp] = useState(restaurant.whatsapp);
@@ -456,8 +496,18 @@ function SocialMediaSection({
         setEditing(true);
       }}
       onSave={() => {
+        save({
+          // the contact section owns the primary phone, so it rides along
+          phones: phoneRows(restaurant.phone, whatsapp),
+          // an emptied field removes the link rather than storing a blank one
+          socialLinks: [
+            instagram ? { platform: "instagram", url: instagram } : null,
+            facebook ? { platform: "facebook", url: facebook } : null,
+          ].filter((link): link is { platform: string; url: string } =>
+            link !== null,
+          ),
+        });
         setEditing(false);
-        toast.success(t.common.done);
       }}
       onCancel={() => {
         setWhatsapp(snapshot.current.whatsapp);
@@ -508,9 +558,11 @@ function SocialMediaSection({
 function GallerySection({
   restaurant,
   t,
+  save,
 }: {
   restaurant: Restaurant;
   t: I18n["t"];
+  save: SaveProfile;
 }) {
   const [editing, setEditing] = useState(false);
   const [images, setImages] = useState(restaurant.coverImages);
@@ -547,8 +599,8 @@ function GallerySection({
         setEditing(true);
       }}
       onSave={() => {
+        save({ images });
         setEditing(false);
-        toast.success(t.common.done);
       }}
       onCancel={() => {
         setImages(snapshot.current);
@@ -617,9 +669,11 @@ function GallerySection({
 function AppearanceSection({
   restaurant,
   t,
+  save,
 }: {
   restaurant: Restaurant;
   t: I18n["t"];
+  save: SaveProfile;
 }) {
   const [editing, setEditing] = useState(false);
   const [primary, setPrimary] = useState(restaurant.theme.primaryColor);
@@ -637,8 +691,8 @@ function AppearanceSection({
         setEditing(true);
       }}
       onSave={() => {
+        save({ primaryColor: primary, secondaryColor: secondary });
         setEditing(false);
-        toast.success(t.common.done);
       }}
       onCancel={() => {
         setPrimary(snapshot.current.primary);
@@ -768,7 +822,7 @@ export function BusinessProfile() {
   const isStore = businessType === "store";
 
   const { data: restaurant } = useQuery({
-    queryKey: queryKeys.restaurants.detail("yasmeen-house"),
+    queryKey: queryKeys.me.business,
     queryFn: getMyRestaurant,
   });
   const { data: governorates } = useQuery({
@@ -780,7 +834,10 @@ export function BusinessProfile() {
     queryFn: getRegions,
   });
 
-  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  // the id is only known once the business has loaded; the mutation is
+  // created unconditionally so the hook order never depends on that
+  const { save } = useBusinessProfileMutations(restaurant?.id ?? "");
+
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
@@ -807,10 +864,9 @@ export function BusinessProfile() {
   };
 
   const confirmLogo = () => {
-    setLogoUrl(logoPreview);
+    if (logoPreview) save({ logo: logoPreview });
     setLogoPreview(null);
     if (logoInputRef.current) logoInputRef.current.value = "";
-    toast.success(t.common.done);
   };
 
   const cancelLogo = () => {
@@ -840,11 +896,12 @@ export function BusinessProfile() {
         <div className="flex min-w-0 items-center gap-4">
           <div className="relative shrink-0">
             <Image
-              src={logoUrl ?? restaurant.logoUrl}
+              src={restaurant.logoUrl}
               alt=""
               width={112}
               height={112}
-              unoptimized={!!logoUrl}
+              // a freshly picked logo is a data URL, which next/image cannot optimise
+              unoptimized={restaurant.logoUrl.startsWith("data:")}
               className="size-16 rounded-2xl border border-border object-cover sm:size-24 md:size-28"
             />
             <button
@@ -980,19 +1037,25 @@ export function BusinessProfile() {
             isStore={isStore}
             t={t}
             lang={lang}
+            save={save}
           />
         </TabsContent>
         <TabsContent value="contact">
-          <ContactInfoSection restaurant={restaurant} t={t} lang={lang} />
+          <ContactInfoSection
+            restaurant={restaurant}
+            t={t}
+            lang={lang}
+            save={save}
+          />
         </TabsContent>
         <TabsContent value="social">
-          <SocialMediaSection restaurant={restaurant} t={t} />
+          <SocialMediaSection restaurant={restaurant} t={t} save={save} />
         </TabsContent>
         <TabsContent value="gallery">
-          <GallerySection restaurant={restaurant} t={t} />
+          <GallerySection restaurant={restaurant} t={t} save={save} />
         </TabsContent>
         <TabsContent value="appearance">
-          <AppearanceSection restaurant={restaurant} t={t} />
+          <AppearanceSection restaurant={restaurant} t={t} save={save} />
         </TabsContent>
         <TabsContent value="plan">
           <SubscriptionSection restaurant={restaurant} t={t} lang={lang} />

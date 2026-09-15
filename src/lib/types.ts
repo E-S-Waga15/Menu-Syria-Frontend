@@ -229,7 +229,9 @@ export interface OrderLine {
 
 export interface Order {
   id: string;
-  number: number;
+  /** the backend derives this from the order id ("C161A8CB"), so it is a
+   * label rather than an integer — display-only, never sorted numerically */
+  number: number | string;
   restaurantId: string;
   tableNumber?: number;
   customerName?: string;

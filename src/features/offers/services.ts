@@ -278,3 +278,121 @@ export async function getFeaturedOffers(limit = 6): Promise<FeaturedOffer[]> {
     kind,
   }));
 }
+
+// ---------------------------------------------------------------------------
+// Writes — offers
+// ---------------------------------------------------------------------------
+
+/**
+ * What the offer form submits, in the API's own shape: one string per field
+ * (the backend stores a single locale) and absolute prices as numbers.
+ */
+export interface OfferWriteInput {
+  name: string;
+  description: string;
+  images: string[];
+  includes: string[];
+  originalPrice: number;
+  price: number;
+  startsAt: string;
+  /** omitted entirely means "runs until the owner stops it" */
+  endsAt?: string;
+  isActive: boolean;
+  badge?: Offer["badge"];
+  sortOrder: number;
+}
+
+export async function createOffer(
+  businessId: string,
+  input: OfferWriteInput,
+): Promise<Offer> {
+  if (IS_MOCK) {
+    return mockDelay({
+      id: `of${Date.now()}`,
+      businessId,
+      name: toLocalized(input.name),
+      description: toLocalized(input.description),
+      images: input.images,
+      includes: input.includes.map(toLocalized),
+      originalPrice: input.originalPrice,
+      price: input.price,
+      startsAt: input.startsAt,
+      endsAt: input.endsAt,
+      isActive: input.isActive,
+      badge: input.badge,
+      sortOrder: input.sortOrder,
+    });
+  }
+  const raw = await apiFetch<RawOffer>(`/businesses/${businessId}/offers`, {
+    method: "POST",
+    body: toOfferBody(input),
+  });
+  return normalizeOffer(raw);
+}
+
+export async function updateOffer(
+  businessId: string,
+  id: string,
+  input: Partial<OfferWriteInput>,
+): Promise<Offer> {
+  if (IS_MOCK) {
+    return mockDelay({
+      id,
+      businessId,
+      name: toLocalized(input.name ?? ""),
+      description: toLocalized(input.description ?? ""),
+      images: input.images ?? [],
+      includes: (input.includes ?? []).map(toLocalized),
+      originalPrice: input.originalPrice ?? 0,
+      price: input.price ?? 0,
+      startsAt: input.startsAt ?? "",
+      endsAt: input.endsAt,
+      isActive: input.isActive ?? true,
+      badge: input.badge,
+      sortOrder: input.sortOrder ?? 0,
+    });
+  }
+  const raw = await apiFetch<RawOffer>(
+    `/businesses/${businessId}/offers/${id}`,
+    { method: "PATCH", body: toOfferBody(input) },
+  );
+  return normalizeOffer(raw);
+}
+
+export async function deleteOffer(
+  businessId: string,
+  id: string,
+): Promise<void> {
+  if (IS_MOCK) return mockDelay(undefined);
+  await apiFetch<void>(`/businesses/${businessId}/offers/${id}`, {
+    method: "DELETE",
+  });
+}
+
+/**
+ * Only the keys the caller actually supplied are sent.
+ *
+ * `endsAt: null` is not the same as omitting it: null clears the end date,
+ * omitting it leaves whatever is stored alone — which is what makes
+ * "pause this offer" a one-field write.
+ */
+function toOfferBody(input: Partial<OfferWriteInput>) {
+  const body: Record<string, unknown> = {};
+  for (const key of [
+    "name",
+    "description",
+    "images",
+    "includes",
+    "originalPrice",
+    "price",
+    "startsAt",
+    "isActive",
+    "badge",
+    "sortOrder",
+  ] as const) {
+    if (input[key] !== undefined) body[key] = input[key];
+  }
+  if (input.endsAt !== undefined) body.endsAt = input.endsAt || null;
+  return body;
+}
+

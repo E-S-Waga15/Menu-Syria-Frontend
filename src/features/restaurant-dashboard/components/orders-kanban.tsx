@@ -1,35 +1,32 @@
 "use client";
 
-import { useState } from "react";
-
 import { useQuery } from "@tanstack/react-query";
 import { ChefHat, CircleCheck, Receipt, User } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatPrice } from "@/features/public-menu/lib/format";
+import { useOrderMutations } from "@/features/restaurant-dashboard/hooks/use-orders";
 import { getMyOrders } from "@/features/restaurant-dashboard/services";
+import { formatPrice } from "@/features/public-menu/lib/format";
 import { fmt, useI18n } from "@/i18n/client";
 import { queryKeys } from "@/lib/api/query-keys";
-import type { Order, OrderStatus } from "@/lib/types";
+import type { OrderStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export function OrdersKanban() {
   const { t, lang } = useI18n();
 
   const { data } = useQuery({
-    queryKey: queryKeys.restaurants.orders("r1"),
+    queryKey: queryKeys.me.orders,
     queryFn: getMyOrders,
   });
 
-  const [orders, setOrders] = useState<Order[]>([]);
-  // Seed the editable copy when the query resolves (adjust-state-during-render pattern)
-  const [seeded, setSeeded] = useState<Order[] | null>(null);
-  if (data && data !== seeded) {
-    setSeeded(data);
-    setOrders(data);
-  }
+  const { advance } = useOrderMutations();
+
+  // the cached board is the source of truth: advancing an order patches the
+  // card into its next column immediately, then reconciles with the server
+  const orders = data ?? [];
 
   if (!data) {
     return (
@@ -40,16 +37,6 @@ export function OrdersKanban() {
       </div>
     );
   }
-
-  const advance = (id: string) => {
-    setOrders((prev) =>
-      prev.map((o) =>
-        o.id === id
-          ? { ...o, status: o.status === "new" ? "preparing" : "ready" }
-          : o,
-      ),
-    );
-  };
 
   const columns: {
     status: OrderStatus;
@@ -159,7 +146,7 @@ export function OrdersKanban() {
                           order.status === "preparing" &&
                             "bg-success text-success-foreground hover:bg-success/85",
                         )}
-                        onClick={() => advance(order.id)}
+                        onClick={() => advance(order)}
                       >
                         {order.status === "new" ? (
                           <ChefHat className="size-3.5" />
