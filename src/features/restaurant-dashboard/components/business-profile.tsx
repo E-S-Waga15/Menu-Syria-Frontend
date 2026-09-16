@@ -56,6 +56,7 @@ import { getMyRestaurant } from "@/features/restaurant-dashboard/services";
 import type { BusinessProfileInput } from "@/features/restaurant-dashboard/services";
 import { fmt, useI18n } from "@/i18n/client";
 import { queryKeys } from "@/lib/api/query-keys";
+import { uploadImage } from "@/lib/api/upload";
 import type { Restaurant } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -567,24 +568,35 @@ function GallerySection({
   const [editing, setEditing] = useState(false);
   const [images, setImages] = useState(restaurant.coverImages);
   const [pendingImage, setPendingImage] = useState<string | null>(null);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
   const snapshot = useRef(images);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const pickImage = (file: File | undefined) => {
     if (!file) return;
+    setPendingFile(file);
     const reader = new FileReader();
     reader.onload = () => setPendingImage(reader.result as string);
     reader.readAsDataURL(file);
   };
 
-  const confirmImage = () => {
-    if (pendingImage) setImages((prev) => [...prev, pendingImage]);
+  const confirmImage = async () => {
+    if (pendingFile) {
+      try {
+        const { url } = await uploadImage(pendingFile, "businesses");
+        setImages((prev) => [...prev, url]);
+      } catch {
+        toast.error(t.common.saveFailed);
+      }
+    }
     setPendingImage(null);
+    setPendingFile(null);
     if (inputRef.current) inputRef.current.value = "";
   };
 
   const cancelImage = () => {
     setPendingImage(null);
+    setPendingFile(null);
     if (inputRef.current) inputRef.current.value = "";
   };
 
@@ -781,9 +793,9 @@ function SubscriptionSection({
       editing={false}
       editable={false}
       t={t}
-      onEdit={() => {}}
-      onSave={() => {}}
-      onCancel={() => {}}
+      onEdit={() => { }}
+      onSave={() => { }}
+      onCancel={() => { }}
     >
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
@@ -839,6 +851,7 @@ export function BusinessProfile() {
   const { save } = useBusinessProfileMutations(restaurant?.id ?? "");
 
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
   if (!restaurant) return <Skeleton className="h-96 rounded-2xl" />;
@@ -858,19 +871,29 @@ export function BusinessProfile() {
 
   const pickLogo = (file: File | undefined) => {
     if (!file) return;
+    setLogoFile(file);
     const reader = new FileReader();
     reader.onload = () => setLogoPreview(reader.result as string);
     reader.readAsDataURL(file);
   };
 
-  const confirmLogo = () => {
-    if (logoPreview) save({ logo: logoPreview });
+  const confirmLogo = async () => {
+    if (logoFile) {
+      try {
+        const { url } = await uploadImage(logoFile, "businesses");
+        save({ logo: url });
+      } catch {
+        toast.error(t.common.saveFailed);
+      }
+    }
     setLogoPreview(null);
+    setLogoFile(null);
     if (logoInputRef.current) logoInputRef.current.value = "";
   };
 
   const cancelLogo = () => {
     setLogoPreview(null);
+    setLogoFile(null);
     if (logoInputRef.current) logoInputRef.current.value = "";
   };
 
@@ -883,7 +906,7 @@ export function BusinessProfile() {
     if (navigator.share) {
       await navigator
         .share({ title: restaurant.name[lang], url: publicUrl })
-        .catch(() => {});
+        .catch(() => { });
     } else {
       await copyLink();
     }

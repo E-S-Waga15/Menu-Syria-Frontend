@@ -29,6 +29,9 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "images.unsplash.com" },
       // storefront logos and covers once uploads move to a real bucket
       { protocol: "https", hostname: "**.public.blob.vercel-storage.com" },
+      // filesystem-backed uploads served by the Nest backend in dev
+      { protocol: "http", hostname: "localhost" },
+      { protocol: "http", hostname: "127.0.0.1" },
     ],
 
     /**
@@ -70,6 +73,20 @@ const nextConfig: NextConfig = {
           },
           { key: "X-DNS-Prefetch-Control", value: "on" },
         ],
+      },
+    ];
+  },
+
+  /**
+   * Proxies filesystem-uploaded images (served by the Nest backend under
+   * /public) through the Next.js origin, so <Image> and plain <img> tags can
+   * reference them with a relative path in both dev and prod.
+   */
+  async rewrites() {
+    return [
+      {
+        source: "/public/:path*",
+        destination: `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"}/public/:path*`,
       },
     ];
   },

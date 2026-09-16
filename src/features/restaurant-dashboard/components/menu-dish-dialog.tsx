@@ -25,6 +25,7 @@ import {
   type DishFormValues,
 } from "@/features/restaurant-dashboard/schemas";
 import { useI18n } from "@/i18n/client";
+import { uploadImage } from "@/lib/api/upload";
 import type {
   CatalogOptionGroup,
   MenuItem,
@@ -136,16 +137,16 @@ export function MenuDishDialog({
       prev.map((g) =>
         g.id === groupId
           ? {
-              ...g,
-              options: [
-                ...g.options,
-                {
-                  id: `opt${Date.now()}`,
-                  name: { ar: "", en: "" },
-                  priceDelta: 0,
-                },
-              ],
-            }
+            ...g,
+            options: [
+              ...g.options,
+              {
+                id: `opt${Date.now()}`,
+                name: { ar: "", en: "" },
+                priceDelta: 0,
+              },
+            ],
+          }
           : g,
       ),
     );
@@ -161,20 +162,20 @@ export function MenuDishDialog({
         g.id !== groupId
           ? g
           : {
-              ...g,
-              options: g.options.map((o) =>
-                o.id === optionId
-                  ? {
-                      ...o,
-                      name:
-                        patch.name !== undefined
-                          ? { ar: patch.name, en: patch.name }
-                          : o.name,
-                      priceDelta: patch.priceDelta ?? o.priceDelta,
-                    }
-                  : o,
-              ),
-            },
+            ...g,
+            options: g.options.map((o) =>
+              o.id === optionId
+                ? {
+                  ...o,
+                  name:
+                    patch.name !== undefined
+                      ? { ar: patch.name, en: patch.name }
+                      : o.name,
+                  priceDelta: patch.priceDelta ?? o.priceDelta,
+                }
+                : o,
+            ),
+          },
       ),
     );
   };
@@ -272,11 +273,10 @@ export function MenuDishDialog({
               <FileDropzone
                 label={t.dashboard.addPhoto}
                 hint={t.dashboard.imagesHint}
-                onFile={(file) => {
+                onFile={async (file) => {
                   if (!file) return;
-                  // mock upload: the picker gives a local object URL, which is
-                  // what the rest of the dashboard previews with too
-                  setImages((prev) => [...prev, URL.createObjectURL(file)]);
+                  const { url } = await uploadImage(file, "items");
+                  setImages((prev) => [...prev, url]);
                 }}
               />
             </div>

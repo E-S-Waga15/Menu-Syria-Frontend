@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 
-import { GripVertical, Pencil, Trash2 } from "lucide-react";
+import { GripVertical, ImageOff, Pencil, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -52,16 +52,22 @@ export function MenuItemRow(props: MenuItemViewProps) {
       {props.draggable && (
         <GripVertical className="size-4.5 shrink-0 cursor-grab text-muted-foreground/50" />
       )}
-      <Image
-        src={item.imageUrl}
-        alt=""
-        width={56}
-        height={56}
-        className={cn(
-          "size-14 shrink-0 rounded-xl object-cover",
-          !item.isAvailable && "grayscale",
-        )}
-      />
+      {item.imageUrl ? (
+        <Image
+          src={item.imageUrl}
+          alt=""
+          width={56}
+          height={56}
+          className={cn(
+            "size-14 shrink-0 rounded-xl object-cover",
+            !item.isAvailable && "grayscale",
+          )}
+        />
+      ) : (
+        <span className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-surface-container-low text-muted-foreground">
+          <ImageOff className="size-5" />
+        </span>
+      )}
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-bold">{item.name[lang]}</p>
         <p className="mt-0.5 text-sm font-semibold text-primary">
@@ -115,13 +121,19 @@ export function MenuItemCard(props: MenuItemViewProps) {
       )}
     >
       <div className="relative aspect-[4/3]">
-        <Image
-          src={item.imageUrl}
-          alt=""
-          fill
-          sizes="(max-width: 640px) 50vw, 25vw"
-          className={cn("object-cover", !item.isAvailable && "grayscale")}
-        />
+        {item.imageUrl ? (
+          <Image
+            src={item.imageUrl}
+            alt=""
+            fill
+            sizes="(max-width: 640px) 50vw, 25vw"
+            className={cn("object-cover", !item.isAvailable && "grayscale")}
+          />
+        ) : (
+          <span className="flex size-full items-center justify-center bg-surface-container-low text-muted-foreground">
+            <ImageOff className="size-8" />
+          </span>
+        )}
         {props.draggable && (
           <GripVertical className="absolute start-2 top-2 size-4 shrink-0 cursor-grab text-white" />
         )}

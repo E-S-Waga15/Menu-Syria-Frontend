@@ -30,6 +30,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { offerSchema, type OfferValues } from "@/features/offers/schemas";
 import { formatPrice } from "@/features/public-menu/lib/format";
 import { fmt, useI18n } from "@/i18n/client";
+import { uploadImage } from "@/lib/api/upload";
 import type { Offer, OfferBadge } from "@/lib/types";
 
 /** today, as the `<input type="date">` value format */
@@ -94,21 +95,21 @@ export function OfferDialog({
     reset(
       editing
         ? {
-            name: editing.name[lang],
-            description: editing.description[lang],
-            originalPrice: editing.originalPrice
-              ? String(editing.originalPrice)
-              : "",
-            price: String(editing.price),
-            startsAt: editing.startsAt,
-            endsAt: editing.endsAt ?? "",
-            isActive: editing.isActive,
-            badge: editing.badge ?? "none",
-            includes: editing.includes.length
-              ? editing.includes.map((i) => i[lang])
-              : [""],
-            images: editing.images,
-          }
+          name: editing.name[lang],
+          description: editing.description[lang],
+          originalPrice: editing.originalPrice
+            ? String(editing.originalPrice)
+            : "",
+          price: String(editing.price),
+          startsAt: editing.startsAt,
+          endsAt: editing.endsAt ?? "",
+          isActive: editing.isActive,
+          badge: editing.badge ?? "none",
+          includes: editing.includes.length
+            ? editing.includes.map((i) => i[lang])
+            : [""],
+          images: editing.images,
+        }
         : emptyValues(),
     );
   }, [open, editing, lang, reset]);
@@ -117,9 +118,9 @@ export function OfferDialog({
   const saving =
     Number(originalPrice) > Number(price) && Number(price) > 0
       ? Math.round(
-          ((Number(originalPrice) - Number(price)) / Number(originalPrice)) *
-            100,
-        )
+        ((Number(originalPrice) - Number(price)) / Number(originalPrice)) *
+        100,
+      )
       : 0;
 
   const badges: { value: OfferBadge | "none"; label: string }[] = [
@@ -209,11 +210,10 @@ export function OfferDialog({
             <FileDropzone
               label={t.dashboard.addPhoto}
               hint={t.offers.imagesHint}
-              onFile={(file) => {
+              onFile={async (file) => {
                 if (!file) return;
-                setValue("images", [...images, URL.createObjectURL(file)], {
-                  shouldDirty: true,
-                });
+                const { url } = await uploadImage(file, "offers");
+                setValue("images", [...images, url], { shouldDirty: true });
               }}
             />
           </div>

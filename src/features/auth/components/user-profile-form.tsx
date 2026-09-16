@@ -24,6 +24,7 @@ import { fmt, useI18n } from "@/i18n/client";
 import { cn } from "@/lib/utils";
 import { registerWithOtp } from "@/features/auth/api";
 import { ApiError } from "@/lib/api/client";
+import { uploadImage } from "@/lib/api/upload";
 
 /** First-visit account creation — photo is the only optional field. */
 export function UserProfileForm() {
@@ -125,9 +126,15 @@ export function UserProfileForm() {
                 setAvatarUrl(null);
                 return;
               }
-              const reader = new FileReader();
-              reader.onload = () => setAvatarUrl(reader.result as string);
-              reader.readAsDataURL(file);
+              void uploadImage(file, "users")
+                .then(({ url }) => setAvatarUrl(url))
+                .catch((error) => {
+                  toast.error(
+                    error instanceof ApiError
+                      ? error.message
+                      : t.auth.genericError,
+                  );
+                });
             }}
           />
 
