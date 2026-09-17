@@ -58,6 +58,11 @@ export function AdminDashboardShell({ children }: { children: ReactNode }) {
     { href: `${base}/stores`, label: t.admin.stores, icon: ShoppingBag },
     { href: `${base}/agents`, label: t.admin.agents, icon: Handshake },
     {
+      href: `${base}/registration-requests`,
+      label: t.admin.registrationRequests,
+      icon: UsersRound,
+    },
+    {
       href: `${base}/subscriptions`,
       label: t.admin.subscriptions,
       icon: CreditCard,

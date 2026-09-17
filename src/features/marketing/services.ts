@@ -14,6 +14,28 @@ import type {
   Review,
 } from "@/lib/types";
 
+export interface SubscriptionPlanOption {
+  id: string;
+  name: string;
+  price: number;
+  durationDays: number;
+}
+
+export async function getSubscriptionPlans(): Promise<SubscriptionPlanOption[]> {
+  if (IS_MOCK) {
+    const { plans } = await import("@/lib/mock/data");
+    return mockDelay(
+      plans.map((plan) => ({
+        id: plan.id,
+        name: plan.name.en,
+        price: plan.priceMonthly,
+        durationDays: 30,
+      })),
+    );
+  }
+  return apiFetch("/subscription-plans");
+}
+
 export async function getGovernorates(): Promise<Governorate[]> {
   if (IS_MOCK) return mockDelay(governorates, 150);
   return apiFetch("/governorates");

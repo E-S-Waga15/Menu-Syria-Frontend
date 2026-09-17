@@ -488,6 +488,8 @@
     "bioPlaceholder": "خبرتك وما يميزك كوكيل في منطقتك…",
     "submitApplication": "أرسل الطلب",
     "applicationSent": "استلمنا طلبك! سنتواصل معك خلال 48 ساعة.",
+    "planLabel": "خطة الاشتراك",
+    "planPlaceholder": "اختر الخطة",
     "storeStep1": "معلومات المتجر",
     "storeDescriptionPlaceholder": "عرّف زبائنك بمتجرك بجملة أو جملتين…",
     "storeLogoLabel": "شعار المتجر",
@@ -768,7 +770,14 @@
     "cannotDeleteGovernorate": "لا يمكن حذف محافظة تحتوي مناطق — احذف مناطقها أولاً",
     "saved": "تم الحفظ",
     "regionName": "اسم المنطقة",
-    "governorateName": "اسم المحافظة"
+    "governorateName": "اسم المحافظة",
+    "registrationRequests": "طلبات التسجيل",
+    "noRegistrationRequests": "لا توجد طلبات تسجيل",
+    "approveRequest": "موافقة",
+    "rejectRequest": "رفض",
+    "requestApproved": "تمت الموافقة على الطلب",
+    "requestRejected": "تم رفض الطلب",
+    "selectPlan": "اختر خطة"
   },
   "orderHistory": {
     "title": "طلباتي السابقة",

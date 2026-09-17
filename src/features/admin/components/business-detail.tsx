@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 import {
   CalendarClock,
@@ -19,6 +20,12 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AdminPageHeader } from "@/features/admin/components/admin-page-header";
+import {
+  changeBusinessPlan,
+  getAdminPlans,
+  getBusinessSubscriptions,
+  updateAdminBusinessStatus,
+} from "@/features/admin/services";
 import { daysUntil } from "@/features/notifications/services";
 import { fmt, useI18n } from "@/i18n/client";
 import { toast } from "@/lib/toast";
@@ -44,7 +51,18 @@ export function AdminBusinessDetail({
   kind: "restaurant" | "store";
 }) {
   const { t, lang } = useI18n();
-  const [enabled, setEnabled] = useState(business.status !== "expired");
+  const [enabled, setEnabled] = useState(business.status === "active");
+  const [savingStatus, setSavingStatus] = useState(false);
+  const [savingPlan, setSavingPlan] = useState(false);
+  const { data: plans = [] } = useQuery({
+    queryKey: ["admin", "plans"],
+    queryFn: () => getAdminPlans(),
+  });
+  const { data: subscriptions = [] } = useQuery({
+    queryKey: ["admin", "subscriptions", business.id],
+    queryFn: () => getBusinessSubscriptions(business.id),
+  });
+  const currentSubscription = subscriptions[0];
 
   const days = daysUntil(business.planExpiresAt);
   const expired = days < 0;
@@ -59,10 +77,34 @@ export function AdminBusinessDetail({
   const start = new Date(business.planExpiresAt);
   start.setFullYear(start.getFullYear() - 1);
 
-  const toggleAccount = () => {
+  const toggleAccount = async () => {
     const next = !enabled;
-    setEnabled(next);
-    toast.success(next ? t.admin.accountEnabled : t.admin.accountDisabled);
+    setSavingStatus(true);
+    try {
+      await updateAdminBusinessStatus(
+        business.id,
+        next ? "active" : "inactive",
+      );
+      setEnabled(next);
+      toast.success(next ? t.admin.accountEnabled : t.admin.accountDisabled);
+    } catch {
+      toast.error(t.common.saveFailed);
+    } finally {
+      setSavingStatus(false);
+    }
+  };
+
+  const changePlan = async (planId: string) => {
+    if (!currentSubscription || planId === currentSubscription.planId) return;
+    setSavingPlan(true);
+    try {
+      await changeBusinessPlan(currentSubscription.id, planId);
+      toast.success(t.admin.planChanged);
+    } catch {
+      toast.error(t.common.saveFailed);
+    } finally {
+      setSavingPlan(false);
+    }
   };
 
   return (
@@ -146,7 +188,16 @@ export function AdminBusinessDetail({
               {t.agent.currentPlan}
             </dt>
             <dd className="mt-1.5 text-sm font-semibold">
-              {t.agent.planStandard}
+              <select
+                value={currentSubscription?.planId ?? ""}
+                onChange={(event) => void changePlan(event.target.value)}
+                disabled={savingPlan || plans.length === 0 || !currentSubscription}
+                className="h-9 rounded-md border border-border bg-background px-2 text-sm"
+              >
+                {plans.map((plan) => (
+                  <option key={plan.id} value={plan.id}>{plan.name[lang]}</option>
+                ))}
+              </select>
             </dd>
           </div>
         </dl>
@@ -175,7 +226,7 @@ export function AdminBusinessDetail({
           <Button
             variant="outline"
             className="h-11 flex-1 border-[1.5px]"
-            onClick={() => toast.success(t.admin.planChanged)}
+            onClick={() => currentSubscription && changePlan(currentSubscription.planId)}
           >
             <Wallet className="size-4" />
             {t.admin.changePlan}
@@ -203,9 +254,10 @@ export function AdminBusinessDetail({
             className={cn(
               "h-11",
               enabled &&
-                "border-[1.5px] border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive",
+              "border-[1.5px] border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive",
             )}
             onClick={toggleAccount}
+            disabled={savingStatus}
           >
             <Power className="size-4" />
             {enabled ? t.admin.disableAccount : t.admin.enableAccount}

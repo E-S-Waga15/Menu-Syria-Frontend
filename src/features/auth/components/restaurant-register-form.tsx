@@ -34,7 +34,11 @@ import {
   registerWizardSchema,
   type RegisterWizardValues,
 } from "@/features/auth/schemas";
-import { getGovernorates, getRegions } from "@/features/marketing/services";
+import {
+  getGovernorates,
+  getRegions,
+  getSubscriptionPlans,
+} from "@/features/marketing/services";
 import { submitRegistrationRequest } from "@/features/auth/api";
 import { ApiError } from "@/lib/api/client";
 import { useI18n } from "@/i18n/client";
@@ -111,6 +115,7 @@ export function RestaurantRegisterForm({
       // an agent page links here as ?ref=CODE, so arriving through an agent
       // pre-fills their referral instead of asking the owner to retype it
       referral: referralFromAgent,
+      planId: "",
     },
     mode: "onTouched",
   });
@@ -134,6 +139,10 @@ export function RestaurantRegisterForm({
   const { data: regions } = useQuery({
     queryKey: queryKeys.regions,
     queryFn: getRegions,
+  });
+  const { data: plans = [] } = useQuery({
+    queryKey: ["subscription-plans"],
+    queryFn: getSubscriptionPlans,
   });
 
   const regionItems = Object.fromEntries(
@@ -163,6 +172,7 @@ export function RestaurantRegisterForm({
         phone: values.whatsapp,
         type: copy ? "store" : "restaurant",
         referralCode: values.referral.trim() || undefined,
+        planId: values.planId,
         notes: [
           values.cuisine && `Cuisine: ${values.cuisine}`,
           values.description && `Description: ${values.description}`,
@@ -520,6 +530,23 @@ export function RestaurantRegisterForm({
 
         {step === 3 && (
           <div className="grid gap-6 md:grid-cols-2">
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="r-plan">{t.auth.planLabel} *</Label>
+              <select
+                id="r-plan"
+                className="h-11 w-full rounded-md border border-input bg-background px-3"
+                aria-invalid={!!errors.planId}
+                {...register("planId")}
+              >
+                <option value="">{t.auth.planPlaceholder}</option>
+                {plans.map((plan) => (
+                  <option key={plan.id} value={plan.id}>
+                    {plan.name} · {plan.price.toLocaleString()} {t.common.currency}
+                  </option>
+                ))}
+              </select>
+              <FieldError message={errors.planId?.message} />
+            </div>
             <div className="space-y-2">
               <Label htmlFor="r-wa">{t.auth.whatsappLabel} *</Label>
               <Input

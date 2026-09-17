@@ -4,7 +4,12 @@
  * only `lib/api/client.ts` needs a base URL, the shapes stay identical.
  */
 
-export type SubscriptionStatus = "active" | "expired" | "pending";
+export type SubscriptionStatus =
+  | "active"
+  | "inactive"
+  | "suspended"
+  | "expired"
+  | "pending";
 
 export interface LocalizedText {
   ar: string;

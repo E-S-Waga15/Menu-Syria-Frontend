@@ -488,6 +488,8 @@
     "bioPlaceholder": "Your experience and what makes you a great agent in your area…",
     "submitApplication": "Submit application",
     "applicationSent": "Application received! We'll reach out within 48 hours.",
+    "planLabel": "Subscription plan",
+    "planPlaceholder": "Choose a plan",
     "storeStep1": "Store info",
     "storeDescriptionPlaceholder": "Introduce your customers to your store in a sentence or two…",
     "storeLogoLabel": "Store logo",
@@ -768,7 +770,14 @@
     "cannotDeleteGovernorate": "A governorate with regions cannot be deleted — remove its regions first",
     "saved": "Saved",
     "regionName": "Region name",
-    "governorateName": "Governorate name"
+    "governorateName": "Governorate name",
+    "registrationRequests": "Registration requests",
+    "noRegistrationRequests": "No registration requests",
+    "approveRequest": "Approve",
+    "rejectRequest": "Reject",
+    "requestApproved": "Request approved",
+    "requestRejected": "Request rejected",
+    "selectPlan": "Select a plan"
   },
   "orderHistory": {
     "title": "Past orders",

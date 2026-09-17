@@ -55,6 +55,7 @@ export async function submitRegistrationRequest(input: {
   notes?: string;
   type: RegistrationRequestType;
   referralCode?: string;
+  planId?: string;
 }): Promise<{ id: string }> {
   return apiFetch("/registration-requests/public", {
     method: "POST",

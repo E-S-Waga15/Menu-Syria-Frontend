@@ -17,6 +17,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AdminPageHeader } from "@/features/admin/components/admin-page-header";
+import {
+  createAdminPlan,
+  deleteAdminPlan,
+  updateAdminPlan,
+} from "@/features/admin/services";
 import { RowActions, type RowAction } from "@/components/shared/row-actions";
 import { formatPrice } from "@/features/public-menu/lib/format";
 import { fmt, useI18n } from "@/i18n/client";
@@ -66,7 +71,7 @@ export function AdminPlansList({ plans }: { plans: Plan[] }) {
       isPopular: Boolean(plan.isPopular),
     });
 
-  const save = () => {
+  const save = async () => {
     if (!draft) return;
     const name = draft.name.trim();
     if (!name) return;
@@ -76,32 +81,59 @@ export function AdminPlansList({ plans }: { plans: Plan[] }) {
       .filter(Boolean)
       .map((f) => ({ ar: f, en: f }));
 
-    setRows((prev) => {
-      const next: Plan = {
-        id: draft.id ?? `p${Date.now()}`,
-        name: { ar: name, en: name },
-        priceMonthly: Number(draft.priceMonthly) || 0,
-        features,
-        subscriberCount:
-          prev.find((p) => p.id === draft.id)?.subscriberCount ?? 0,
-        isPopular: draft.isPopular,
-      };
+    const nextPlan: Plan = {
+      id: draft.id ?? `p${Date.now()}`,
+      name: { ar: name, en: name },
+      priceMonthly: Number(draft.priceMonthly) || 0,
+      features,
+      subscriberCount:
+        rows.find((p) => p.id === draft.id)?.subscriberCount ?? 0,
+      isPopular: draft.isPopular,
+    };
 
+    try {
+      if (draft.id) {
+        await updateAdminPlan(draft.id, {
+          name,
+          price: nextPlan.priceMonthly,
+          agentPrice: 0,
+          durationDays: 30,
+        });
+      } else {
+        await createAdminPlan({
+          name,
+          price: nextPlan.priceMonthly,
+          agentPrice: 0,
+          durationDays: 30,
+        });
+      }
+    } catch {
+      toast.error(t.common.saveFailed);
+      return;
+    }
+
+    setRows((prev) => {
       // only one tier can be the highlighted one
       const cleared = draft.isPopular
         ? prev.map((p) => ({ ...p, isPopular: false }))
         : prev;
 
       return draft.id
-        ? cleared.map((p) => (p.id === draft.id ? next : p))
-        : [...cleared, next];
+        ? cleared.map((p) => (p.id === draft.id ? nextPlan : p))
+        : [...cleared, nextPlan];
     });
 
     setDraft(null);
     toast.success(t.admin.planSaved);
   };
 
-  const remove = (plan: Plan) => {
+  const remove = async (plan: Plan) => {
+    try {
+      await deleteAdminPlan(plan.id);
+    } catch {
+      toast.error(t.common.saveFailed);
+      return;
+    }
     setRows((prev) => prev.filter((p) => p.id !== plan.id));
     toast.success(t.admin.planDeleted);
   };

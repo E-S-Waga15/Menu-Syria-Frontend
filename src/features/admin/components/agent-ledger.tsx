@@ -1,15 +1,18 @@
 "use client";
 
 import Image from "next/image";
+import { useState } from "react";
 
 import { useQuery } from "@tanstack/react-query";
 import { ArrowDownCircle, ArrowUpCircle, Percent, Wallet } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   getAdminAgentById,
   getAdminAgentLedger,
+  updateAdminAgent,
 } from "@/features/admin/services";
 import { formatPrice } from "@/features/public-menu/lib/format";
 import { StatCard } from "@/features/restaurant-dashboard/components/stat-card";
@@ -19,6 +22,8 @@ import { cn } from "@/lib/utils";
 
 export function AdminAgentLedger({ agentId }: { agentId: string }) {
   const { t, lang } = useI18n();
+  const [commissionRate, setCommissionRate] = useState("");
+  const [savingRate, setSavingRate] = useState(false);
 
   const { data: agent, isPending } = useQuery({
     queryKey: queryKeys.agents.detail(agentId),
@@ -45,6 +50,21 @@ export function AdminAgentLedger({ agentId }: { agentId: string }) {
       </p>
     );
   }
+
+  const saveCommissionRate = async () => {
+    const percentage = Number(commissionRate);
+    if (!Number.isFinite(percentage) || percentage < 0 || percentage > 100) {
+      return;
+    }
+    setSavingRate(true);
+    try {
+      await updateAdminAgent(agent.id, { commissionRate: percentage / 100 });
+      agent.commissionRate = percentage / 100;
+      setCommissionRate("");
+    } finally {
+      setSavingRate(false);
+    }
+  };
 
   const credit = ledger
     .filter((tx) => tx.amount > 0)
@@ -103,6 +123,25 @@ export function AdminAgentLedger({ agentId }: { agentId: string }) {
           accent="neutral"
         />
       </div>
+
+      <section className="flex flex-wrap items-end gap-3 rounded-2xl border border-border/60 bg-card p-5">
+        <div className="min-w-48">
+          <label className="text-sm font-semibold" htmlFor="commission-rate">
+            {t.admin.commissionRate}
+          </label>
+          <input
+            id="commission-rate"
+            className="mt-2 h-10 w-full rounded-md border border-border bg-background px-3"
+            inputMode="decimal"
+            placeholder={`${agent.commissionRate * 100}`}
+            value={commissionRate}
+            onChange={(event) => setCommissionRate(event.target.value)}
+          />
+        </div>
+        <Button onClick={() => void saveCommissionRate()} disabled={savingRate}>
+          {t.common.save}
+        </Button>
+      </section>
 
       {/* ledger */}
       <section className="space-y-3">

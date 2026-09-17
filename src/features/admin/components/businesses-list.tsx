@@ -9,6 +9,7 @@ import {
   ExternalLink,
   Eye,
   MapPin,
+  Power,
   RefreshCw,
   Wallet,
 } from "lucide-react";
@@ -19,6 +20,7 @@ import { AdminPageHeader } from "@/features/admin/components/admin-page-header";
 import { RowActions, type RowAction } from "@/components/shared/row-actions";
 import { AdminSelect } from "@/features/admin/components/admin-select";
 import { AdminViewToggle } from "@/features/admin/components/admin-view-toggle";
+import { updateAdminBusinessStatus } from "@/features/admin/services";
 import { daysUntil } from "@/features/notifications/services";
 import { fmt, useI18n } from "@/i18n/client";
 import { toast } from "@/lib/toast";
@@ -45,6 +47,7 @@ export function AdminBusinessesList({
   kind: "restaurant" | "store";
 }) {
   const { t, lang } = useI18n();
+  const [businessRows, setBusinessRows] = useState(businesses);
   const view = useUiStore((s) => s.adminListView);
   const setView = useUiStore((s) => s.setAdminListView);
 
@@ -54,6 +57,7 @@ export function AdminBusinessesList({
 
   const base = `/${lang}/admin`;
   const storefrontBase = kind === "restaurant" ? "menu" : "store";
+  const adminBusinessBase = kind === "restaurant" ? "restaurants" : "stores";
 
   const hasFilters =
     query.trim() !== "" || governorateId !== ALL || regionId !== ALL;
@@ -75,7 +79,7 @@ export function AdminBusinessesList({
 
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return businesses
+    return businessRows
       .map((business) => ({
         business,
         days: daysUntil(business.planExpiresAt),
@@ -93,16 +97,35 @@ export function AdminBusinessesList({
         return true;
       })
       .sort((a, b) => a.days - b.days);
-  }, [businesses, query, governorateId, regionId]);
+  }, [businessRows, query, governorateId, regionId]);
 
   const governorateName = (id: string) =>
     governorates.find((g) => g.id === id)?.name[lang] ?? "";
+
+  const toggleAccount = async (business: Business) => {
+    const nextStatus = business.status === "active" ? "inactive" : "active";
+    try {
+      await updateAdminBusinessStatus(business.id, nextStatus);
+      setBusinessRows((current) =>
+        current.map((row) =>
+          row.id === business.id ? { ...row, status: nextStatus } : row,
+        ),
+      );
+      toast.success(
+        nextStatus === "active"
+          ? t.admin.accountEnabled
+          : t.admin.accountDisabled,
+      );
+    } catch {
+      toast.error(t.common.saveFailed);
+    }
+  };
 
   const actionsFor = (business: Business): RowAction[] => [
     {
       label: t.admin.viewProfile,
       icon: Eye,
-      render: <Link href={`${base}/${storefrontBase}s/${business.id}`} />,
+      render: <Link href={`${base}/${adminBusinessBase}/${business.id}`} />,
     },
     {
       label: t.admin.openStorefront,
@@ -122,7 +145,16 @@ export function AdminBusinessesList({
     {
       label: t.admin.changePlan,
       icon: Wallet,
-      onSelect: () => toast.success(t.admin.planChanged),
+      render: <Link href={`${base}/${adminBusinessBase}/${business.id}`} />,
+    },
+    {
+      label:
+        business.status === "active"
+          ? t.admin.disableAccount
+          : t.admin.enableAccount,
+      icon: Power,
+      onSelect: () => void toggleAccount(business),
+      danger: business.status === "active",
     },
   ];
 
@@ -213,7 +245,7 @@ export function AdminBusinessesList({
                   directory to scan, not a gallery to browse */}
               <div className="relative h-28">
                 <Link
-                  href={`${base}/${storefrontBase}s/${business.id}`}
+                  href={`${base}/${adminBusinessBase}/${business.id}`}
                   className="absolute inset-0"
                   aria-label={business.name[lang]}
                 >
@@ -252,7 +284,7 @@ export function AdminBusinessesList({
                 />
                 <div className="min-w-0 flex-1">
                   <Link
-                    href={`${base}/${storefrontBase}s/${business.id}`}
+                    href={`${base}/${adminBusinessBase}/${business.id}`}
                     className="block truncate text-sm font-bold group-hover:text-primary"
                   >
                     {business.name[lang]}
@@ -293,7 +325,7 @@ export function AdminBusinessesList({
 
               <div className="min-w-0 flex-1">
                 <Link
-                  href={`${base}/${storefrontBase}s/${business.id}`}
+                  href={`${base}/${adminBusinessBase}/${business.id}`}
                   className="block truncate text-sm font-bold hover:text-primary"
                 >
                   {business.name[lang]}

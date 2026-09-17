@@ -29,6 +29,25 @@ export function RestaurantGallery({ images }: { images: string[] }) {
 
   const many = images.length > 1;
 
+  // mirror embla's position so the dashes can follow it. No initial read:
+  // embla starts on slide 0 and so does this state.
+  useEffect(() => {
+    if (!api) return;
+    const onSelect = () => setSlide(api.selectedScrollSnap());
+    api.on("select", onSelect);
+    return () => {
+      api.off("select", onSelect);
+    };
+  }, [api]);
+
+  // Advance on a timer, and stand down while the visitor is interacting —
+  // a carousel that moves under a pointer mid-drag feels broken.
+  useEffect(() => {
+    if (!api || !many || paused) return;
+    const id = window.setInterval(() => api.scrollNext(), SLIDE_MS);
+    return () => window.clearInterval(id);
+  }, [api, many, paused]);
+
   // no photos uploaded yet — a flat hero reads better than an empty slider
   if (images.length === 0) {
     return (
@@ -48,25 +67,6 @@ export function RestaurantGallery({ images }: { images: string[] }) {
       </div>
     );
   }
-
-  // mirror embla's position so the dashes can follow it. No initial read:
-  // embla starts on slide 0 and so does this state.
-  useEffect(() => {
-    if (!api) return;
-    const onSelect = () => setSlide(api.selectedScrollSnap());
-    api.on("select", onSelect);
-    return () => {
-      api.off("select", onSelect);
-    };
-  }, [api]);
-
-  // Advance on a timer, and stand down while the visitor is interacting —
-  // a carousel that moves under a pointer mid-drag feels broken.
-  useEffect(() => {
-    if (!api || !many || paused) return;
-    const id = window.setInterval(() => api.scrollNext(), SLIDE_MS);
-    return () => window.clearInterval(id);
-  }, [api, many, paused]);
 
   return (
     <Carousel

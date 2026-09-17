@@ -53,6 +53,7 @@ export const registerWizardSchema = (v: ValidationMessages) =>
     instagram: z.string(),
     facebook: z.string(),
     referral: z.string(),
+    planId: z.string().min(1, v.required),
   });
 export type RegisterWizardValues = z.infer<
   ReturnType<typeof registerWizardSchema>

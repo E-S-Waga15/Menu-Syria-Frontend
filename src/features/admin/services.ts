@@ -25,6 +25,35 @@ import type {
  */
 export type AdminAuth = { accessToken?: string | null };
 
+export type AdminBusinessStatus = "active" | "inactive" | "suspended";
+
+export type RegistrationRequestStatus = "pending" | "approved" | "rejected";
+
+export interface RegistrationRequest {
+  id: string;
+  applicantName: string;
+  phone: string;
+  notes: string | null;
+  type: "restaurant" | "store" | "agent";
+  status: RegistrationRequestStatus;
+  applicantUserId: string | null;
+  planId: string | null;
+  plan?: { id: string; name: string; durationDays: number } | null;
+  createdAt: string;
+  district?: { name?: string };
+  agent?: { name?: string };
+}
+
+export interface BusinessSubscription {
+  id: string;
+  businessId: string;
+  planId: string;
+  startDate: string;
+  endDate: string;
+  status: string;
+  plan?: { id: string; name: string; durationDays: number };
+}
+
 /** Authorization header for an explicitly-provided token, if any. */
 function authHeaders({ accessToken }: AdminAuth): HeadersInit {
   return accessToken ? { Authorization: `Bearer ${accessToken}` } : {};
@@ -93,6 +122,136 @@ export async function getAdminUsers(
 export async function getAdminPlans(auth: AdminAuth = {}): Promise<Plan[]> {
   if (IS_MOCK) return mockDelay(plans);
   return apiFetch("/admin/plans", { headers: authHeaders(auth) });
+}
+
+export async function updateAdminBusinessStatus(
+  businessId: string,
+  status: AdminBusinessStatus,
+  auth: AdminAuth = {},
+): Promise<void> {
+  if (IS_MOCK) return mockDelay(undefined, 150);
+  await apiFetch(`/businesses/${businessId}/status`, {
+    method: "PATCH",
+    headers: authHeaders(auth),
+    body: { status },
+  });
+}
+
+export async function getRegistrationRequests(
+  auth: AdminAuth = {},
+): Promise<RegistrationRequest[]> {
+  if (IS_MOCK) return mockDelay([]);
+  return apiFetch("/registration-requests", { headers: authHeaders(auth) });
+}
+
+export async function updateRegistrationRequestStatus(
+  id: string,
+  status: RegistrationRequestStatus,
+  planId?: string,
+  auth: AdminAuth = {},
+): Promise<RegistrationRequest> {
+  return apiFetch(`/registration-requests/${id}/status`, {
+    method: "PATCH",
+    headers: authHeaders(auth),
+    body: { status, planId },
+  });
+}
+
+export async function getBusinessSubscriptions(
+  businessId: string,
+  auth: AdminAuth = {},
+): Promise<BusinessSubscription[]> {
+  if (IS_MOCK) return mockDelay([]);
+  return apiFetch(`/subscriptions?businessId=${businessId}`, {
+    headers: authHeaders(auth),
+  });
+}
+
+export async function changeBusinessPlan(
+  subscriptionId: string,
+  planId: string,
+  auth: AdminAuth = {},
+): Promise<BusinessSubscription> {
+  return apiFetch(`/subscriptions/${subscriptionId}`, {
+    method: "PATCH",
+    headers: authHeaders(auth),
+    body: { planId },
+  });
+}
+
+export async function updateAdminAgent(
+  id: string,
+  input: { commissionRate: number },
+  auth: AdminAuth = {},
+): Promise<void> {
+  await apiFetch(`/agents/${id}`, {
+    method: "PATCH",
+    headers: authHeaders(auth),
+    body: input,
+  });
+}
+
+export interface AdminPlanWriteInput {
+  name: string;
+  price: number;
+  agentPrice: number;
+  durationDays: number;
+  hasCart?: boolean;
+  hasStatistics?: boolean;
+}
+
+export async function createAdminPlan(
+  input: AdminPlanWriteInput,
+  auth: AdminAuth = {},
+): Promise<Plan> {
+  if (IS_MOCK) {
+    return mockDelay({
+      id: `p${Date.now()}`,
+      name: { ar: input.name, en: input.name },
+      priceMonthly: input.price,
+      features: [],
+      subscriberCount: 0,
+      isPopular: false,
+    });
+  }
+  return apiFetch("/subscription-plans", {
+    method: "POST",
+    headers: authHeaders(auth),
+    body: input,
+  });
+}
+
+export async function updateAdminPlan(
+  id: string,
+  input: Partial<AdminPlanWriteInput>,
+  auth: AdminAuth = {},
+): Promise<Plan> {
+  if (IS_MOCK) {
+    return mockDelay({
+      id,
+      name: { ar: input.name ?? "", en: input.name ?? "" },
+      priceMonthly: input.price ?? 0,
+      features: [],
+      subscriberCount: 0,
+      isPopular: false,
+    });
+  }
+  return apiFetch(`/subscription-plans/${id}`, {
+    method: "PATCH",
+    headers: authHeaders(auth),
+    body: input,
+  });
+}
+
+export async function deleteAdminPlan(
+  id: string,
+  auth: AdminAuth = {},
+): Promise<void> {
+  if (IS_MOCK) return mockDelay(undefined, 150);
+  await apiFetch<void>(`/subscription-plans/${id}`, {
+    method: "DELETE",
+    headers: authHeaders(auth),
+  });
 }
 
 /**
