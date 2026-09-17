@@ -14,6 +14,7 @@ export function FileDropzone({
   onFile,
   className,
   variant = "card",
+  previewUrl,
 }: {
   label: string;
   hint?: string;
@@ -21,11 +22,15 @@ export function FileDropzone({
   className?: string;
   /** "card" = dashed rectangle (logos, ID docs); "avatar" = circular profile photo */
   variant?: "card" | "avatar";
+  /** An image already stored on the server — standing in for the placeholder
+   * until the caller's own file replaces it. It is not removable from here:
+   * the X only undoes a file this component just picked. */
+  previewUrl?: string | null;
 }) {
   const { t } = useI18n();
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
-  const [preview, setPreview] = useState<string | null>(null);
+  const [preview, setPreview] = useState<string | null>(previewUrl ?? null);
   const [fileName, setFileName] = useState<string | null>(null);
 
   const accept = (file: File | undefined) => {
@@ -97,14 +102,16 @@ export function FileDropzone({
         </span>
 
         {preview ? (
-          <span
-            role="button"
-            aria-label={t.common.delete}
-            onClick={clear}
-            className="absolute top-0 end-0 flex size-7 items-center justify-center rounded-full bg-card text-muted-foreground ring-2 ring-background hover:bg-destructive/10 hover:text-destructive"
-          >
-            <X className="size-3.5" />
-          </span>
+          fileName ? (
+            <span
+              role="button"
+              aria-label={t.common.delete}
+              onClick={clear}
+              className="absolute top-0 end-0 flex size-7 items-center justify-center rounded-full bg-card text-muted-foreground ring-2 ring-background hover:bg-destructive/10 hover:text-destructive"
+            >
+              <X className="size-3.5" />
+            </span>
+          ) : null
         ) : (
           <span className="absolute bottom-0 end-0 flex size-8 items-center justify-center rounded-full bg-primary text-primary-foreground ring-2 ring-background">
             <Camera className="size-4" />
@@ -149,16 +156,18 @@ export function FileDropzone({
             unoptimized
           />
           <p className="max-w-full truncate text-xs font-semibold">
-            {fileName}
+            {fileName ?? label}
           </p>
-          <span
-            role="button"
-            aria-label={t.common.delete}
-            onClick={clear}
-            className="absolute top-2 end-2 flex size-6 items-center justify-center rounded-full bg-muted text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-          >
-            <X className="size-3.5" />
-          </span>
+          {fileName && (
+            <span
+              role="button"
+              aria-label={t.common.delete}
+              onClick={clear}
+              className="absolute top-2 end-2 flex size-6 items-center justify-center rounded-full bg-muted text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+            >
+              <X className="size-3.5" />
+            </span>
+          )}
         </>
       ) : (
         <>

@@ -13,6 +13,11 @@ export const queryKeys = {
     waiters: (id: string) => ["restaurants", id, "waiters"] as const,
   },
   me: {
+    /**
+     * The signed-in person's own account (name, email, avatar, phone
+     * numbers) — role-agnostic, unlike `business` below.
+     */
+    account: ["me", "account"] as const,
     /** the signed-in user's own business profile */
     business: ["me", "business"] as const,
     menu: ["me", "menu"] as const,
