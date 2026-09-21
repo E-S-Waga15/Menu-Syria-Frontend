@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import {
   Bell,
   CreditCard,
+  HandCoins,
   Handshake,
   LayoutDashboard,
   Settings2,
@@ -61,6 +62,11 @@ export function AdminDashboardShell({ children }: { children: ReactNode }) {
       href: `${base}/registration-requests`,
       label: t.admin.registrationRequests,
       icon: UsersRound,
+    },
+    {
+      href: `${base}/subscription-requests`,
+      label: t.admin.subscriptionRequests,
+      icon: HandCoins,
     },
     {
       href: `${base}/subscriptions`,

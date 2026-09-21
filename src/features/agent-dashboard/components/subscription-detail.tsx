@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 import {
   ArrowUpRight,
@@ -13,6 +14,8 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { requestBusinessRenewal } from "@/features/agent-dashboard/services";
+import { getSubscriptionPlans } from "@/features/marketing/services";
 import { daysUntil } from "@/features/notifications/services";
 import { fmt, useI18n } from "@/i18n/client";
 import type { Business } from "@/lib/types";
@@ -23,9 +26,9 @@ import { cn } from "@/lib/utils";
  * One subscription, in the order an agent needs it: whose it is, how long it
  * has, then the two things they can do about it.
  *
- * Renew and upgrade raise a request rather than taking payment — billing is
- * not the agent's to complete, and a button that silently does nothing would
- * be worse than one that says what it started.
+ * Renew and upgrade file a subscription request rather than taking payment —
+ * billing is confirmed hand-to-hand by an admin, and a button that silently
+ * does nothing would be worse than one that says what it started.
  */
 export function SubscriptionDetail({
   business,
@@ -64,6 +67,36 @@ export function SubscriptionDetail({
         };
 
   const storefront = `/${lang}/${kind === "restaurant" ? "menu" : "store"}/${business.slug}`;
+
+  // Plans drive the request: the agent picks the target plan, then the
+  // request tells the admin to collect the cash and activate/renew it.
+  const [plans, setPlans] = useState<
+    { id: string; name: string; price: number }[]
+  >([]);
+  const [selectedPlanId, setSelectedPlanId] = useState("");
+  const [requesting, setRequesting] = useState(false);
+
+  useEffect(() => {
+    void getSubscriptionPlans().then((fetched) => {
+      setPlans(fetched);
+      if (fetched.length === 1) setSelectedPlanId(fetched[0]!.id);
+    });
+  }, []);
+
+  const request = async (kind2: "renew" | "upgrade") => {
+    if (!selectedPlanId) return;
+    setRequesting(true);
+    try {
+      await requestBusinessRenewal(business.id, selectedPlanId);
+      toast.success(
+        kind2 === "upgrade" ? t.agent.upgradeRequested : t.agent.renewRequested,
+      );
+    } catch {
+      toast.error(t.common.saveFailed);
+    } finally {
+      setRequesting(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -150,7 +183,8 @@ export function SubscriptionDetail({
         <div className="mt-5 flex flex-col gap-2 sm:flex-row">
           <Button
             className="h-11 flex-1"
-            onClick={() => toast.success(t.agent.renewRequested)}
+            disabled={requesting || !selectedPlanId}
+            onClick={() => void request("renew")}
           >
             <RefreshCw className="size-4" />
             {t.agent.renewPlan}
@@ -158,12 +192,31 @@ export function SubscriptionDetail({
           <Button
             variant="outline"
             className="h-11 flex-1 border-[1.5px]"
-            onClick={() => toast.success(t.agent.upgradeRequested)}
+            disabled={requesting || !selectedPlanId}
+            onClick={() => void request("upgrade")}
           >
             <ArrowUpRight className="size-4" />
             {t.agent.upgradePlan}
           </Button>
         </div>
+
+        {/* One plan picker serves both actions — the request just carries it */}
+        {plans.length > 0 && (
+          <select
+            value={selectedPlanId}
+            onChange={(event) => setSelectedPlanId(event.target.value)}
+            className="mt-2 h-10 w-full rounded-md border border-input bg-background px-2 text-sm sm:mt-3 sm:w-auto"
+          >
+            <option value="">{t.admin.selectPlan}</option>
+            {plans.map((plan) => (
+              <option key={plan.id} value={plan.id}>
+                {plan.name}
+                {" — "}
+                {plan.price}
+              </option>
+            ))}
+          </select>
+        )}
       </section>
 
       <section className="rounded-2xl border border-border/60 bg-card p-5 md:p-6">

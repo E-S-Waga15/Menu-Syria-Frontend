@@ -777,7 +777,18 @@
     "rejectRequest": "رفض",
     "requestApproved": "تمت الموافقة على الطلب",
     "requestRejected": "تم رفض الطلب",
-    "selectPlan": "اختر خطة"
+    "selectPlan": "اختر خطة",
+    "subscriptionRequests": "طلبات الاشتراك",
+    "noSubscriptionRequests": "لا توجد طلبات اشتراك — طلبات التجديد والترقية من المنشآت والوكلاء تصل إلى هنا",
+    "subscriptionRequestsHint": "الموافقة تعني أن المبلغ استُلم نقداً — وهي ما يفعّل الاشتراك أو يجدّده. لا يوجد دفع إلكتروني.",
+    "subscriptionRequestApproved": "تم تأكيد الدفع — تم تفعيل الاشتراك",
+    "confirmPayment": "تأكيد استلام المبلغ",
+    "pendingPayments": "بانتظار الدفع",
+    "noPendingPayments": "لا شيء بانتظار الدفع — كل الاشتراكات المعتمدة مفعّلة",
+    "subscriptionActivated": "تم تأكيد الدفع — الاشتراك مفعّل الآن",
+    "renewalRequested": "تم إرسال طلب التجديد — ادفع لوكيلك أو لنا نقداً وسنفعّله",
+    "choosePlan": "اختر خطة",
+    "statusPendingPayment": "بانتظار الدفع"
   },
   "orderHistory": {
     "title": "طلباتي السابقة",

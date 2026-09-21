@@ -50,7 +50,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuthStore } from "@/features/auth/store";
-import { getGovernorates, getRegions } from "@/features/marketing/services";
+import { getGovernorates, getRegions, getSubscriptionPlans } from "@/features/marketing/services";
+import { createSubscriptionRequest } from "@/features/subscription-requests/services";
 import { useBusinessProfileMutations } from "@/features/restaurant-dashboard/hooks/use-business-profile";
 import { getMyRestaurant } from "@/features/restaurant-dashboard/services";
 import type { BusinessProfileInput } from "@/features/restaurant-dashboard/services";
@@ -786,6 +787,26 @@ function SubscriptionSection({
   t: I18n["t"];
   lang: I18n["lang"];
 }) {
+  const [renewing, setRenewing] = useState(false);
+  const { data: plans = [] } = useQuery({
+    queryKey: ["subscription-plans"],
+    queryFn: getSubscriptionPlans,
+  });
+
+  const renew = async () => {
+    const planId = plans[0]?.id;
+    if (!planId) return;
+    setRenewing(true);
+    try {
+      await createSubscriptionRequest({ planId });
+      toast.success(t.admin.renewalRequested);
+    } catch {
+      toast.error(t.common.saveFailed);
+    } finally {
+      setRenewing(false);
+    }
+  };
+
   return (
     <ProfileSection
       title={t.dashboard.planTab}
@@ -820,7 +841,13 @@ function SubscriptionSection({
             </p>
           </div>
         </div>
-        <Button className="min-w-36">{t.dashboard.renewPlan}</Button>
+        <Button
+          className="min-w-36"
+          onClick={() => void renew()}
+          disabled={renewing || plans.length === 0}
+        >
+          {t.dashboard.renewPlan}
+        </Button>
       </div>
     </ProfileSection>
   );

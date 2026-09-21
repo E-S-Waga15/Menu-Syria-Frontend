@@ -3,6 +3,22 @@ import { agents, agentTransactions, restaurants, stores } from "@/lib/mock/data"
 import type { Agent, Restaurant, Store, Transaction } from "@/lib/types";
 
 /**
+ * An agent asks the platform to renew (or upgrade) a referred business's
+ * subscription — the actual hand-to-hand payment is confirmed by an admin,
+ * so this only files the request rather than changing billing itself.
+ */
+export async function requestBusinessRenewal(
+  businessId: string,
+  planId: string,
+): Promise<void> {
+  if (IS_MOCK) return mockDelay(undefined, 200);
+  await apiFetch("/subscription-requests", {
+    method: "POST",
+    body: { businessId, planId },
+  });
+}
+
+/**
  * Extra auth the portal's server components thread in: server-side
  * fetches read the session cookie (see `features/agent-dashboard/server.ts`),
  * while client components skip this and let `apiFetch` attach the

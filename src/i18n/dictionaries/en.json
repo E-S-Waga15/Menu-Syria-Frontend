@@ -777,7 +777,18 @@
     "rejectRequest": "Reject",
     "requestApproved": "Request approved",
     "requestRejected": "Request rejected",
-    "selectPlan": "Select a plan"
+    "selectPlan": "Select a plan",
+    "subscriptionRequests": "Subscription requests",
+    "noSubscriptionRequests": "No subscription requests — renewals and upgrade requests from businesses and agents land here",
+    "subscriptionRequestsHint": "Approving confirms the cash was collected in person — that is what activates or renews the subscription. No online payment is involved.",
+    "subscriptionRequestApproved": "Payment confirmed — subscription activated",
+    "confirmPayment": "Confirm payment collected",
+    "pendingPayments": "Awaiting payment",
+    "noPendingPayments": "Nothing waiting on payment — every approved subscription is active",
+    "subscriptionActivated": "Payment confirmed — subscription is now active",
+    "renewalRequested": "Renewal requested — pay your agent or us in person and we activate it",
+    "choosePlan": "Choose a plan",
+    "statusPendingPayment": "Awaiting payment"
   },
   "orderHistory": {
     "title": "Past orders",
