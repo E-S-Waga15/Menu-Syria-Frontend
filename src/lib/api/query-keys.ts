@@ -45,5 +45,6 @@ export const queryKeys = {
     stats: ["admin", "stats"] as const,
     restaurants: ["admin", "restaurants"] as const,
     agents: ["admin", "agents"] as const,
+    whatsappOtp: ["admin", "whatsapp-otp", "status"] as const,
   },
 } as const;

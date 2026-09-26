@@ -296,3 +296,193 @@ export async function getAdminBusiness(
 
   return null;
 }
+
+// ---------------------------------------------------------------------------
+// WhatsApp OTP gateway
+// ---------------------------------------------------------------------------
+
+/** Where the gateway's status lives. */
+export const WHATSAPP_OTP_STATUS_PATH = "/whatsapp-otp/status";
+
+/**
+ * The gateway's health, as the console needs to read it.
+ *
+ * Four booleans rather than one status string, because they fail
+ * independently and the panel says something different for each: the service
+ * may be unconfigured on the server, configured but unreachable over the
+ * network, reachable but not paired to a phone, or paired and working.
+ */
+export interface WhatsappOtpStatus {
+  /** the gateway is set up on the server at all */
+  configured: boolean;
+  /** it answered this particular request */
+  reachable: boolean;
+  /** paired to a phone right now — the one that decides "connected" */
+  connected: boolean;
+  hasPendingQr: boolean;
+  /** a full `data:image/png;base64,...` URL, ready for `src` as-is */
+  qrBase64: string | null;
+  /** the linked number, when the gateway reports one */
+  phone: string | null;
+  /** the name the device is paired under */
+  profileName: string | null;
+}
+
+/**
+ * The response, read loosely.
+ *
+ * The OpenAPI document declares no schema for this endpoint — the 200 carries
+ * an empty description — so the exact spelling of the identity fields is not
+ * knowable from the contract. Rather than guess one name and render a blank
+ * line when it is wrong, the reader below accepts the handful of spellings a
+ * WhatsApp gateway realistically uses and takes the first that holds a value.
+ * When the real shape is confirmed this can collapse to one field each.
+ */
+interface WhatsappOtpStatusResponse {
+  configured?: boolean;
+  reachable?: boolean;
+  connected?: boolean;
+  has_pending_qr?: boolean;
+  qr_base64?: string | null;
+  [key: string]: unknown;
+}
+
+/** first of `keys` that holds a non-empty string */
+function pickString(
+  raw: Record<string, unknown>,
+  keys: readonly string[],
+): string | null {
+  for (const key of keys) {
+    const value = raw[key];
+    if (typeof value === "string" && value.trim() !== "") return value.trim();
+  }
+  return null;
+}
+
+/** a jid arrives as `963...@s.whatsapp.net`; only the number is wanted */
+function toDisplayPhone(value: string | null): string | null {
+  if (!value) return null;
+  const digits = value.split("@")[0]!.replace(/\D/g, "");
+  if (digits === "") return null;
+  return `+${digits}`;
+}
+
+export async function getWhatsappOtpStatus(
+  auth: AdminAuth = {},
+): Promise<WhatsappOtpStatus> {
+  if (IS_MOCK)
+    return mockDelay({
+      configured: true,
+      reachable: true,
+      connected: true,
+      hasPendingQr: false,
+      qrBase64: null,
+      phone: "+963959825575",
+      profileName: "Menu Syria",
+    });
+
+  const raw = await apiFetch<WhatsappOtpStatusResponse>(
+    WHATSAPP_OTP_STATUS_PATH,
+    { headers: authHeaders(auth) },
+  );
+
+  return {
+    configured: raw.configured ?? false,
+    reachable: raw.reachable ?? false,
+    connected: raw.connected ?? false,
+    hasPendingQr: raw.has_pending_qr ?? false,
+    qrBase64: raw.qr_base64 ?? null,
+    phone: toDisplayPhone(
+      pickString(raw, [
+        "phone",
+        "phoneNumber",
+        "phone_number",
+        "number",
+        "msisdn",
+        "jid",
+        "wid",
+      ]),
+    ),
+    profileName: pickString(raw, [
+      "profileName",
+      "profile_name",
+      "pushName",
+      "push_name",
+      "instanceName",
+      "instance_name",
+      "name",
+    ]),
+  };
+}
+
+/**
+ * What the pairing endpoints answer with: the connection's state plus, when a
+ * phone still has to scan, the code to scan. `qrDataUrl` is a full
+ * `data:image/png;base64,...` string, ready for `src` as it stands.
+ */
+export interface WhatsappOtpPairing {
+  connected: boolean;
+  qrDataUrl: string | null;
+}
+
+interface WhatsappOtpPairingResponse {
+  connected?: boolean;
+  qr?: string | null;
+  qrDataUrl?: string | null;
+  qr_data_url?: string | null;
+}
+
+function toPairing(raw: WhatsappOtpPairingResponse): WhatsappOtpPairing {
+  return {
+    connected: raw.connected ?? false,
+    qrDataUrl: raw.qrDataUrl ?? raw.qr_data_url ?? raw.qr ?? null,
+  };
+}
+
+/**
+ * Pairs a number when none is linked.
+ *
+ * Answers 409 when one already is — the gateway refuses to guess whether the
+ * admin meant to swap or to add, which is why `replace` exists as its own
+ * call. The 409 travels up as an `ApiError` so the dialog can say so.
+ */
+export async function linkWhatsappOtp(
+  auth: AdminAuth = {},
+): Promise<WhatsappOtpPairing> {
+  if (IS_MOCK) return mockDelay({ connected: false, qrDataUrl: null });
+  return toPairing(
+    await apiFetch<WhatsappOtpPairingResponse>("/whatsapp-otp/link", {
+      method: "POST",
+      headers: authHeaders(auth),
+    }),
+  );
+}
+
+/**
+ * Swaps the linked number in one step: logs the current one out, drops the
+ * saved session and starts a fresh pairing. Sending stops until the new code
+ * is scanned, which is why the dialog asks before calling this.
+ */
+export async function replaceWhatsappOtp(
+  auth: AdminAuth = {},
+): Promise<WhatsappOtpPairing> {
+  if (IS_MOCK) return mockDelay({ connected: false, qrDataUrl: null });
+  return toPairing(
+    await apiFetch<WhatsappOtpPairingResponse>("/whatsapp-otp/replace", {
+      method: "POST",
+      headers: authHeaders(auth),
+    }),
+  );
+}
+
+/**
+ * Unlinks and does not reconnect. Verification codes stop going out until
+ * someone pairs again, so this is the destructive entry in the menu.
+ */
+export async function unlinkWhatsappOtp(auth: AdminAuth = {}): Promise<void> {
+  if (IS_MOCK) return mockDelay(undefined);
+  await apiFetch("/whatsapp-otp/unlink", {
+    method: "POST",
+    headers: authHeaders(auth),
+  });
+}

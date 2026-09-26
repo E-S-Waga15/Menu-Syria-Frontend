@@ -8,6 +8,7 @@ import { BellRing, Clock3, MapPin } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { PlacesManager } from "@/features/admin/components/places-manager";
+import { WhatsappOtpCard } from "@/features/admin/components/whatsapp-otp-card";
 import { getGovernorates, getRegions } from "@/features/marketing/services";
 import { useI18n } from "@/i18n/client";
 import { queryKeys } from "@/lib/api/query-keys";
@@ -80,6 +81,10 @@ export function SystemSettings() {
       </section>
 
       <div className="space-y-6">
+        {/* the one panel here backed by a live service rather than local
+            state, so it leads the column */}
+        <WhatsappOtpCard />
+
         {/* cron jobs */}
         <section className="rounded-2xl border border-border/60 bg-card">
           <h2 className="flex items-center gap-2.5 border-b border-border/60 px-5 py-4 font-heading text-lg font-semibold">
