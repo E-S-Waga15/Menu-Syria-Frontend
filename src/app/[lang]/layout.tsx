@@ -45,6 +45,10 @@ export async function generateMetadata({
 
   return {
     metadataBase: new URL(SITE_URL),
+    applicationName: t.seo.siteName,
+    authors: [{ name: t.seo.siteName, url: SITE_URL }],
+    creator: t.seo.siteName,
+    publisher: t.seo.siteName,
     title: {
       default: t.seo.homeTitle,
       template: `%s | ${t.seo.siteName}`,
@@ -52,19 +56,46 @@ export async function generateMetadata({
     description: t.seo.homeDescription,
     keywords: t.seo.keywords,
     alternates: alternatesFor(lang, ""),
+    icons: {
+      icon: [
+        { url: "/favicon.ico", sizes: "any" },
+        { url: "/icon.png", type: "image/png", sizes: "512x512" },
+      ],
+      apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
+    },
+    manifest: "/manifest.webmanifest",
     openGraph: {
       type: "website",
       siteName: t.seo.siteName,
       locale: lang === "ar" ? "ar_SY" : "en_US",
       title: t.seo.homeTitle,
       description: t.seo.homeDescription,
+      url: `${SITE_URL}/${lang}`,
+      images: [
+        {
+          url: `${SITE_URL}/${lang}/opengraph-image`,
+          width: 1200,
+          height: 630,
+          alt: t.seo.homeTitle,
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
       title: t.seo.homeTitle,
       description: t.seo.homeDescription,
     },
-    robots: { index: true, follow: true },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+        "max-video-preview": -1,
+      },
+    },
   };
 }
 

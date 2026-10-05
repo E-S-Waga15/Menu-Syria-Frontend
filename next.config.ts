@@ -27,6 +27,8 @@ const nextConfig: NextConfig = {
      */
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },
+      // production API-hosted business images
+      { protocol: "https", hostname: "menusyria.softup.agency" },
       // storefront logos and covers once uploads move to a real bucket
       { protocol: "https", hostname: "**.public.blob.vercel-storage.com" },
       // filesystem-backed uploads served by the Nest backend in dev

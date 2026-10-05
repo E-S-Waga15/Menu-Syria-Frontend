@@ -16,10 +16,18 @@ export function organizationJsonLd(siteName: string, description: string) {
   return {
     "@context": "https://schema.org",
     "@type": "Organization",
+    "@id": `${SITE_URL}/#organization`,
     name: siteName,
     url: SITE_URL,
     description,
+    logo: `${SITE_URL}/icon.png`,
     areaServed: { "@type": "Country", name: "Syria" },
+    knowsAbout: [
+      "QR digital menus",
+      "restaurant order management",
+      "online stores",
+      "Syria",
+    ],
   };
 }
 
@@ -27,9 +35,19 @@ export function websiteJsonLd(siteName: string, lang: Locale) {
   return {
     "@context": "https://schema.org",
     "@type": "WebSite",
+    "@id": `${SITE_URL}/${lang}/#website`,
     name: siteName,
     url: `${SITE_URL}/${lang}`,
     inLanguage: lang,
+    publisher: { "@id": `${SITE_URL}/#organization` },
+    potentialAction: {
+      "@type": "SearchAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: `${SITE_URL}/${lang}/restaurants?query={search_term_string}`,
+      },
+      "query-input": "required name=search_term_string",
+    },
   };
 }
 
