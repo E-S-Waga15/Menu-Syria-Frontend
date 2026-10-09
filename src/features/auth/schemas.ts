@@ -15,6 +15,28 @@ export const otpFormSchema = (v: ValidationMessages) =>
   z.object({ otp: z.string().length(6, v.otpIncomplete) });
 export type OtpFormValues = z.infer<ReturnType<typeof otpFormSchema>>;
 
+/** Forgot-password: the OTP sent to the phone plus the new password, set
+ * together in one call — there is no separate "verify" step for a reset. */
+export const resetPasswordSchema = (v: ValidationMessages) =>
+  z
+    .object({
+      otp: z.string().length(6, v.otpIncomplete),
+      newPassword: z.string().min(8, v.passwordMin),
+      confirmNewPassword: z.string().min(1, v.required),
+    })
+    .superRefine((values, ctx) => {
+      if (values.newPassword !== values.confirmNewPassword) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["confirmNewPassword"],
+          message: v.passwordsMismatch,
+        });
+      }
+    });
+export type ResetPasswordValues = z.infer<
+  ReturnType<typeof resetPasswordSchema>
+>;
+
 /** Business sign-in's second method: username + password (phone+OTP is the first). */
 export const credentialsSchema = (v: ValidationMessages) =>
   z.object({

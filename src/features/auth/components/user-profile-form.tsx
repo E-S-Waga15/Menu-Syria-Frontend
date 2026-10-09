@@ -25,11 +25,13 @@ import { cn } from "@/lib/utils";
 import { registerWithOtp } from "@/features/auth/api";
 import { ApiError } from "@/lib/api/client";
 import { uploadImage } from "@/lib/api/upload";
+import { useNavigationLoading } from "@/providers/navigation-loading";
 
 /** First-visit account creation — photo is the only optional field. */
 export function UserProfileForm() {
   const { t, lang } = useI18n();
   const router = useRouter();
+  const { start: startNavigating } = useNavigationLoading();
   const searchParams = useSearchParams();
   const phone = searchParams.get("phone") ?? "";
   const signupToken = searchParams.get("signupToken") ?? "";
@@ -80,6 +82,7 @@ export function UserProfileForm() {
         });
       }
       toast.success(fmt(t.auth.welcomeBack, { name }));
+      startNavigating();
       router.push(`/${lang}/profile`);
     } catch (err) {
       const msg = err instanceof ApiError ? err.message : t.auth.genericError;

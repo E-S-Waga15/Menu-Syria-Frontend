@@ -39,6 +39,7 @@ import { queryKeys } from "@/lib/api/query-keys";
 import { submitAgentApplication } from "@/features/auth/api";
 import { uploadImage } from "@/lib/api/upload";
 import { ApiError } from "@/lib/api/client";
+import { useNavigationLoading } from "@/providers/navigation-loading";
 import { cn } from "@/lib/utils";
 
 const SELECT_FIELD = "h-12! w-full gap-2 pe-3.5 ps-4 text-sm";
@@ -46,6 +47,7 @@ const SELECT_FIELD = "h-12! w-full gap-2 pe-3.5 ps-4 text-sm";
 export function AgentRegisterForm() {
   const { t, lang } = useI18n();
   const router = useRouter();
+  const { start: startNavigating } = useNavigationLoading();
   const [step, setStep] = useState(0);
   const [photoUploading, setPhotoUploading] = useState(false);
 
@@ -128,6 +130,9 @@ export function AgentRegisterForm() {
   };
 
   const submit = async (values: AgentRegisterValues) => {
+    // the form submits natively on Enter from any step — only the button on
+    // the last step may actually send the request
+    if (step !== steps.length - 1) return;
     try {
       await submitAgentApplication({
         name: values.name.trim(),
@@ -149,6 +154,7 @@ export function AgentRegisterForm() {
           .join("\n"),
       });
       toast.success(t.auth.applicationSent);
+      startNavigating();
       router.push(`/${lang}`);
     } catch (error) {
       toast.error(error instanceof ApiError ? error.message : t.auth.genericError);

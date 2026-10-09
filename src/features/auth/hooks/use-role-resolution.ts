@@ -10,6 +10,7 @@ import type { PhoneRole } from "@/features/auth/mock-directory";
 import { useAuthStore } from "@/features/auth/store";
 import { fmt, useI18n } from "@/i18n/client";
 import type { AuthUserSummary } from "@/features/auth/api";
+import { useNavigationLoading } from "@/providers/navigation-loading";
 
 export type ResolveResult = "none" | "routed" | "choose";
 
@@ -24,6 +25,7 @@ export function useRoleResolution() {
   const router = useRouter();
   const login = useAuthStore((s) => s.login);
   const setTokens = useAuthStore((s) => s.setTokens);
+  const { start: startNavigating } = useNavigationLoading();
 
   const [modalRoles, setModalRoles] = useState<PhoneRole[] | null>(null);
   const [phone, setPhone] = useState("");
@@ -36,6 +38,7 @@ export function useRoleResolution() {
       businessType: picked.businessType,
     });
     toast.success(fmt(t.auth.welcomeBack, { name: picked.label }));
+    startNavigating();
     router.push(destinationForRole(lang, picked.role));
     setModalRoles(null);
   };
@@ -58,6 +61,7 @@ export function useRoleResolution() {
       businessType: user.businessType ?? undefined,
     });
     toast.success(fmt(t.auth.welcomeBack, { name: user.name }));
+    startNavigating();
     router.push(destinationForRole(lang, user.frontendRole));
     setModalRoles(null);
   };

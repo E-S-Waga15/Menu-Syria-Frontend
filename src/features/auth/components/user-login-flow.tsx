@@ -32,6 +32,7 @@ import { useAuthStore } from "@/features/auth/store";
 import { fmt, useI18n } from "@/i18n/client";
 import { requestOtp, verifyOtp as verifyOtpApi } from "@/features/auth/api";
 import { ApiError, IS_MOCK } from "@/lib/api/client";
+import { useNavigationLoading } from "@/providers/navigation-loading";
 import { toast } from "@/lib/toast";
 
 const RESEND_SECONDS = 60;
@@ -46,6 +47,7 @@ const RESEND_SECONDS = 60;
 export function UserLoginFlow() {
   const { t, lang } = useI18n();
   const router = useRouter();
+  const { start: startNavigating } = useNavigationLoading();
   const knownPhones = useAuthStore((s) => s.knownPhones);
   const { resolveRoles, finishFromBackend, modalRoles, selectRole, closeModal } =
     useRoleResolution();
@@ -95,6 +97,7 @@ export function UserLoginFlow() {
 
       if (result.isNewUser) {
         // New phone — send to profile completion, carrying the signup token
+        startNavigating();
         router.push(
           `/${lang}/register/user?phone=${encodeURIComponent(fullPhone)}&signupToken=${encodeURIComponent(result.signupToken)}`,
         );
@@ -112,6 +115,7 @@ export function UserLoginFlow() {
             : directoryRoles;
         const resolved = resolveRoles(fullPhone, roles);
         if (resolved === "none") {
+          startNavigating();
           router.push(
             `/${lang}/register/user?phone=${encodeURIComponent(fullPhone)}&signupToken=mock-signup-token`,
           );

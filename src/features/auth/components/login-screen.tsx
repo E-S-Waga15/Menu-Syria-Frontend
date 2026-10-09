@@ -20,6 +20,7 @@ import { toast } from "@/lib/toast";
 import { AuthBrandPanel } from "@/components/shared/auth-brand-panel";
 import { FieldError } from "@/components/shared/field-error";
 import { PasswordInput } from "@/components/shared/password-input";
+import { ForgotPasswordModal } from "@/features/auth/components/forgot-password-modal";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -62,7 +63,9 @@ export function LoginScreen() {
   const { t, lang } = useI18n();
   const { finishFromBackend } = useRoleResolution();
 
-  const [method, setMethod] = useState<Method>("phone");
+  // username + password is the default entry; the visitor switches to
+  // phone + OTP themselves if they prefer it
+  const [method, setMethod] = useState<Method>("credentials");
   const [step, setStep] = useState<"phone" | "otp">("phone");
   const [phone, setPhone] = useState("");
   const [seconds, setSeconds] = useState(RESEND_SECONDS);
@@ -194,11 +197,13 @@ export function LoginScreen() {
                 <h2 className="font-heading text-xl font-bold">
                   {otpStep ? t.auth.otpTitle : t.auth.signIn}
                 </h2>
-                {(otpStep || method === "phone") && (
-                  <p className="text-sm text-muted-foreground">
-                    {otpStep ? t.auth.otpSubtitle : t.auth.loginBody}
-                  </p>
-                )}
+                <p className="text-sm text-muted-foreground">
+                  {otpStep
+                    ? t.auth.otpSubtitle
+                    : method === "phone"
+                      ? t.auth.loginBody
+                      : t.auth.loginCredentialsBody}
+                </p>
               </div>
             </div>
 
@@ -374,12 +379,7 @@ export function LoginScreen() {
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <Label htmlFor="password">{t.auth.passwordLabel}</Label>
-                      <a
-                        href="#"
-                        className="text-xs font-semibold text-primary hover:underline"
-                      >
-                        {t.auth.forgotPassword}
-                      </a>
+                      <ForgotPasswordModal />
                     </div>
                     <div className="relative">
                       <Lock className="absolute start-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />

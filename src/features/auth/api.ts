@@ -161,6 +161,32 @@ export async function verifyOtp(
   });
 }
 
+/**
+ * Sets a new password for the account at this phone number, proving
+ * identity with the same OTP code sent by `requestOtp` — one call verifies
+ * the code and sets the password together, so there is no separate "verify"
+ * step for a reset the way there is for login.
+ */
+export async function resetPassword(
+  phoneNumber: string,
+  code: string,
+  newPassword: string,
+  confirmNewPassword: string,
+): Promise<{ message: string }> {
+  if (IS_MOCK) {
+    return mockDelay({ message: "Password updated (mock)" });
+  }
+  return apiFetch("/auth/password/reset", {
+    method: "POST",
+    body: {
+      phoneNumber: normalizePhoneNumber(phoneNumber),
+      code,
+      newPassword,
+      confirmNewPassword,
+    },
+  });
+}
+
 /** Complete registration for a new user (phone-based). */
 export async function registerWithOtp(
   signupToken: string,

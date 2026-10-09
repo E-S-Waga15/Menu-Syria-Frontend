@@ -60,6 +60,7 @@ import { ApiError } from "@/lib/api/client";
 import { uploadImage } from "@/lib/api/upload";
 import { useI18n } from "@/i18n/client";
 import { queryKeys } from "@/lib/api/query-keys";
+import { useNavigationLoading } from "@/providers/navigation-loading";
 import { cn } from "@/lib/utils";
 
 /** paired primary/secondary palettes seen often on restaurant menus */
@@ -139,6 +140,7 @@ export function RestaurantRegisterForm({
 
   const { t, lang } = useI18n();
   const router = useRouter();
+  const { start: startNavigating } = useNavigationLoading();
   const businessType = copy ? "STORE" : "RESTAURANT";
   const [step, setStep] = useState(0);
   const [mapOpen, setMapOpen] = useState(false);
@@ -249,6 +251,10 @@ export function RestaurantRegisterForm({
   };
 
   const submit = async (values: RegisterWizardValues) => {
+    // the form submits natively on Enter from any step (a single text field
+    // is enough to trigger the browser's implicit submission) — only the
+    // button on the last step may actually send the request
+    if (step !== steps.length - 1) return;
     try {
       await submitRegistrationRequest({
         districtId: values.regionId,
@@ -277,6 +283,7 @@ export function RestaurantRegisterForm({
           .join("\n"),
       });
       toast.success(t.auth.applicationSent);
+      startNavigating();
       router.push(`/${lang}`);
     } catch (error) {
       toast.error(error instanceof ApiError ? error.message : t.auth.genericError);
@@ -650,6 +657,7 @@ export function RestaurantRegisterForm({
                 <DialogTrigger
                   render={
                     <Button
+                      type="button"
                       variant="outline"
                       className="h-14 w-full justify-start gap-3 border-dashed"
                     />

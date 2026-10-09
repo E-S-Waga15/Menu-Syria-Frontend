@@ -19,6 +19,7 @@ import {
 } from "@/features/auth/schemas";
 import { useAuthStore } from "@/features/auth/store";
 import { loginAdminWithCredentials } from "@/features/auth/api";
+import { useNavigationLoading } from "@/providers/navigation-loading";
 import { ApiError, IS_MOCK } from "@/lib/api/client";
 import { fmt, useI18n } from "@/i18n/client";
 
@@ -30,6 +31,7 @@ const ADMIN_PASSWORD = "msms1515@";
 export function AdminLogin() {
   const { t, lang } = useI18n();
   const router = useRouter();
+  const { start: startNavigating } = useNavigationLoading();
   const login = useAuthStore((s) => s.login);
   const setTokens = useAuthStore((s) => s.setTokens);
 
@@ -63,6 +65,7 @@ export function AdminLogin() {
         name: t.auth.roleAdmin,
       });
       toast.success(fmt(t.auth.welcomeBack, { name: t.auth.roleAdmin }));
+      startNavigating();
       router.push(`/${lang}/admin`);
       return;
     }
@@ -88,6 +91,7 @@ export function AdminLogin() {
         name: result.user.name,
       });
       toast.success(fmt(t.auth.welcomeBack, { name: result.user.name }));
+      startNavigating();
       router.push(`/${lang}/admin`);
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {

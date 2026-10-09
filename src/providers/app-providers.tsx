@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "next-themes";
 
 import { ToastStack } from "@/components/shared/toast-stack";
+import { NavigationLoadingProvider } from "@/providers/navigation-loading";
 
 export function AppProviders({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
@@ -29,7 +30,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
       disableTransitionOnChange
     >
       <QueryClientProvider client={queryClient}>
-        {children}
+        <NavigationLoadingProvider>{children}</NavigationLoadingProvider>
         <ToastStack />
       </QueryClientProvider>
     </ThemeProvider>
