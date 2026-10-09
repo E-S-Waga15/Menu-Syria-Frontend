@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { FadeImage } from "@/components/shared/fade-image";
 
 import { Plus } from "lucide-react";
 
@@ -60,7 +60,7 @@ export function DishCard({
     >
       <div className="relative aspect-[4/3] overflow-hidden">
         {item.imageUrl ? (
-          <Image
+          <FadeImage
             src={item.imageUrl}
             alt={item.name[lang]}
             fill

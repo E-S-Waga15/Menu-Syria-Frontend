@@ -2,6 +2,8 @@
 export const queryKeys = {
   governorates: ["governorates"] as const,
   regions: ["regions"] as const,
+  businessSubTypes: (type: "RESTAURANT" | "STORE") =>
+    ["business-sub-types", type] as const,
   restaurants: {
     all: ["restaurants"] as const,
     featured: ["restaurants", "featured"] as const,

@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import { AuthBackButton } from "@/components/shared/auth-back-button";
 import { LanguageSwitcher } from "@/components/shared/language-switcher";
 import { Logo } from "@/components/shared/logo";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
@@ -24,7 +25,14 @@ export default async function AuthLayout({
         </div>
       </header>
 
-      <main className="flex flex-1 items-center justify-center px-4 py-10">
+      {/* its own row, clear of both the header above and the card the page
+          centres below — a control for leaving the screen, not a detail
+          riding on the card's own border */}
+      <div className="container-page mt-3 sm:mt-4">
+        <AuthBackButton />
+      </div>
+
+      <main className="flex flex-1 items-center justify-center px-4 pt-6 pb-10">
         {children}
       </main>
     </div>

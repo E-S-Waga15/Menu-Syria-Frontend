@@ -64,7 +64,7 @@ export function MenuDishDialog({
     register,
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<DishFormValues>({
     resolver: zodResolver(dishFormSchema(t.validation)),
     defaultValues: { name: "", desc: "", price: "" },
@@ -433,7 +433,11 @@ export function MenuDishDialog({
             </div>
           </div>
           <DialogFooter className="px-4 pb-4">
-            <Button type="submit" className="w-full shadow-glow">
+            <Button
+              type="submit"
+              loading={isSubmitting}
+              className="w-full shadow-glow"
+            >
               {t.common.save}
             </Button>
           </DialogFooter>

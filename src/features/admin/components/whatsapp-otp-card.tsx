@@ -212,7 +212,7 @@ export function WhatsappOtpCard() {
               {t.common.cancel}
             </AlertDialogCancel>
             <AlertDialogAction
-              disabled={unlink.isPending}
+              loading={confirm === "unlink" && unlink.isPending}
               onClick={() => {
                 if (confirm === "unlink") {
                   unlink.mutate();

@@ -12,10 +12,54 @@ export class ApiError extends Error {
   constructor(
     public status: number,
     message: string,
+    /**
+     * Every message the backend sent, when there was more than one. A
+     * class-validator failure answers one string per invalid field;
+     * `message` above is already the first of these, picked as the single
+     * line worth putting in a toast — this is for a caller (a form) that
+     * wants to show the rest too.
+     */
+    public details: string[] = [message],
   ) {
     super(message);
     this.name = "ApiError";
   }
+}
+
+/**
+ * Turns a failed response's body into one readable sentence.
+ *
+ * The backend answers an error as JSON, but the shape of its own `message`
+ * field is not uniform: a thrown business error ("a number is already
+ * linked") sends a string, while a class-validator failure sends an ARRAY of
+ * strings, one per invalid field. Reading `err.message` without unwrapping
+ * this first means literally printing the JSON object — `{"statusCode":400,
+ * "message":["phone must be 10-15 digits", ...],...}` — wherever an error
+ * reaches a toast or an inline message, which is every screen in the app
+ * that calls `apiFetch`. Resolving the shape once here, rather than at each
+ * of those call sites, is what keeps that from happening anywhere.
+ */
+function extractErrorMessage(
+  status: number,
+  rawBody: string,
+): { message: string; details: string[] } {
+  if (rawBody) {
+    try {
+      const parsed = JSON.parse(rawBody) as { message?: unknown };
+      if (Array.isArray(parsed.message) && parsed.message.length > 0) {
+        const details = parsed.message.map(String);
+        return { message: details[0]!, details };
+      }
+      if (typeof parsed.message === "string" && parsed.message.trim() !== "") {
+        return { message: parsed.message, details: [parsed.message] };
+      }
+    } catch {
+      // not JSON (a gateway's own HTML error page, a dropped connection) —
+      // fall through and surface whatever text there is
+    }
+  }
+  const fallback = rawBody.trim() || `Request failed with status ${status}`;
+  return { message: fallback, details: [fallback] };
 }
 
 interface RequestOptions extends Omit<RequestInit, "body"> {
@@ -45,6 +89,16 @@ export function getStoredAccessToken(): string | null {
   }
 }
 
+/**
+ * How long an anonymous GET may be served from Next's Data Cache before a
+ * fresh copy is fetched. Short enough that nothing meaningful goes stale —
+ * a restaurant's rating or an offer's price does not change minute to
+ * minute — long enough that browsing the directory, opening a few
+ * storefronts and coming back to the list does not re-hit the real backend
+ * for data that was just on screen.
+ */
+const PUBLIC_GET_REVALIDATE_SECONDS = 60;
+
 export async function apiFetch<T>(
   path: string,
   { body, headers, ...init }: RequestOptions = {},
@@ -55,18 +109,42 @@ export async function apiFetch<T>(
     authHeaders.Authorization = `Bearer ${accessToken}`;
   }
 
+  const mergedHeaders: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(authHeaders as Record<string, string>),
+    ...(headers as Record<string, string> | undefined),
+  };
+
+  // Next's fetch cache keys on the URL and these options, not on request
+  // headers — a cached response would be handed to whoever asks next,
+  // regardless of whose token sent the original request. So a request that
+  // carries an Authorization header (the local one above, or one a caller
+  // merged in, e.g. the SSR console pages threading a cookie-backed token)
+  // is NEVER covered by the default below, however it was authenticated.
+  // Anything a caller already opted into explicitly (`cache`, `next`) is
+  // left exactly as given, and anything other than a bare read (POST,
+  // PATCH, DELETE, …) is never cached by default either.
+  const isAuthenticated = "Authorization" in mergedHeaders;
+  const isGet = !init.method || init.method === "GET";
+  const alreadyDecided = "cache" in init || "next" in init;
+  const cacheDefault =
+    isGet && !isAuthenticated && !alreadyDecided
+      ? { next: { revalidate: PUBLIC_GET_REVALIDATE_SECONDS } }
+      : {};
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
+    ...cacheDefault,
     ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...authHeaders,
-      ...headers,
-    },
+    headers: mergedHeaders,
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
 
   if (!response.ok) {
-    throw new ApiError(response.status, await response.text());
+    const { message, details } = extractErrorMessage(
+      response.status,
+      await response.text(),
+    );
+    throw new ApiError(response.status, message, details);
   }
 
   // Every DELETE in the API answers 204/205 with no body. `response.json()`

@@ -9,7 +9,7 @@ import { apiFetch, IS_MOCK, mockDelay } from "@/lib/api/client";
 import { lookupRolesByPhone } from "@/features/auth/mock-directory";
 import type { UserRole, BusinessType } from "@/features/auth/store";
 
-export type RegistrationRequestType = "restaurant" | "store" | "agent";
+export type RegistrationRequestType = "RESTAURANT" | "STORE";
 
 // ---------------------------------------------------------------------------
 // Response shapes (mirror the backend DTOs)
@@ -52,6 +52,11 @@ export async function submitRegistrationRequest(input: {
   districtId: string;
   applicantName: string;
   phone: string;
+  username: string;
+  password: string;
+  confirmPassword: string;
+  subTypeId: string;
+  email?: string;
   notes?: string;
   type: RegistrationRequestType;
   referralCode?: string;
@@ -62,6 +67,43 @@ export async function submitRegistrationRequest(input: {
     body: {
       ...input,
       phone: normalizePhoneNumber(input.phone),
+    },
+  });
+}
+
+/**
+ * Agent self-registration. `/registration-requests/public` is documented
+ * for RESTAURANT/STORE applications only — agents are otherwise created by
+ * a SUPER_ADMIN via `POST /agents`. This submits to the same public endpoint
+ * with an AGENT-shaped body as a first pass; confirming (or replacing) the
+ * real intake route is tracked as follow-up work.
+ */
+export async function submitAgentApplication(input: {
+  name: string;
+  username: string;
+  phone: string;
+  email?: string;
+  password: string;
+  confirmPassword: string;
+  governorateId: string;
+  districtIds: string[];
+  photoUrl?: string;
+  notes?: string;
+}): Promise<{ id: string }> {
+  return apiFetch("/registration-requests/public", {
+    method: "POST",
+    body: {
+      applicantName: input.name,
+      username: input.username,
+      phone: normalizePhoneNumber(input.phone),
+      email: input.email,
+      password: input.password,
+      confirmPassword: input.confirmPassword,
+      governorateId: input.governorateId,
+      districtIds: input.districtIds,
+      photoUrl: input.photoUrl,
+      notes: input.notes,
+      type: "AGENT",
     },
   });
 }
@@ -145,9 +187,34 @@ export async function registerWithOtp(
   });
 }
 
-/** Login with email + password. The backend resolves the role from the user
- * record — the client never picks one. */
+/** Login with username + password. The backend resolves the role from the
+ * user record — the client never picks one. */
 export async function loginWithCredentials(
+  username: string,
+  password: string,
+): Promise<AuthResponse> {
+  if (IS_MOCK) {
+    return mockDelay<AuthResponse>({
+      accessToken: "mock-access-token",
+      refreshToken: "mock-refresh-token",
+      user: {
+        id: "mock-user-id",
+        email: null,
+        name: username,
+        frontendRole: "owner",
+        businessName: null,
+        businessType: "restaurant",
+      },
+    });
+  }
+  return apiFetch("/auth/login", {
+    method: "POST",
+    body: { username, password },
+  });
+}
+
+/** Admin console login — the one caller still on email + password. */
+export async function loginAdminWithCredentials(
   email: string,
   password: string,
 ): Promise<AuthResponse> {
@@ -159,9 +226,9 @@ export async function loginWithCredentials(
         id: "mock-user-id",
         email,
         name: email,
-        frontendRole: "owner",
+        frontendRole: "admin",
         businessName: null,
-        businessType: "restaurant",
+        businessType: null,
       },
     });
   }

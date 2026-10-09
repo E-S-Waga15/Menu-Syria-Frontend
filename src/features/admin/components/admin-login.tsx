@@ -9,6 +9,7 @@ import { toast } from "@/lib/toast";
 
 import { AuthBrandPanel } from "@/components/shared/auth-brand-panel";
 import { FieldError } from "@/components/shared/field-error";
+import { PasswordInput } from "@/components/shared/password-input";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,7 +18,7 @@ import {
   type AdminLoginValues,
 } from "@/features/auth/schemas";
 import { useAuthStore } from "@/features/auth/store";
-import { loginWithCredentials } from "@/features/auth/api";
+import { loginAdminWithCredentials } from "@/features/auth/api";
 import { ApiError, IS_MOCK } from "@/lib/api/client";
 import { fmt, useI18n } from "@/i18n/client";
 
@@ -67,7 +68,7 @@ export function AdminLogin() {
     }
 
     try {
-      const result = await loginWithCredentials(
+      const result = await loginAdminWithCredentials(
         values.email.trim(),
         values.password,
       );
@@ -149,9 +150,8 @@ export function AdminLogin() {
                 <Label htmlFor="admin-pass">{t.auth.passwordLabel}</Label>
                 <div className="relative">
                   <Lock className="absolute start-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
+                  <PasswordInput
                     id="admin-pass"
-                    type="password"
                     autoComplete="current-password"
                     aria-invalid={!!errors.password}
                     className="h-12 ps-10"
@@ -164,7 +164,7 @@ export function AdminLogin() {
               <Button
                 type="submit"
                 className="h-12 w-full text-base"
-                disabled={isSubmitting}
+                loading={isSubmitting}
               >
                 {t.auth.signIn}
               </Button>

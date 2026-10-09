@@ -1,6 +1,7 @@
 import { apiFetch, apiGetOrUndefined, IS_MOCK, mockDelay } from "@/lib/api/client";
 import {
   agents,
+  businessSubTypes,
   governorates,
   regions,
   restaurants,
@@ -8,6 +9,7 @@ import {
 } from "@/lib/mock/data";
 import type {
   Agent,
+  BusinessSubType,
   Governorate,
   Region,
   Restaurant,
@@ -57,6 +59,22 @@ export async function getRestaurantBySlug(
 export async function getRegions(): Promise<Region[]> {
   if (IS_MOCK) return mockDelay(regions, 100);
   return apiFetch("/regions");
+}
+
+/**
+ * The business categories (cuisines, store sectors) offered at registration.
+ * The backend has no RESTAURANT/STORE flag on these — only a coarse
+ * `category` (`food_beverage` | `retail_goods`) — and ignores any query
+ * param, so the type→category mapping and the filtering both happen here.
+ */
+export async function getBusinessSubTypes(
+  type: "RESTAURANT" | "STORE",
+): Promise<BusinessSubType[]> {
+  const category = type === "RESTAURANT" ? "food_beverage" : "retail_goods";
+  const all = IS_MOCK
+    ? await mockDelay(businessSubTypes, 120)
+    : await apiFetch<BusinessSubType[]>("/business-sub-types");
+  return all.filter((s) => s.category === category);
 }
 
 export async function getAgents(): Promise<Agent[]> {

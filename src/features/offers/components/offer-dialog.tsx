@@ -77,7 +77,7 @@ export function OfferDialog({
     handleSubmit,
     reset,
     setValue,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<OfferValues>({
     resolver: zodResolver(offerSchema(t.validation)),
     mode: "onTouched",
@@ -377,7 +377,7 @@ export function OfferDialog({
           <Button type="button" variant="ghost" onClick={onClose}>
             {t.common.cancel}
           </Button>
-          <Button type="submit" form="offer-form">
+          <Button type="submit" form="offer-form" loading={isSubmitting}>
             {t.offers.saveOffer}
           </Button>
         </DialogFooter>

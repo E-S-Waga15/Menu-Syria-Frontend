@@ -198,7 +198,7 @@ export function AccountIdentityCard({
           <div className="mt-5 flex flex-wrap gap-2">
             <Button
               type="submit"
-              disabled={isSaving}
+              loading={isSaving}
               className="h-10 gap-1.5 px-4"
             >
               {isSaving ? (

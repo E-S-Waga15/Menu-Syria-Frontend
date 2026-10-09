@@ -19,3 +19,9 @@ export const isSyrianPhone = (value: string): boolean => {
 
 export const syrianPhone = (message: string) =>
   z.string().refine(isSyrianPhone, message);
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** An email field that is allowed to be left blank. */
+export const optionalEmail = (message: string) =>
+  z.string().refine((v) => v.trim() === "" || EMAIL_RE.test(v.trim()), message);

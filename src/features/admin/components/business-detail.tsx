@@ -19,6 +19,7 @@ import {
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { AdminPageHeader } from "@/features/admin/components/admin-page-header";
 import {
   changeBusinessPlan,
@@ -227,8 +228,9 @@ export function AdminBusinessDetail({
             variant="outline"
             className="h-11 flex-1 border-[1.5px]"
             onClick={() => currentSubscription && changePlan(currentSubscription.planId)}
+            disabled={savingPlan || !currentSubscription}
           >
-            <Wallet className="size-4" />
+            {savingPlan ? <Spinner size="xs" tone="current" /> : <Wallet className="size-4" />}
             {t.admin.changePlan}
           </Button>
         </div>
@@ -259,7 +261,7 @@ export function AdminBusinessDetail({
             onClick={toggleAccount}
             disabled={savingStatus}
           >
-            <Power className="size-4" />
+            {savingStatus ? <Spinner size="xs" tone="current" /> : <Power className="size-4" />}
             {enabled ? t.admin.disableAccount : t.admin.enableAccount}
           </Button>
         </div>

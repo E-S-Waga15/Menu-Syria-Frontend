@@ -9,16 +9,17 @@ import {
   Handshake,
   KeyRound,
   Lock,
-  Mail,
   Phone,
   ShieldCheck,
   ShoppingBag,
+  UserRound,
   UtensilsCrossed,
 } from "lucide-react";import { Controller, useForm } from "react-hook-form";
 import { toast } from "@/lib/toast";
 
 import { AuthBrandPanel } from "@/components/shared/auth-brand-panel";
 import { FieldError } from "@/components/shared/field-error";
+import { PasswordInput } from "@/components/shared/password-input";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -78,7 +79,7 @@ export function LoginScreen() {
   });
   const credentialsForm = useForm<CredentialsValues>({
     resolver: zodResolver(credentialsSchema(t.validation)),
-    defaultValues: { email: "", password: "" },
+    defaultValues: { username: "", password: "" },
     mode: "onTouched",
   });
 
@@ -93,7 +94,8 @@ export function LoginScreen() {
   const requestCode = async (values: PhoneFormValues) => {
     setNotFound(false);
     try {
-      await requestOtp(`963${values.phone.trim()}`);
+      const { message } = await requestOtp(`963${values.phone.trim()}`);
+      toast.success(message);
       setPhone(values.phone);
       setStep("otp");
       setSeconds(RESEND_SECONDS);
@@ -140,7 +142,7 @@ export function LoginScreen() {
   const submitCredentials = async (values: CredentialsValues) => {
     try {
       const result = await loginWithCredentials(
-        values.email.trim(),
+        values.username.trim(),
         values.password,
       );
       // Same handshake as the OTP path: the backend's user record decides
@@ -149,7 +151,7 @@ export function LoginScreen() {
         result.accessToken,
         result.refreshToken,
         result.user,
-        values.email.trim(),
+        values.username.trim(),
       );
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
@@ -173,7 +175,7 @@ export function LoginScreen() {
           title={t.auth.loginTitle}
           subtitle={
             method === "credentials"
-              ? t.auth.panelEmailAutoRole
+              ? t.auth.panelUsernameAutoRole
               : t.auth.panelAutoRole
           }
         />
@@ -234,7 +236,11 @@ export function LoginScreen() {
                       />
                     </div>
 
-                    <Button type="submit" className="h-12 w-full text-base">
+                    <Button
+                      type="submit"
+                      loading={phoneForm.formState.isSubmitting}
+                      className="h-12 w-full text-base"
+                    >
                       {t.auth.sendCode}
                     </Button>
                   </form>
@@ -290,7 +296,11 @@ export function LoginScreen() {
                       )}
                     </div>
 
-                    <Button type="submit" className="h-12 w-full text-base">
+                    <Button
+                      type="submit"
+                      loading={otpForm.formState.isSubmitting}
+                      className="h-12 w-full text-base"
+                    >
                       {t.auth.verify}
                     </Button>
 
@@ -315,7 +325,10 @@ export function LoginScreen() {
                           type="button"
                           onClick={async () => {
                             try {
-                              await requestOtp(`963${phone.trim()}`);
+                              const { message } = await requestOtp(
+                                `963${phone.trim()}`,
+                              );
+                              toast.success(message);
                               setSeconds(RESEND_SECONDS);
                             } catch (err) {
                               const msg =
@@ -341,21 +354,20 @@ export function LoginScreen() {
                   className="animate-fade-up space-y-5"
                 >
                   <div className="space-y-2">
-                    <Label htmlFor="email">{t.auth.emailLabel}</Label>
+                    <Label htmlFor="username">{t.auth.usernameLabel}</Label>
                     <div className="relative">
-                      <Mail className="absolute start-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                      <UserRound className="absolute start-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                       <Input
-                        id="email"
-                        type="email"
-                        autoComplete="email"
-                        placeholder={t.auth.emailPlaceholder}
-                        aria-invalid={!!credentialsForm.formState.errors.email}
+                        id="username"
+                        autoComplete="username"
+                        placeholder={t.auth.usernamePlaceholder}
+                        aria-invalid={!!credentialsForm.formState.errors.username}
                         className="h-12 ps-10"
-                        {...credentialsForm.register("email")}
+                        {...credentialsForm.register("username")}
                       />
                     </div>
                     <FieldError
-                      message={credentialsForm.formState.errors.email?.message}
+                      message={credentialsForm.formState.errors.username?.message}
                     />
                   </div>
 
@@ -371,9 +383,8 @@ export function LoginScreen() {
                     </div>
                     <div className="relative">
                       <Lock className="absolute start-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input
+                      <PasswordInput
                         id="password"
-                        type="password"
                         autoComplete="current-password"
                         aria-invalid={
                           !!credentialsForm.formState.errors.password
@@ -389,7 +400,11 @@ export function LoginScreen() {
                     />
                   </div>
 
-                  <Button type="submit" className="h-12 w-full text-base">
+                  <Button
+                    type="submit"
+                    loading={credentialsForm.formState.isSubmitting}
+                    className="h-12 w-full text-base"
+                  >
                     {t.auth.signIn}
                   </Button>
                 </form>

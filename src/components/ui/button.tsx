@@ -1,6 +1,7 @@
 import { Button as ButtonPrimitive } from "@base-ui/react/button"
 import { cva, type VariantProps } from "class-variance-authority"
 
+import { Spinner } from "@/components/ui/spinner"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
@@ -45,16 +46,39 @@ function Button({
   variant = "default",
   size = "default",
   nativeButton,
+  loading = false,
+  disabled,
+  children,
   ...props
-}: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+}: ButtonPrimitive.Props &
+  VariantProps<typeof buttonVariants> & {
+    /**
+     * Shows a spinner and stops the button answering, for the span of a
+     * request it kicked off.
+     *
+     * The label stays put behind the spinner rather than being replaced by
+     * it: a button that swaps its text for "جارٍ..." changes width mid-click
+     * and shoves the row around it. The spinner is tinted `current`, so it is
+     * the colour of that button's own label on every variant — white on the
+     * primary, berry on a ghost — with nothing to configure per call.
+     */
+    loading?: boolean
+  }) {
   return (
     <ButtonPrimitive
       data-slot="button"
       // When a custom element is rendered (e.g. a Link), it is not a native <button>
       nativeButton={nativeButton ?? props.render === undefined}
+      // a button mid-request must not fire twice, and the wait has to reach
+      // a screen reader as a state rather than only as a turning icon
+      disabled={disabled || loading}
+      aria-busy={loading || undefined}
       className={cn(buttonVariants({ variant, size, className }))}
       {...props}
-    />
+    >
+      {loading && <Spinner size="xs" tone="current" />}
+      {children}
+    </ButtonPrimitive>
   )
 }
 

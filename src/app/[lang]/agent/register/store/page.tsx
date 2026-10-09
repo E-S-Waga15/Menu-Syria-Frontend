@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 import { AgentRegisterIntro } from "@/features/agent-dashboard/components/agent-register-intro";
+import { fetchAgentPage } from "@/features/agent-dashboard/server";
+import { getMyAgentProfile } from "@/features/agent-dashboard/services";
 import { RestaurantRegisterForm } from "@/features/auth/components/restaurant-register-form";
 import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
@@ -12,6 +14,9 @@ export default async function AgentRegisterStorePage({
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
   const t = await getDictionary(lang);
+  const agent = await fetchAgentPage(lang, (accessToken) =>
+    getMyAgentProfile({ accessToken }),
+  );
 
   return (
     // centred and width-capped: the shared form is built for the auth
@@ -21,6 +26,7 @@ export default async function AgentRegisterStorePage({
       <AgentRegisterIntro kind="store" />
       <Suspense>
         <RestaurantRegisterForm
+          lockedReferralCode={agent.referralCode}
           copy={{
             title: t.auth.storeRegTitle,
             body: t.auth.storeRegBody,

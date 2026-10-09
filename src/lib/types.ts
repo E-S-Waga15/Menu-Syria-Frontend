@@ -27,6 +27,20 @@ export interface Region {
   name: LocalizedText;
 }
 
+/**
+ * The backend only returns an Arabic `name` and a coarse `category` — no
+ * English translation and no direct RESTAURANT/STORE flag. The slug is
+ * stable, so the frontend maps it to an English label and to our own
+ * business-type split (see `BUSINESS_SUB_TYPE_LABELS` and
+ * `getBusinessSubTypes` in `features/marketing/services`).
+ */
+export interface BusinessSubType {
+  id: string;
+  name: string;
+  category: "food_beverage" | "retail_goods";
+  slug: string;
+}
+
 export interface RestaurantTheme {
   primaryColor: string;
   secondaryColor: string;

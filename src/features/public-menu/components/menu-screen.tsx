@@ -387,6 +387,18 @@ export function MenuScreen({
               </p>
             )}
           </section>
+        ) : items.length === 0 ? (
+          // a real, empty storefront — the owner has not published a menu
+          // yet — reads very differently from "no category has anything
+          // visible", which is a layout accident this branch would rather
+          // not claim happened
+          <div className="flex flex-col items-center gap-2 py-20 text-center">
+            <Info className="size-8 text-muted-foreground/40" />
+            <p className="font-semibold">{copy.noMenuItems}</p>
+            <p className="max-w-xs text-sm text-muted-foreground">
+              {copy.noMenuItemsBody}
+            </p>
+          </div>
         ) : (
           categories.map((category) => {
             const categoryItems = itemsByCategory.get(category.id) ?? [];

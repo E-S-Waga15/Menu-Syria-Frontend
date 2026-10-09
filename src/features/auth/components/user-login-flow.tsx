@@ -76,7 +76,8 @@ export function UserLoginFlow() {
   const requestCode = async (values: PhoneFormValues) => {
     setApiError(null);
     try {
-      await requestOtp(`+963${values.phone.trim()}`);
+      const { message } = await requestOtp(`+963${values.phone.trim()}`);
+      toast.success(message);
       setPhone(values.phone);
       setStep("otp");
       setSeconds(RESEND_SECONDS);
@@ -199,7 +200,11 @@ export function UserLoginFlow() {
                 </p>
               </div>
 
-              <Button type="submit" className="h-12 w-full text-base">
+              <Button
+                type="submit"
+                loading={phoneForm.formState.isSubmitting}
+                className="h-12 w-full text-base"
+              >
                 {t.auth.sendCode}
               </Button>
             </form>
@@ -248,7 +253,11 @@ export function UserLoginFlow() {
                 </p>
               </div>
 
-              <Button type="submit" className="h-12 w-full text-base">
+              <Button
+                type="submit"
+                loading={otpForm.formState.isSubmitting}
+                className="h-12 w-full text-base"
+              >
                 {t.auth.verify}
               </Button>
 
@@ -272,7 +281,10 @@ export function UserLoginFlow() {
                     type="button"
                     onClick={async () => {
                       try {
-                        await requestOtp(`963${phone.trim()}`);
+                        const { message } = await requestOtp(
+                          `963${phone.trim()}`,
+                        );
+                        toast.success(message);
                         setSeconds(RESEND_SECONDS);
                       } catch (err) {
                         const msg =

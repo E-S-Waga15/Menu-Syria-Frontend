@@ -66,6 +66,17 @@ export function RestaurantDetailsBody({
 }) {
   const separator = lang === "ar" ? "، " : ", ";
 
+  // the one field that tells a visitor *what* this place sells — a
+  // restaurant carries it as `cuisine`, a store as `category`; the shared
+  // body takes a plain `Business` so it reads whichever of the two exists
+  // rather than requiring the caller to know which kind this is
+  const typeLabel =
+    "cuisine" in restaurant
+      ? (restaurant as { cuisine: typeof restaurant.name }).cuisine[lang]
+      : "category" in restaurant
+        ? (restaurant as { category: typeof restaurant.name }).category[lang]
+        : null;
+
   /** the profiles the business keeps, as opposed to ways to reach a person */
   const socialPages = [
     restaurant.facebook && {
@@ -127,6 +138,11 @@ export function RestaurantDetailsBody({
                 ? t.restaurant.openNow
                 : t.restaurant.closedNow}
             </Badge>
+            {typeLabel && (
+              <Badge className="shrink-0 bg-muted px-2 py-0.5 text-[11px] text-muted-foreground md:px-2.5 md:text-xs">
+                {typeLabel}
+              </Badge>
+            )}
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
             <span className="flex items-center gap-1.5">

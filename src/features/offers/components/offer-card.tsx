@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { FadeImage } from "@/components/shared/fade-image";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -83,7 +83,7 @@ export function OfferCard({
   const body = (
     <>
       {cover ? (
-        <Image
+        <FadeImage
           src={cover}
           alt=""
           fill

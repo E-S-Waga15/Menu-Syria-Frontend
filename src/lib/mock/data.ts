@@ -1,5 +1,6 @@
 import type {
   Agent,
+  BusinessSubType,
   DiningTable,
   Governorate,
   MenuCategory,
@@ -91,6 +92,35 @@ export const regions: Region[] = [
     governorateId: "hama",
     name: { ar: "وسط المدينة", en: "City Center" },
   },
+];
+
+// mirrors the live `/business-sub-types` response (id, slug & category are
+// real) so mock mode exercises the same shape and filtering as production
+export const businessSubTypes: BusinessSubType[] = [
+  { id: "bst-01", category: "food_beverage", slug: "general-restaurant", name: "مطعم عام" },
+  { id: "bst-02", category: "food_beverage", slug: "fast-food", name: "وجبات سريعة" },
+  { id: "bst-03", category: "food_beverage", slug: "eastern-cuisine", name: "مطبخ شرقي" },
+  { id: "bst-04", category: "food_beverage", slug: "western-cuisine", name: "مطبخ غربي" },
+  { id: "bst-05", category: "food_beverage", slug: "seafood", name: "مأكولات بحرية" },
+  { id: "bst-06", category: "food_beverage", slug: "desserts", name: "حلويات" },
+  { id: "bst-07", category: "food_beverage", slug: "juices-beverages", name: "عصائر ومشروبات" },
+  { id: "bst-08", category: "food_beverage", slug: "cafe", name: "مقهى وكافيه" },
+  { id: "bst-09", category: "food_beverage", slug: "grills", name: "مشاوي وغريل" },
+  { id: "bst-10", category: "food_beverage", slug: "pizza-italian", name: "بيتزا وإيطالي" },
+  { id: "bst-11", category: "food_beverage", slug: "breakfast", name: "فطور وإفطار" },
+  { id: "bst-12", category: "food_beverage", slug: "bakery", name: "مخبز وفرن" },
+  { id: "bst-13", category: "retail_goods", slug: "clothing", name: "ملبوسات" },
+  { id: "bst-14", category: "retail_goods", slug: "electronics", name: "إلكترونيات" },
+  { id: "bst-15", category: "retail_goods", slug: "telecom-phones", name: "اتصالات وهواتف" },
+  { id: "bst-16", category: "retail_goods", slug: "appliances", name: "أدوات كهربائية ومنزلية" },
+  { id: "bst-17", category: "retail_goods", slug: "cosmetics", name: "مستحضرات تجميل وعناية" },
+  { id: "bst-18", category: "retail_goods", slug: "pharmacy", name: "صيدلية ومستلزمات طبية" },
+  { id: "bst-19", category: "retail_goods", slug: "bookstore-stationery", name: "مكتبة وقرطاسية" },
+  { id: "bst-20", category: "retail_goods", slug: "gifts", name: "هدايا وتحف" },
+  { id: "bst-21", category: "retail_goods", slug: "household-goods", name: "مستلزمات منزلية" },
+  { id: "bst-22", category: "retail_goods", slug: "supermarket", name: "سوبر ماركت" },
+  { id: "bst-23", category: "retail_goods", slug: "furniture", name: "أثاث ومفروشات" },
+  { id: "bst-24", category: "retail_goods", slug: "toys", name: "ألعاب أطفال" },
 ];
 
 export const restaurants: Restaurant[] = [

@@ -5,6 +5,7 @@ import { Check, Clock3, X } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { AdminPageHeader } from "@/features/admin/components/admin-page-header";
 import {
     getAdminPlans,
@@ -79,10 +80,10 @@ export function RegistrationRequestsList({
                                 (request.status === "approved" && !request.applicantUserId)) && (
                                     <div className="flex gap-2">
                                         <Button size="sm" onClick={() => void review(request, "approved")} disabled={savingId === request.id || !(selectedPlans[request.id] ?? request.planId)}>
-                                            <Check className="size-4" /> {t.admin.approveRequest}
+                                            {savingId === request.id ? <Spinner size="xs" tone="current" /> : <Check className="size-4" />} {t.admin.approveRequest}
                                         </Button>
                                         <Button size="sm" variant="outline" onClick={() => void review(request, "rejected")} disabled={savingId === request.id}>
-                                            <X className="size-4" /> {t.admin.rejectRequest}
+                                            {savingId === request.id ? <Spinner size="xs" tone="current" /> : <X className="size-4" />} {t.admin.rejectRequest}
                                         </Button>
                                     </div>
                                 )}

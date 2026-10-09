@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
 import {
   Check,
+  Lock,
   MapPin,
   Plus,
   ShoppingBag,
@@ -15,10 +16,17 @@ import {
 import { useForm, useWatch } from "react-hook-form";
 import { toast } from "@/lib/toast";
 
+import {
+  FacebookIcon,
+  InstagramIcon,
+  TikTokIcon,
+} from "@/components/shared/brand-icons";
+import { ColorField } from "@/components/shared/color-field";
 import { FieldError } from "@/components/shared/field-error";
 import { FileDropzone } from "@/components/shared/file-dropzone";
 import { GoogleLocationPicker } from "@/components/shared/google-location-picker";
 import { GovernorateRegionSelect } from "@/components/shared/governorate-region-select";
+import { PasswordInput } from "@/components/shared/password-input";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -29,22 +37,32 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  registerStepFields,
   registerWizardSchema,
   type RegisterWizardValues,
 } from "@/features/auth/schemas";
 import {
+  getBusinessSubTypes,
   getGovernorates,
   getRegions,
-  getSubscriptionPlans,
 } from "@/features/marketing/services";
 import { submitRegistrationRequest } from "@/features/auth/api";
 import { ApiError } from "@/lib/api/client";
+import { uploadImage } from "@/lib/api/upload";
 import { useI18n } from "@/i18n/client";
 import { queryKeys } from "@/lib/api/query-keys";
 import { cn } from "@/lib/utils";
 
+/** paired primary/secondary palettes seen often on restaurant menus */
 const colorPresets: { primary: string; secondary: string }[] = [
   { primary: "#850036", secondary: "#fe9800" },
   { primary: "#0c4a6e", secondary: "#f59e0b" },
@@ -54,13 +72,40 @@ const colorPresets: { primary: string; secondary: string }[] = [
   { primary: "#7a2810", secondary: "#e8a13c" },
 ];
 
-/** which schema fields each wizard step must pass before advancing */
-const stepFields: (keyof RegisterWizardValues)[][] = [
-  ["name"],
-  ["primaryColor", "secondaryColor"],
-  ["governorateId", "regionId"],
-  ["whatsapp"],
-];
+/** matches the 44px fields next to it (GovernorateRegionSelect's FIELD) */
+const SELECT_FIELD = "h-11! w-full gap-2 pe-3.5 ps-4 text-sm";
+/** caps the open list so 24+ business types scroll instead of pushing the
+ * page down; overrides the default available-height-based max-height */
+const SELECT_CONTENT = "max-h-72";
+
+/** the backend only returns an Arabic `name` — this translates the stable
+ * `slug` for English, falling back to that name for anything unmapped */
+const SUB_TYPE_EN_LABELS: Record<string, string> = {
+  "general-restaurant": "General restaurant",
+  "fast-food": "Fast food",
+  "eastern-cuisine": "Eastern cuisine",
+  "western-cuisine": "Western cuisine",
+  seafood: "Seafood",
+  desserts: "Desserts",
+  "juices-beverages": "Juices & beverages",
+  cafe: "Cafe",
+  grills: "Grill house",
+  "pizza-italian": "Pizza & Italian",
+  breakfast: "Breakfast",
+  bakery: "Bakery",
+  clothing: "Clothing",
+  electronics: "Electronics",
+  "telecom-phones": "Telecom & phones",
+  appliances: "Home appliances",
+  cosmetics: "Cosmetics & care",
+  pharmacy: "Pharmacy & medical supplies",
+  "bookstore-stationery": "Bookstore & stationery",
+  gifts: "Gifts & antiques",
+  "household-goods": "Household goods",
+  supermarket: "Supermarket",
+  furniture: "Furniture",
+  toys: "Kids' toys",
+};
 
 export interface RegisterCopy {
   title: string;
@@ -78,16 +123,26 @@ export interface RegisterCopy {
 
 export function RestaurantRegisterForm({
   copy,
+  /** set when an agent/agent-manager creates this account on a business's
+   * behalf — the referral field locks to the agent's own code */
+  lockedReferralCode,
 }: {
   /** overrides for the store variant; defaults to restaurant wording */
   copy?: RegisterCopy;
+  lockedReferralCode?: string;
 }) {
-  const referralFromAgent = useSearchParams().get("ref")?.trim() ?? "";
+  const referralFromLink = useSearchParams().get("ref")?.trim() ?? "";
+  // an agent page passes their code directly; a ?ref= link is the other way
+  // a referral arrives with an agent already attached — either way the
+  // field is no longer the owner's to edit
+  const referralLocked = lockedReferralCode || referralFromLink || "";
 
   const { t, lang } = useI18n();
   const router = useRouter();
+  const businessType = copy ? "STORE" : "RESTAURANT";
   const [step, setStep] = useState(0);
   const [mapOpen, setMapOpen] = useState(false);
+  const [logoUploading, setLogoUploading] = useState(false);
 
   const {
     register,
@@ -95,12 +150,19 @@ export function RestaurantRegisterForm({
     control,
     setValue,
     trigger,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<RegisterWizardValues>({
     resolver: zodResolver(registerWizardSchema(t.validation)),
     defaultValues: {
       name: "",
-      cuisine: "",
+      subTypeId: "",
+      username: "",
+      phone: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+      referral: referralLocked,
+      logoUrl: "",
       description: "",
       primaryColor: "#850036",
       secondaryColor: "#fe9800",
@@ -109,20 +171,25 @@ export function RestaurantRegisterForm({
       address: "",
       lat: null,
       lng: null,
-      whatsapp: "",
       instagram: "",
       facebook: "",
-      // an agent page links here as ?ref=CODE, so arriving through an agent
-      // pre-fills their referral instead of asking the owner to retype it
-      referral: referralFromAgent,
-      planId: "",
+      tiktok: "",
     },
     mode: "onTouched",
   });
 
-  const [primaryColor, secondaryColor, lat, lng, governorateId, regionId] = useWatch({
+  const [
+    subTypeId,
+    primaryColor,
+    secondaryColor,
+    lat,
+    lng,
+    governorateId,
+    regionId,
+  ] = useWatch({
     control,
     name: [
+      "subTypeId",
       "primaryColor",
       "secondaryColor",
       "lat",
@@ -132,6 +199,10 @@ export function RestaurantRegisterForm({
     ],
   });
 
+  const { data: subTypes } = useQuery({
+    queryKey: queryKeys.businessSubTypes(businessType),
+    queryFn: () => getBusinessSubTypes(businessType),
+  });
   const { data: governorates } = useQuery({
     queryKey: queryKeys.governorates,
     queryFn: getGovernorates,
@@ -140,28 +211,41 @@ export function RestaurantRegisterForm({
     queryKey: queryKeys.regions,
     queryFn: getRegions,
   });
-  const { data: plans = [] } = useQuery({
-    queryKey: ["subscription-plans"],
-    queryFn: getSubscriptionPlans,
-  });
 
   const regionItems = Object.fromEntries(
     (regions ?? [])
       .filter((region) => region.governorateId === governorateId)
       .map((region) => [region.id, region.name[lang]]),
   );
+  const subTypeItems = Object.fromEntries(
+    (subTypes ?? []).map((st) => [
+      st.id,
+      lang === "ar" ? st.name : SUB_TYPE_EN_LABELS[st.slug] ?? st.name,
+    ]),
+  );
 
   const Icon = copy ? ShoppingBag : UtensilsCrossed;
-  const steps = [
-    copy?.step1 ?? t.auth.step1,
-    t.auth.step2,
-    t.auth.step3,
-    t.auth.step4,
-  ];
+  const steps = [copy?.step1 ?? t.auth.step1, t.auth.step2, t.auth.step3, t.auth.step4];
 
   const nextStep = async () => {
-    const valid = await trigger(stepFields[step]);
+    const valid = await trigger(registerStepFields[step]);
     if (valid) setStep((s) => s + 1);
+  };
+
+  const handleLogoFile = async (file: File | null) => {
+    if (!file) {
+      setValue("logoUrl", "");
+      return;
+    }
+    setLogoUploading(true);
+    try {
+      const { url } = await uploadImage(file, "businesses");
+      setValue("logoUrl", url);
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.message : t.auth.genericError);
+    } finally {
+      setLogoUploading(false);
+    }
   };
 
   const submit = async (values: RegisterWizardValues) => {
@@ -169,19 +253,25 @@ export function RestaurantRegisterForm({
       await submitRegistrationRequest({
         districtId: values.regionId,
         applicantName: values.name.trim(),
-        phone: values.whatsapp,
-        type: copy ? "store" : "restaurant",
+        phone: values.phone,
+        username: values.username.trim(),
+        password: values.password,
+        confirmPassword: values.confirmPassword,
+        subTypeId: values.subTypeId,
+        email: values.email.trim() || undefined,
+        type: businessType,
         referralCode: values.referral.trim() || undefined,
-        planId: values.planId,
         notes: [
-          values.cuisine && `Cuisine: ${values.cuisine}`,
+          values.logoUrl && `Logo: ${values.logoUrl}`,
           values.description && `Description: ${values.description}`,
+          `Colors: ${values.primaryColor}, ${values.secondaryColor}`,
           values.address && `Address: ${values.address}`,
           values.lat !== null && values.lng !== null
             ? `Location: ${values.lat}, ${values.lng}`
             : "",
           values.instagram && `Instagram: ${values.instagram}`,
           values.facebook && `Facebook: ${values.facebook}`,
+          values.tiktok && `TikTok: ${values.tiktok}`,
         ]
           .filter(Boolean)
           .join("\n"),
@@ -212,10 +302,7 @@ export function RestaurantRegisterForm({
           centered on the circles instead of on the circle+label stack */}
       <ol className="mx-auto mt-8 flex max-w-xl items-center pb-6">
         {steps.map((label, i) => (
-          <li
-            key={label}
-            className={cn("flex items-center", i > 0 && "flex-1")}
-          >
+          <li key={label} className={cn("flex items-center", i > 0 && "flex-1")}>
             {i > 0 && (
               <span
                 className={cn(
@@ -263,42 +350,144 @@ export function RestaurantRegisterForm({
                 <Input
                   id="r-name"
                   className="h-11"
-                  placeholder={
-                    copy?.namePlaceholder ?? t.auth.restaurantNamePlaceholder
-                  }
+                  placeholder={copy?.namePlaceholder ?? t.auth.restaurantNamePlaceholder}
                   aria-invalid={!!errors.name}
                   {...register("name")}
                 />
                 <FieldError message={errors.name?.message} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="r-cuisine">
-                  {copy?.typeLabel ?? t.auth.restaurantTypeLabel}
-                </Label>
-                <Input
-                  id="r-cuisine"
-                  className="h-11"
-                  {...register("cuisine")}
-                />
+                <Label>{copy?.typeLabel ?? t.auth.restaurantTypeLabel} *</Label>
+                <Select
+                  value={subTypeId || null}
+                  onValueChange={(v) =>
+                    v && setValue("subTypeId", v, { shouldValidate: true })
+                  }
+                  items={subTypeItems}
+                >
+                  <SelectTrigger
+                    className={SELECT_FIELD}
+                    aria-label={copy?.typeLabel ?? t.auth.restaurantTypeLabel}
+                    aria-invalid={!!errors.subTypeId}
+                  >
+                    <SelectValue placeholder={t.auth.businessTypePlaceholder} />
+                  </SelectTrigger>
+                  <SelectContent className={SELECT_CONTENT}>
+                    {Object.entries(subTypeItems).map(([id, label]) => (
+                      <SelectItem key={id} value={id}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FieldError message={errors.subTypeId?.message} />
               </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="r-desc">{t.auth.descriptionLabel}</Label>
-              <Textarea
-                id="r-desc"
-                rows={3}
-                placeholder={
-                  copy?.descriptionPlaceholder ?? t.auth.descriptionPlaceholder
-                }
-                {...register("description")}
-              />
+
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="r-username">{t.auth.usernameLabel} *</Label>
+                <Input
+                  id="r-username"
+                  dir="ltr"
+                  autoComplete="username"
+                  placeholder={t.auth.usernamePlaceholder}
+                  aria-invalid={!!errors.username}
+                  className="h-11"
+                  {...register("username")}
+                />
+                <FieldError message={errors.username?.message} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="r-phone">{t.auth.phoneLabel} *</Label>
+                <Input
+                  id="r-phone"
+                  dir="ltr"
+                  inputMode="tel"
+                  placeholder="+963 9XX XXX XXX"
+                  aria-invalid={!!errors.phone}
+                  className="h-11"
+                  {...register("phone")}
+                />
+                <FieldError message={errors.phone?.message} />
+              </div>
             </div>
+
             <div className="space-y-2">
-              <Label>{copy?.logoLabel ?? t.auth.logoLabel}</Label>
-              <FileDropzone
-                label={copy?.logoLabel ?? t.auth.logoLabel}
-                hint={t.auth.logoHint}
+              <Label htmlFor="r-email">
+                {t.auth.emailLabel}{" "}
+                <span className="font-normal text-muted-foreground">
+                  ({t.common.optional})
+                </span>
+              </Label>
+              <Input
+                id="r-email"
+                dir="ltr"
+                type="email"
+                autoComplete="email"
+                placeholder={t.auth.emailPlaceholder}
+                aria-invalid={!!errors.email}
+                className="h-11"
+                {...register("email")}
               />
+              <FieldError message={errors.email?.message} />
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="r-password">{t.auth.passwordLabel} *</Label>
+                <PasswordInput
+                  id="r-password"
+                  autoComplete="new-password"
+                  aria-invalid={!!errors.password}
+                  className="h-11"
+                  {...register("password")}
+                />
+                <FieldError message={errors.password?.message} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="r-confirm-password">
+                  {t.auth.confirmPasswordLabel} *
+                </Label>
+                <PasswordInput
+                  id="r-confirm-password"
+                  autoComplete="new-password"
+                  aria-invalid={!!errors.confirmPassword}
+                  className="h-11"
+                  {...register("confirmPassword")}
+                />
+                <FieldError message={errors.confirmPassword?.message} />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="r-referral">
+                {t.auth.referralLabel}{" "}
+                {!referralLocked && (
+                  <span className="font-normal text-muted-foreground">
+                    ({t.common.optional})
+                  </span>
+                )}
+              </Label>
+              <div className="relative">
+                {referralLocked && (
+                  <Lock className="absolute start-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                )}
+                <Input
+                  id="r-referral"
+                  dir="ltr"
+                  readOnly={!!referralLocked}
+                  disabled={!!referralLocked}
+                  placeholder={t.auth.referralPlaceholder}
+                  className={cn("h-11", referralLocked && "ps-10")}
+                  {...register("referral")}
+                />
+              </div>
+              {referralLocked && (
+                <p className="text-xs text-muted-foreground">
+                  {t.auth.referralLockedHint}
+                </p>
+              )}
             </div>
           </div>
         )}
@@ -306,6 +495,24 @@ export function RestaurantRegisterForm({
         {step === 1 && (
           <div className="grid gap-8 md:grid-cols-[1fr_minmax(0,17rem)]">
             <div className="space-y-6">
+              <div className="space-y-2">
+                <Label>{copy?.logoLabel ?? t.auth.logoLabel}</Label>
+                <FileDropzone
+                  label={copy?.logoLabel ?? t.auth.logoLabel}
+                  hint={logoUploading ? t.common.loading : t.auth.logoHint}
+                  onFile={handleLogoFile}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="r-desc">{t.auth.descriptionLabel}</Label>
+                <Textarea
+                  id="r-desc"
+                  rows={3}
+                  placeholder={copy?.descriptionPlaceholder ?? t.auth.descriptionPlaceholder}
+                  {...register("description")}
+                />
+              </div>
+
               <div className="space-y-3">
                 <Label>{t.auth.colorPresets}</Label>
                 <div className="flex flex-wrap gap-3">
@@ -318,8 +525,8 @@ export function RestaurantRegisterForm({
                         key={preset.primary}
                         type="button"
                         onClick={() => {
-                          setValue("primaryColor", preset.primary);
-                          setValue("secondaryColor", preset.secondary);
+                          setValue("primaryColor", preset.primary, { shouldValidate: true });
+                          setValue("secondaryColor", preset.secondary, { shouldValidate: true });
                         }}
                         aria-pressed={isActive}
                         className={cn(
@@ -335,43 +542,22 @@ export function RestaurantRegisterForm({
                     );
                   })}
                 </div>
+                <p className="text-xs text-muted-foreground">{t.auth.customColorHint}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="r-primary">{t.auth.primaryColorLabel}</Label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      id="r-primary"
-                      type="color"
-                      value={primaryColor}
-                      onChange={(e) => setValue("primaryColor", e.target.value)}
-                      className="size-11 cursor-pointer rounded-lg border border-input bg-transparent p-1"
-                    />
-                    <span className="font-mono text-sm" dir="ltr">
-                      {primaryColor}
-                    </span>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="r-secondary">
-                    {t.auth.secondaryColorLabel}
-                  </Label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      id="r-secondary"
-                      type="color"
-                      value={secondaryColor}
-                      onChange={(e) =>
-                        setValue("secondaryColor", e.target.value)
-                      }
-                      className="size-11 cursor-pointer rounded-lg border border-input bg-transparent p-1"
-                    />
-                    <span className="font-mono text-sm" dir="ltr">
-                      {secondaryColor}
-                    </span>
-                  </div>
-                </div>
+                <ColorField
+                  id="r-primary"
+                  label={t.auth.primaryColorLabel}
+                  value={primaryColor}
+                  onChange={(v) => setValue("primaryColor", v, { shouldValidate: true })}
+                />
+                <ColorField
+                  id="r-secondary"
+                  label={t.auth.secondaryColorLabel}
+                  value={secondaryColor}
+                  onChange={(v) => setValue("secondaryColor", v, { shouldValidate: true })}
+                />
               </div>
             </div>
 
@@ -387,10 +573,7 @@ export function RestaurantRegisterForm({
                 >
                   <span
                     className="absolute start-3 top-3 rounded-full px-2.5 py-1 text-[0.65rem] font-bold"
-                    style={{
-                      backgroundColor: secondaryColor,
-                      color: "#2c1600",
-                    }}
+                    style={{ backgroundColor: secondaryColor, color: "#2c1600" }}
                   >
                     {t.menu.popular}
                   </span>
@@ -403,11 +586,7 @@ export function RestaurantRegisterForm({
                     {copy?.previewItemDesc ?? t.auth.previewDishDesc}
                   </p>
                   <div className="mt-3 flex items-center justify-between">
-                    <span
-                      className="text-sm font-bold"
-                      style={{ color: primaryColor }}
-                      dir="ltr"
-                    >
+                    <span className="text-sm font-bold" style={{ color: primaryColor }} dir="ltr">
                       45,000 {t.common.currency}
                     </span>
                     <span
@@ -431,19 +610,17 @@ export function RestaurantRegisterForm({
                 <GovernorateRegionSelect
                   triggerClassName="h-11"
                   governorateValue={governorateId}
-                  onGovernorateChange={(v) =>
-                  (setValue("governorateId", v, { shouldValidate: true }),
-                    setValue("regionId", "", { shouldValidate: true }))
-                  }
+                  onGovernorateChange={(v) => {
+                    setValue("governorateId", v, { shouldValidate: true });
+                    setValue("regionId", "", { shouldValidate: true });
+                  }}
                   governorateItems={Object.fromEntries(
                     (governorates ?? []).map((g) => [g.id, g.name[lang]]),
                   )}
                   governorateAriaLabel={t.auth.governorateLabel}
                   governorateInvalid={!!errors.governorateId}
                   regionValue={regionId}
-                  onRegionChange={(v) =>
-                    setValue("regionId", v, { shouldValidate: true })
-                  }
+                  onRegionChange={(v) => setValue("regionId", v, { shouldValidate: true })}
                   regionItems={regionItems}
                   regionAriaLabel={t.agentsPage.region}
                   regionDisabled={!governorateId}
@@ -452,7 +629,12 @@ export function RestaurantRegisterForm({
                 <FieldError message={errors.regionId?.message} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="r-address">{t.auth.addressLabel}</Label>
+                <Label htmlFor="r-address">
+                  {t.auth.addressLabel}{" "}
+                  <span className="font-normal text-muted-foreground">
+                    ({t.common.optional})
+                  </span>
+                </Label>
                 <Input
                   id="r-address"
                   className="h-11"
@@ -481,21 +663,14 @@ export function RestaurantRegisterForm({
                         : "bg-berry-soft text-berry-soft-foreground",
                     )}
                   >
-                    {lat ? (
-                      <Check className="size-4.5" />
-                    ) : (
-                      <MapPin className="size-4.5" />
-                    )}
+                    {lat ? <Check className="size-4.5" /> : <MapPin className="size-4.5" />}
                   </span>
                   <span className="text-start">
                     <span className="block text-sm font-semibold">
                       {lat ? t.auth.locationPicked : t.auth.openMapPicker}
                     </span>
                     {lat && (
-                      <span
-                        className="block text-xs text-muted-foreground"
-                        dir="ltr"
-                      >
+                      <span className="block text-xs text-muted-foreground" dir="ltr">
                         {lat.toFixed(5)}, {lng?.toFixed(5)}
                       </span>
                     )}
@@ -514,11 +689,7 @@ export function RestaurantRegisterForm({
                       setValue("lng", pickedLng);
                     }}
                   />
-                  <Button
-                    type="button"
-                    className="w-full"
-                    onClick={() => setMapOpen(false)}
-                  >
+                  <Button type="button" className="w-full" onClick={() => setMapOpen(false)}>
                     <Check className="size-4" />
                     <span className="font-semibold">OK</span>
                   </Button>
@@ -530,38 +701,10 @@ export function RestaurantRegisterForm({
 
         {step === 3 && (
           <div className="grid gap-6 md:grid-cols-2">
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="r-plan">{t.auth.planLabel} *</Label>
-              <select
-                id="r-plan"
-                className="h-11 w-full rounded-md border border-input bg-background px-3"
-                aria-invalid={!!errors.planId}
-                {...register("planId")}
-              >
-                <option value="">{t.auth.planPlaceholder}</option>
-                {plans.map((plan) => (
-                  <option key={plan.id} value={plan.id}>
-                    {plan.name} · {plan.price.toLocaleString()} {t.common.currency}
-                  </option>
-                ))}
-              </select>
-              <FieldError message={errors.planId?.message} />
-            </div>
             <div className="space-y-2">
-              <Label htmlFor="r-wa">{t.auth.whatsappLabel} *</Label>
-              <Input
-                id="r-wa"
-                dir="ltr"
-                inputMode="tel"
-                placeholder="+963 9XX XXX XXX"
-                aria-invalid={!!errors.whatsapp}
-                className="h-11"
-                {...register("whatsapp")}
-              />
-              <FieldError message={errors.whatsapp?.message} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="r-ig">{t.auth.instagramLabel}</Label>
+              <Label htmlFor="r-ig" className="flex items-center gap-1.5">
+                <InstagramIcon className="size-4" /> {t.auth.instagramLabel}
+              </Label>
               <Input
                 id="r-ig"
                 dir="ltr"
@@ -571,28 +714,16 @@ export function RestaurantRegisterForm({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="r-fb">{t.auth.facebookLabel}</Label>
-              <Input
-                id="r-fb"
-                dir="ltr"
-                className="h-11"
-                {...register("facebook")}
-              />
+              <Label htmlFor="r-fb" className="flex items-center gap-1.5">
+                <FacebookIcon className="size-4" /> {t.auth.facebookLabel}
+              </Label>
+              <Input id="r-fb" dir="ltr" className="h-11" {...register("facebook")} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="r-ref">
-                {t.auth.referralLabel}{" "}
-                <span className="font-normal text-muted-foreground">
-                  ({t.common.optional})
-                </span>
+              <Label htmlFor="r-tiktok" className="flex items-center gap-1.5">
+                <TikTokIcon className="size-4" /> {t.auth.tiktokLabel}
               </Label>
-              <Input
-                id="r-ref"
-                dir="ltr"
-                placeholder={t.auth.referralPlaceholder}
-                className="h-11"
-                {...register("referral")}
-              />
+              <Input id="r-tiktok" dir="ltr" className="h-11" {...register("tiktok")} />
             </div>
           </div>
         )}
@@ -608,15 +739,11 @@ export function RestaurantRegisterForm({
             {t.common.back}
           </Button>
           {step < steps.length - 1 ? (
-            <Button
-              type="button"
-              className="h-11 min-w-32 shadow-glow"
-              onClick={nextStep}
-            >
+            <Button type="button" className="h-11 min-w-32 shadow-glow" onClick={nextStep}>
               {t.common.next}
             </Button>
           ) : (
-            <Button type="submit" className="h-11 min-w-40 shadow-glow">
+            <Button type="submit" loading={isSubmitting} className="h-11 min-w-40 shadow-glow">
               {t.auth.createAccount}
             </Button>
           )}

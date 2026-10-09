@@ -196,7 +196,7 @@ export function UserProfileForm() {
 
           <Button
             type="submit"
-            disabled={isSubmitting}
+            loading={isSubmitting}
             className="h-12 w-full text-base"
           >
             {t.auth.createMyAccount}

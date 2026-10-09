@@ -222,7 +222,7 @@ export function PhoneNumbersCard({
           <div className="flex flex-wrap gap-2">
             <Button
               type="submit"
-              disabled={isAdding}
+              loading={isAdding}
               className="h-10 gap-1.5 px-4"
             >
               {isAdding ? (

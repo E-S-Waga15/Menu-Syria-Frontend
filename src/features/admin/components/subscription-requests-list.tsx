@@ -6,6 +6,7 @@ import { BadgeCheck, Check, HandCoins, X } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { AdminPageHeader } from "@/features/admin/components/admin-page-header";
 import {
     updateSubscriptionRequestStatus,
@@ -104,7 +105,11 @@ export function SubscriptionRequestsList({
                                         }
                                         disabled={savingId === request.id}
                                     >
-                                        <HandCoins className="size-4" />{" "}
+                                        {savingId === request.id ? (
+                                            <Spinner size="xs" tone="current" />
+                                        ) : (
+                                            <HandCoins className="size-4" />
+                                        )}{" "}
                                         {t.admin.confirmPayment}
                                     </Button>
                                     <Button
@@ -115,7 +120,11 @@ export function SubscriptionRequestsList({
                                         }
                                         disabled={savingId === request.id}
                                     >
-                                        <X className="size-4" />{" "}
+                                        {savingId === request.id ? (
+                                            <Spinner size="xs" tone="current" />
+                                        ) : (
+                                            <X className="size-4" />
+                                        )}{" "}
                                         {t.admin.rejectRequest}
                                     </Button>
                                 </div>
