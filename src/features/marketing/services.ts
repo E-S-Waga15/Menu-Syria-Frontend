@@ -40,7 +40,13 @@ export async function getSubscriptionPlans(): Promise<SubscriptionPlanOption[]> 
 
 export async function getGovernorates(): Promise<Governorate[]> {
   if (IS_MOCK) return mockDelay(governorates, 150);
-  return apiFetch("/governorates");
+  const items = await apiFetch<Array<{ id: string; governorateName: string }>>(
+    "/locations/governorates",
+  );
+  return items.map((item) => ({
+    id: item.id,
+    name: { ar: item.governorateName, en: item.governorateName },
+  }));
 }
 
 export async function getFeaturedRestaurants(): Promise<Restaurant[]> {
@@ -58,7 +64,14 @@ export async function getRestaurantBySlug(
 
 export async function getRegions(): Promise<Region[]> {
   if (IS_MOCK) return mockDelay(regions, 100);
-  return apiFetch("/regions");
+  const items = await apiFetch<
+    Array<{ id: string; governorateId: string; districtName: string }>
+  >("/locations/districts");
+  return items.map((item) => ({
+    id: item.id,
+    governorateId: item.governorateId,
+    name: { ar: item.districtName, en: item.districtName },
+  }));
 }
 
 /**

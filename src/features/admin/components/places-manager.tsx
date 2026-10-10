@@ -15,6 +15,14 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  createAdminGovernorate,
+  createAdminRegion,
+  deleteAdminGovernorate,
+  deleteAdminRegion,
+  updateAdminGovernorate,
+  updateAdminRegion,
+} from "@/features/admin/services";
 import { fmt, useI18n } from "@/i18n/client";
 import { toast } from "@/lib/toast";
 import type { Governorate, Region } from "@/lib/types";
@@ -28,8 +36,8 @@ import { cn } from "@/lib/utils";
  * right. Two separate flat lists would make the reader hold the relationship
  * in their head and make it possible to add a region to nothing.
  *
- * Edits stay local while the API is mocked, so the panel behaves like the real
- * thing without pretending a write landed on a server.
+ * Mutations are persisted through the locations API; mock mode keeps the same
+ * interaction available when the backend is not configured.
  */
 export function PlacesManager({
   governorates: initialGovernorates,
@@ -49,6 +57,10 @@ export function PlacesManager({
 
   const [newGovernorate, setNewGovernorate] = useState("");
   const [newRegion, setNewRegion] = useState("");
+  const [renamingGovernorateId, setRenamingGovernorateId] = useState<
+    string | null
+  >(null);
+  const [governorateRenameValue, setGovernorateRenameValue] = useState("");
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
 
@@ -57,41 +69,78 @@ export function PlacesManager({
     regions.filter((r) => r.governorateId === id);
   const selectedRegions = selected ? regionsOf(selected.id) : [];
 
-  const addGovernorate = () => {
-    const name = newGovernorate.trim();
-    if (!name) return;
-    const id = `g${Date.now()}`;
-    setGovernorates((prev) => [...prev, { id, name: { ar: name, en: name } }]);
-    setNewGovernorate("");
-    setSelectedId(id);
-    toast.success(t.admin.saved);
+  const showError = (error: unknown) => {
+    toast.error(error instanceof Error ? error.message : t.common.saveFailed);
   };
 
-  const deleteGovernorate = (id: string) => {
+  const addGovernorate = async () => {
+    const name = newGovernorate.trim();
+    if (!name) return;
+    try {
+      const governorate = await createAdminGovernorate(name);
+      setGovernorates((prev) => [...prev, governorate]);
+      setNewGovernorate("");
+      setSelectedId(governorate.id);
+      toast.success(t.admin.saved);
+    } catch (error) {
+      showError(error);
+    }
+  };
+
+  const startGovernorateRename = (governorate: Governorate) => {
+    setRenamingGovernorateId(governorate.id);
+    setGovernorateRenameValue(governorate.name[lang]);
+  };
+
+  const commitGovernorateRename = async () => {
+    const name = governorateRenameValue.trim();
+    if (!renamingGovernorateId || !name) return;
+    try {
+      const updated = await updateAdminGovernorate(
+        renamingGovernorateId,
+        name,
+      );
+      setGovernorates((prev) =>
+        prev.map((governorate) =>
+          governorate.id === updated.id ? updated : governorate,
+        ),
+      );
+      toast.success(t.admin.saved);
+      setRenamingGovernorateId(null);
+    } catch (error) {
+      showError(error);
+    }
+  };
+
+  const deleteGovernorate = async (id: string) => {
     // deleting a parent would orphan its children, so it is blocked with a
     // reason rather than silently cascading
     if (regionsOf(id).length > 0) {
       toast.error(t.admin.cannotDeleteGovernorate);
       return;
     }
-    setGovernorates((prev) => prev.filter((g) => g.id !== id));
-    if (selectedId === id) setSelectedId(governorates[0]?.id ?? "");
-    toast.success(t.admin.saved);
+    try {
+      await deleteAdminGovernorate(id);
+      const next = governorates.filter((governorate) => governorate.id !== id);
+      setGovernorates(next);
+      if (selectedId === id) setSelectedId(next[0]?.id ?? "");
+      toast.success(t.admin.saved);
+    } catch (error) {
+      showError(error);
+    }
   };
 
-  const addRegion = () => {
+  const addRegion = async () => {
     const name = newRegion.trim();
     if (!name || !selected) return;
-    setRegions((prev) => [
-      ...prev,
-      {
-        id: `r${Date.now()}`,
-        governorateId: selected.id,
-        name: { ar: name, en: name },
-      },
-    ]);
-    setNewRegion("");
-    toast.success(t.admin.saved);
+    try {
+      const region = await createAdminRegion(selected.id, name);
+      setRegions((prev) => [...prev, region]);
+      setNewRegion("");
+      toast.success(t.admin.saved);
+    } catch (error) {
+      showError(error);
+    }
   };
 
   const startRename = (region: Region) => {
@@ -99,22 +148,38 @@ export function PlacesManager({
     setRenameValue(region.name[lang]);
   };
 
-  const commitRename = () => {
+  const commitRename = async () => {
     const name = renameValue.trim();
-    if (renamingId && name) {
+    if (!renamingId || !name) return;
+    try {
+      const current = regions.find((region) => region.id === renamingId);
+      const updated = await updateAdminRegion(renamingId, name);
       setRegions((prev) =>
-        prev.map((r) =>
-          r.id === renamingId ? { ...r, name: { ar: name, en: name } } : r,
+        prev.map((region) =>
+          region.id === updated.id
+            ? {
+                ...updated,
+                governorateId:
+                  current?.governorateId ?? updated.governorateId,
+              }
+            : region,
         ),
       );
       toast.success(t.admin.saved);
+      setRenamingId(null);
+    } catch (error) {
+      showError(error);
     }
-    setRenamingId(null);
   };
 
-  const deleteRegion = (id: string) => {
-    setRegions((prev) => prev.filter((r) => r.id !== id));
-    toast.success(t.admin.saved);
+  const deleteRegion = async (id: string) => {
+    try {
+      await deleteAdminRegion(id);
+      setRegions((prev) => prev.filter((region) => region.id !== id));
+      toast.success(t.admin.saved);
+    } catch (error) {
+      showError(error);
+    }
   };
 
   return (
@@ -131,12 +196,12 @@ export function PlacesManager({
             className="h-10"
             value={newGovernorate}
             onChange={(e) => setNewGovernorate(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && addGovernorate()}
+            onKeyDown={(e) => e.key === "Enter" && void addGovernorate()}
           />
           <Button
             className="h-10 shrink-0"
             aria-label={t.admin.addGovernorate}
-            onClick={addGovernorate}
+            onClick={() => void addGovernorate()}
           >
             <Plus className="size-4" />
           </Button>
@@ -156,26 +221,71 @@ export function PlacesManager({
                       : "border-border/60 hover:border-primary/35",
                   )}
                 >
-                  <button
-                    type="button"
-                    onClick={() => setSelectedId(gov.id)}
-                    aria-current={active ? "true" : undefined}
-                    className="flex min-h-10 flex-1 cursor-pointer items-center gap-2 px-2 text-start text-sm font-semibold"
-                  >
-                    <span className="min-w-0 flex-1 truncate">
-                      {gov.name[lang]}
-                    </span>
-                    <span className="shrink-0 rounded-full bg-surface-container px-1.5 text-xs text-muted-foreground tabular-nums">
-                      {count}
-                    </span>
-                    <Chevron className="size-4 shrink-0 text-muted-foreground" />
-                  </button>
+                  {renamingGovernorateId === gov.id ? (
+                    <Input
+                      autoFocus
+                      value={governorateRenameValue}
+                      onChange={(e) => setGovernorateRenameValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") void commitGovernorateRename();
+                        if (e.key === "Escape") setRenamingGovernorateId(null);
+                      }}
+                      className="h-8 min-w-0 flex-1"
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedId(gov.id)}
+                      aria-current={active ? "true" : undefined}
+                      className="flex min-h-10 flex-1 cursor-pointer items-center gap-2 px-2 text-start text-sm font-semibold"
+                    >
+                      <span className="min-w-0 flex-1 truncate">
+                        {gov.name[lang]}
+                      </span>
+                      <span className="shrink-0 rounded-full bg-surface-container px-1.5 text-xs text-muted-foreground tabular-nums">
+                        {count}
+                      </span>
+                      <Chevron className="size-4 shrink-0 text-muted-foreground" />
+                    </button>
+                  )}
+                  {renamingGovernorateId === gov.id ? (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="icon-xs"
+                        aria-label={t.common.save}
+                        className="shrink-0 text-success"
+                        onClick={() => void commitGovernorateRename()}
+                      >
+                        <Check className="size-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon-xs"
+                        aria-label={t.common.cancel}
+                        className="shrink-0 text-muted-foreground"
+                        onClick={() => setRenamingGovernorateId(null)}
+                      >
+                        <X className="size-3.5" />
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
+                      aria-label={t.common.edit}
+                      className="shrink-0 text-muted-foreground hover:text-foreground"
+                      onClick={() => startGovernorateRename(gov)}
+                    >
+                      <Pencil className="size-3.5" />
+                    </Button>
+                  )}
                   <Button
                     variant="ghost"
                     size="icon-xs"
                     aria-label={t.common.delete}
                     className="shrink-0 text-muted-foreground hover:text-destructive"
-                    onClick={() => deleteGovernorate(gov.id)}
+                    onClick={() => void deleteGovernorate(gov.id)}
                   >
                     <Trash2 className="size-3.5" />
                   </Button>
@@ -210,12 +320,14 @@ export function PlacesManager({
                 className="h-10"
                 value={newRegion}
                 onChange={(e) => setNewRegion(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && addRegion()}
+                onKeyDown={(e) =>
+                  e.key === "Enter" && void addRegion()
+                }
               />
               <Button
                 className="h-10 shrink-0"
                 aria-label={t.admin.addRegion}
-                onClick={addRegion}
+                onClick={() => void addRegion()}
               >
                 <Plus className="size-4" />
                 {t.common.add}
@@ -240,7 +352,7 @@ export function PlacesManager({
                           value={renameValue}
                           onChange={(e) => setRenameValue(e.target.value)}
                           onKeyDown={(e) => {
-                            if (e.key === "Enter") commitRename();
+                            if (e.key === "Enter") void commitRename();
                             if (e.key === "Escape") setRenamingId(null);
                           }}
                           className="h-8"
@@ -250,7 +362,7 @@ export function PlacesManager({
                           size="icon-xs"
                           aria-label={t.common.save}
                           className="shrink-0 text-success"
-                          onClick={commitRename}
+                          onClick={() => void commitRename()}
                         >
                           <Check className="size-3.5" />
                         </Button>
@@ -283,7 +395,7 @@ export function PlacesManager({
                           size="icon-xs"
                           aria-label={t.common.delete}
                           className="shrink-0 text-muted-foreground hover:text-destructive"
-                          onClick={() => deleteRegion(region.id)}
+                          onClick={() => void deleteRegion(region.id)}
                         >
                           <Trash2 className="size-3.5" />
                         </Button>

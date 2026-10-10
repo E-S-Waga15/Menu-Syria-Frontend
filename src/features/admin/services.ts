@@ -13,6 +13,8 @@ import type {
   Plan,
   PlatformUser,
   Restaurant,
+  Governorate,
+  Region,
   Store,
   Transaction,
 } from "@/lib/types";
@@ -52,6 +54,127 @@ export interface BusinessSubscription {
   endDate: string;
   status: string;
   plan?: { id: string; name: string; durationDays: number };
+}
+
+type GovernorateResponse = { id: string; governorateName: string };
+type DistrictResponse = {
+  id: string;
+  governorateId: string;
+  districtName: string;
+};
+
+function toGovernorate(item: GovernorateResponse): Governorate {
+  return {
+    id: item.id,
+    name: { ar: item.governorateName, en: item.governorateName },
+  };
+}
+
+function toRegion(item: DistrictResponse): Region {
+  return {
+    id: item.id,
+    governorateId: item.governorateId,
+    name: { ar: item.districtName, en: item.districtName },
+  };
+}
+
+export async function createAdminGovernorate(
+  name: string,
+  auth: AdminAuth = {},
+): Promise<Governorate> {
+  if (IS_MOCK) {
+    return mockDelay({
+      id: `g${Date.now()}`,
+      name: { ar: name, en: name },
+    });
+  }
+  const item = await apiFetch<GovernorateResponse>("/locations/governorates", {
+    method: "POST",
+    headers: authHeaders(auth),
+    body: { governorateName: name },
+  });
+  return toGovernorate(item);
+}
+
+export async function updateAdminGovernorate(
+  id: string,
+  name: string,
+  auth: AdminAuth = {},
+): Promise<Governorate> {
+  if (IS_MOCK) {
+    return mockDelay({ id, name: { ar: name, en: name } });
+  }
+  const item = await apiFetch<GovernorateResponse>(
+    `/locations/governorates/${id}`,
+    {
+      method: "PATCH",
+      headers: authHeaders(auth),
+      body: { governorateName: name },
+    },
+  );
+  return toGovernorate(item);
+}
+
+export async function deleteAdminGovernorate(
+  id: string,
+  auth: AdminAuth = {},
+): Promise<void> {
+  if (IS_MOCK) return mockDelay(undefined, 150);
+  await apiFetch<void>(`/locations/governorates/${id}`, {
+    method: "DELETE",
+    headers: authHeaders(auth),
+  });
+}
+
+export async function createAdminRegion(
+  governorateId: string,
+  name: string,
+  auth: AdminAuth = {},
+): Promise<Region> {
+  if (IS_MOCK) {
+    return mockDelay({
+      id: `r${Date.now()}`,
+      governorateId,
+      name: { ar: name, en: name },
+    });
+  }
+  const item = await apiFetch<DistrictResponse>("/locations/districts", {
+    method: "POST",
+    headers: authHeaders(auth),
+    body: { governorateId, districtName: name },
+  });
+  return toRegion(item);
+}
+
+export async function updateAdminRegion(
+  id: string,
+  name: string,
+  auth: AdminAuth = {},
+): Promise<Region> {
+  if (IS_MOCK) {
+    return mockDelay({
+      id,
+      governorateId: "",
+      name: { ar: name, en: name },
+    });
+  }
+  const item = await apiFetch<DistrictResponse>(`/locations/districts/${id}`, {
+    method: "PATCH",
+    headers: authHeaders(auth),
+    body: { districtName: name },
+  });
+  return toRegion(item);
+}
+
+export async function deleteAdminRegion(
+  id: string,
+  auth: AdminAuth = {},
+): Promise<void> {
+  if (IS_MOCK) return mockDelay(undefined, 150);
+  await apiFetch<void>(`/locations/districts/${id}`, {
+    method: "DELETE",
+    headers: authHeaders(auth),
+  });
 }
 
 /** Authorization header for an explicitly-provided token, if any. */
