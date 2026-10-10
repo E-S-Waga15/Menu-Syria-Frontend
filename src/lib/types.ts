@@ -328,6 +328,89 @@ export interface RestaurantAnalytics {
   bestSeller: MenuItem;
 }
 
+// ---------------------------------------------------------------------------
+// Statistics & analytics (`/statistics/*`) — gated behind the business's own
+// plan (`plan.hasStatistics`); every read below can come back 403 for a
+// business on a plan that doesn't include it.
+// ---------------------------------------------------------------------------
+
+export interface TopSoldItem {
+  itemId: string;
+  name: string;
+  totalQuantity: number;
+}
+
+/** `GET /statistics/business` — headline numbers for a date range. */
+export interface BusinessStatistics {
+  visitCount: number;
+  orderCount: number;
+  revenue: number;
+  topItems: TopSoldItem[];
+}
+
+export interface OverviewCartItemStat {
+  itemId: string;
+  name: string;
+  cartAddCount: number;
+}
+
+/** `GET /statistics/overview` — this calendar month, for the dashboard home. */
+export interface OverviewStats {
+  mostAddedToCart: OverviewCartItemStat | null;
+  mostViewedWithoutPurchase:
+    | { itemId: string; name: string; viewCount: number }
+    | null;
+  /** null only when there is no active subscription at all */
+  daysUntilSubscriptionExpiry: number | null;
+  leastAddedToCart: (OverviewCartItemStat & { tip: string }) | null;
+}
+
+/** `GET /statistics/best-selling` — up to 10 rows, by quantitySold desc. */
+export interface BestSellingItem {
+  itemId: string;
+  name: string;
+  imageUrl: string;
+  isAvailable: boolean;
+  cartAddCount: number;
+  quantitySold: number;
+  revenue: number;
+}
+
+export interface CategoryViewStat {
+  categoryId: string;
+  name: string;
+  viewCount: number;
+  /** rounded share of total category views, 0–100 */
+  percentage: number;
+}
+
+/** `GET /statistics/categories` — all-time. */
+export interface CategoriesAnalytics {
+  mostVisited: { categoryId: string; name: string } | null;
+  leastActive: { categoryId: string; name: string } | null;
+  breakdown: CategoryViewStat[];
+}
+
+/** `GET /statistics/peak-times` — all-time, scored by cart-add events only. */
+export interface PeakTimesStats {
+  topHourSlots: { hourRange: string; cartAddCount: number }[];
+  bestDayOfWeek: { dayAr: string; cartAddCount: number } | null;
+  bestMonth: { label: string; cartAddCount: number } | null;
+}
+
+/** `GET /statistics/live-activity` — a rough, explicitly approximate count. */
+export interface LiveActivityStats {
+  activeCount: number;
+  windowMinutes: number;
+  isApproximate: boolean;
+}
+
+/** `GET /statistics/insights` — ready-to-show smart-alert lines. */
+export interface BusinessInsight {
+  icon: "calendar" | "lightbulb";
+  textAr: string;
+}
+
 /** What a notification is about; the copy for each lives in the dictionary. */
 export type NotificationKind =
   "expiringSoon" | "expired" | "renewed" | "joined";

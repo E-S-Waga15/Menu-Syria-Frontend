@@ -1,13 +1,20 @@
 import type {
   Agent,
   Branch,
+  BestSellingItem,
+  BusinessInsight,
+  BusinessStatistics,
   BusinessSubType,
+  CategoriesAnalytics,
   DiningTable,
   Governorate,
+  LiveActivityStats,
   MenuCategory,
   MenuItem,
   Offer,
   Order,
+  OverviewStats,
+  PeakTimesStats,
   Plan,
   PlatformUser,
   Region,
@@ -1080,6 +1087,90 @@ export const restaurantAnalytics: RestaurantAnalytics = {
   ],
   bestSeller: menuItems.find((m) => m.id === "m7")!,
 };
+
+export const businessStatistics: BusinessStatistics = {
+  visitCount: 1284,
+  orderCount: 47,
+  revenue: 3250000,
+  topItems: [
+    { itemId: "m7", name: "مشاوي مشكلة", totalQuantity: 58 },
+    { itemId: "m3", name: "حمص بالطحينة", totalQuantity: 41 },
+    { itemId: "m5", name: "كنافة نابلسية", totalQuantity: 33 },
+  ],
+};
+
+export const overviewStats: OverviewStats = {
+  mostAddedToCart: { itemId: "m7", name: "مشاوي مشكلة", cartAddCount: 62 },
+  mostViewedWithoutPurchase: { itemId: "m9", name: "عصير مانجا", viewCount: 24 },
+  daysUntilSubscriptionExpiry: 189,
+  leastAddedToCart: {
+    itemId: "m4",
+    name: "هريسة",
+    cartAddCount: 2,
+    tip: "جرّب تعديل صورة أو سعر «هريسة» لتحسين أدائه",
+  },
+};
+
+export const bestSellingItems: BestSellingItem[] = [
+  {
+    itemId: "m7",
+    name: "مشاوي مشكلة",
+    imageUrl: img("photo-1544025162-d76694265947", 200),
+    isAvailable: true,
+    cartAddCount: 62,
+    quantitySold: 58,
+    revenue: 1450000,
+  },
+  {
+    itemId: "m3",
+    name: "حمص بالطحينة",
+    imageUrl: img("photo-1529059997568-3d847b1154f0", 200),
+    isAvailable: true,
+    cartAddCount: 49,
+    quantitySold: 41,
+    revenue: 410000,
+  },
+  {
+    itemId: "m5",
+    name: "كنافة نابلسية",
+    imageUrl: img("photo-1517248135467-4c7edcad34c4", 200),
+    isAvailable: false,
+    cartAddCount: 37,
+    quantitySold: 33,
+    revenue: 495000,
+  },
+];
+
+export const categoriesAnalytics: CategoriesAnalytics = {
+  mostVisited: { categoryId: "c1", name: "المشاوي" },
+  leastActive: { categoryId: "c4", name: "المشروبات" },
+  breakdown: [
+    { categoryId: "c1", name: "المشاوي", viewCount: 420, percentage: 42 },
+    { categoryId: "c2", name: "المقبلات", viewCount: 280, percentage: 28 },
+    { categoryId: "c3", name: "الحلويات", viewCount: 150, percentage: 15 },
+    { categoryId: "c4", name: "المشروبات", viewCount: 150, percentage: 15 },
+  ],
+};
+
+export const peakTimes: PeakTimesStats = {
+  topHourSlots: [
+    { hourRange: "18:00-19:00", cartAddCount: 14 },
+    { hourRange: "21:00-22:00", cartAddCount: 9 },
+  ],
+  bestDayOfWeek: { dayAr: "السبت", cartAddCount: 21 },
+  bestMonth: { label: "أكتوبر 2026", cartAddCount: 54 },
+};
+
+export const liveActivity: LiveActivityStats = {
+  activeCount: 3,
+  windowMinutes: 5,
+  isApproximate: true,
+};
+
+export const businessInsights: BusinessInsight[] = [
+  { icon: "calendar", textAr: "يوم السبت هو أفضل يوم نشاط لديك." },
+  { icon: "lightbulb", textAr: "جرّب تعديل صورة أو سعر «هريسة» لتحسين أدائه." },
+];
 
 export const stores: Store[] = [
   {

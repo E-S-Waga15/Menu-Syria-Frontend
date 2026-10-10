@@ -1,24 +1,38 @@
 import { apiFetch, IS_MOCK, mockDelay } from "@/lib/api/client";
 import {
   branches,
+  bestSellingItems,
+  businessInsights,
+  businessStatistics,
+  categoriesAnalytics,
   diningTables,
+  liveActivity,
   menuCategories,
   menuItems,
   orders,
+  overviewStats,
+  peakTimes,
   restaurantAnalytics,
   restaurants,
   waiters,
 } from "@/lib/mock/data";
 import type {
+  BestSellingItem,
   Branch,
+  BusinessInsight,
+  BusinessStatistics,
   CatalogOptionGroup,
+  CategoriesAnalytics,
   CurrencyCode,
   DiningTable,
+  LiveActivityStats,
   LocalizedText,
   MenuCategory,
   MenuItem,
   Order,
   OrderStatus,
+  OverviewStats,
+  PeakTimesStats,
   Restaurant,
   RestaurantAnalytics,
   Waiter,
@@ -142,6 +156,61 @@ export async function getMyWaiters(): Promise<Waiter[]> {
 export async function getMyAnalytics(): Promise<RestaurantAnalytics> {
   if (IS_MOCK) return mockDelay(restaurantAnalytics);
   return apiFetch("/me/analytics");
+}
+
+// ---------------------------------------------------------------------------
+// Statistics & analytics (`/statistics/*`)
+//
+// `businessId` is left out of every call below: the backend resolves it from
+// the signed-in owner's own token when omitted, which is exactly who these
+// pages are for. Every one of these can answer 403 — the business's plan may
+// not include statistics (`plan.hasStatistics`) — and that is left for the
+// caller to catch and show as an upgrade prompt rather than swallowed here.
+// ---------------------------------------------------------------------------
+
+export async function getBusinessStatistics(range?: {
+  dateFrom?: string;
+  dateTo?: string;
+}): Promise<BusinessStatistics> {
+  if (IS_MOCK) return mockDelay(businessStatistics);
+  const params = new URLSearchParams();
+  if (range?.dateFrom) params.set("dateFrom", range.dateFrom);
+  if (range?.dateTo) params.set("dateTo", range.dateTo);
+  const query = params.toString();
+  return apiFetch(`/statistics/business${query ? `?${query}` : ""}`);
+}
+
+export async function getOverviewStats(): Promise<OverviewStats> {
+  if (IS_MOCK) return mockDelay(overviewStats);
+  return apiFetch("/statistics/overview");
+}
+
+/** `days`: 1–90, defaults to 7 server-side. */
+export async function getBestSelling(days?: number): Promise<BestSellingItem[]> {
+  if (IS_MOCK) return mockDelay(bestSellingItems);
+  return apiFetch(
+    `/statistics/best-selling${days ? `?days=${days}` : ""}`,
+  );
+}
+
+export async function getCategoriesAnalytics(): Promise<CategoriesAnalytics> {
+  if (IS_MOCK) return mockDelay(categoriesAnalytics);
+  return apiFetch("/statistics/categories");
+}
+
+export async function getPeakTimes(): Promise<PeakTimesStats> {
+  if (IS_MOCK) return mockDelay(peakTimes);
+  return apiFetch("/statistics/peak-times");
+}
+
+export async function getLiveActivity(): Promise<LiveActivityStats> {
+  if (IS_MOCK) return mockDelay(liveActivity);
+  return apiFetch("/statistics/live-activity");
+}
+
+export async function getBusinessInsights(): Promise<BusinessInsight[]> {
+  if (IS_MOCK) return mockDelay(businessInsights);
+  return apiFetch("/statistics/insights");
 }
 
 // ---------------------------------------------------------------------------

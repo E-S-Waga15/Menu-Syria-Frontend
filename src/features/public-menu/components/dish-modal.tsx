@@ -24,6 +24,7 @@ import {
   formatPrice,
   type StorefrontCopy,
 } from "@/features/public-menu/lib/format";
+import { trackItemCartAdd, trackItemView } from "@/features/public-menu/services";
 import { useI18n } from "@/i18n/client";
 import type {
   RestaurantTheme,
@@ -79,6 +80,9 @@ export function DishModal({
     );
     setQuantity(1);
     setSlide(0);
+    // this branch runs exactly once per distinct item opened — the same
+    // "once per open" the backend asks for, with no separate effect needed
+    trackItemView(item.id);
   }
 
   // Embla owns the drag/swipe gesture; this only mirrors which slide it landed
@@ -125,6 +129,7 @@ export function DishModal({
           : null;
 
   const addToCart = () => {
+    trackItemCartAdd(item.id);
     addItem(businessId, item, selected, quantity);
     onClose();
   };

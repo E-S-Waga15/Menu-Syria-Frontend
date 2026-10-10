@@ -126,11 +126,19 @@ export function SiteFooter({ lang, t }: { lang: Locale; t: Dictionary }) {
           <ul className="space-y-3 text-sm">
             <li className="flex items-center gap-2.5">
               <Phone className="size-4 text-white/40" />
-              <span dir="ltr">+963 11 000 0000</span>
+              <a href="tel:+963959825575" dir="ltr" className="hover:text-white">
+                +963 959 825 575
+              </a>
             </li>
             <li className="flex items-center gap-2.5">
               <Mail className="size-4 text-white/40" />
-              <span dir="ltr">hello@menusyria.com</span>
+              <a
+                href="mailto:menu.syria15@gmail.com"
+                dir="ltr"
+                className="hover:text-white"
+              >
+                menu.syria15@gmail.com
+              </a>
             </li>
           </ul>
           <div className="mt-5 flex gap-2">

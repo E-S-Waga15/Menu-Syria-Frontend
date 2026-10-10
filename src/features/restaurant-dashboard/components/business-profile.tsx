@@ -61,6 +61,7 @@ import type { BusinessProfileInput } from "@/features/restaurant-dashboard/servi
 import { fmt, useI18n } from "@/i18n/client";
 import { queryKeys } from "@/lib/api/query-keys";
 import { uploadImage } from "@/lib/api/upload";
+import { recoverBusinessFields } from "@/lib/business-text";
 import type { Restaurant } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -190,6 +191,11 @@ function ImagePreviewDialog({
   );
 }
 
+/**
+ * Account info + contact info, merged into one section/tab — an owner edits
+ * who they are and where they are in the same place instead of hunting
+ * across two near-identical cards for one one form.
+ */
 function AccountInfoSection({
   restaurant,
   isStore,
@@ -203,11 +209,53 @@ function AccountInfoSection({
   lang: I18n["lang"];
   save: SaveProfile;
 }) {
+  const { data: governorates } = useQuery({
+    queryKey: queryKeys.governorates,
+    queryFn: getGovernorates,
+  });
+  const { data: regions } = useQuery({
+    queryKey: queryKeys.regions,
+    queryFn: getRegions,
+  });
+
+  // a request approved before the backend had dedicated columns for these
+  // left its logo/colors/address/location dumped as text inside
+  // `description` — recovered here so the owner sees (and can re-save) the
+  // real values instead of that raw dump
+  const recovered = recoverBusinessFields(restaurant.description[lang]);
+
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(restaurant.name[lang]);
-  const [description, setDescription] = useState(restaurant.description[lang]);
+  const [description, setDescription] = useState(recovered.description);
   const [specialty, setSpecialty] = useState(restaurant.cuisine[lang]);
-  const snapshot = useRef({ name, description, specialty });
+  const [phone, setPhone] = useState(restaurant.phone);
+  const [address, setAddress] = useState(
+    restaurant.address[lang] || recovered.address || "",
+  );
+  const [governorateId, setGovernorateId] = useState(restaurant.governorateId);
+  const [regionId, setRegionId] = useState(restaurant.regionId);
+  const [lat, setLat] = useState(
+    recovered.location?.lat ?? restaurant.location.lat,
+  );
+  const [lng, setLng] = useState(
+    recovered.location?.lng ?? restaurant.location.lng,
+  );
+  const [mapOpen, setMapOpen] = useState(false);
+  const snapshot = useRef({
+    name,
+    description,
+    specialty,
+    phone,
+    address,
+    governorateId,
+    regionId,
+    lat,
+    lng,
+  });
+
+  const regionChoices = (regions ?? []).filter(
+    (r) => r.governorateId === governorateId,
+  );
 
   return (
     <ProfileSection
@@ -216,7 +264,17 @@ function AccountInfoSection({
       editing={editing}
       t={t}
       onEdit={() => {
-        snapshot.current = { name, description, specialty };
+        snapshot.current = {
+          name,
+          description,
+          specialty,
+          phone,
+          address,
+          governorateId,
+          regionId,
+          lat,
+          lng,
+        };
         setEditing(true);
       }}
       onSave={() => {
@@ -226,6 +284,15 @@ function AccountInfoSection({
           // a store's "specialty" is its business type, which the platform
           // assigns — only a food business has an editable cuisine
           ...(isStore ? {} : { cuisineType: specialty }),
+          address,
+          // the region is the district row the API stores; the governorate is
+          // derived from it, so it is not sent separately
+          districtId: regionId || undefined,
+          latitude: lat,
+          longitude: lng,
+          // the social section owns the WhatsApp number, so it is carried
+          // across rather than cleared by writing this section alone
+          phones: phoneRows(phone, restaurant.whatsapp),
         });
         setEditing(false);
       }}
@@ -233,6 +300,12 @@ function AccountInfoSection({
         setName(snapshot.current.name);
         setDescription(snapshot.current.description);
         setSpecialty(snapshot.current.specialty);
+        setPhone(snapshot.current.phone);
+        setAddress(snapshot.current.address);
+        setGovernorateId(snapshot.current.governorateId);
+        setRegionId(snapshot.current.regionId);
+        setLat(snapshot.current.lat);
+        setLng(snapshot.current.lng);
         setEditing(false);
       }}
     >
@@ -272,93 +345,8 @@ function AccountInfoSection({
           onChange={(e) => setDescription(e.target.value)}
         />
       </div>
-    </ProfileSection>
-  );
-}
 
-function ContactInfoSection({
-  restaurant,
-  t,
-  lang,
-  save,
-}: {
-  restaurant: Restaurant;
-  t: I18n["t"];
-  lang: I18n["lang"];
-  save: SaveProfile;
-}) {
-  const { data: governorates } = useQuery({
-    queryKey: queryKeys.governorates,
-    queryFn: getGovernorates,
-  });
-  const { data: regions } = useQuery({
-    queryKey: queryKeys.regions,
-    queryFn: getRegions,
-  });
-
-  const [editing, setEditing] = useState(false);
-  const [phone, setPhone] = useState(restaurant.phone);
-  const [address, setAddress] = useState(restaurant.address[lang]);
-  const [governorateId, setGovernorateId] = useState(restaurant.governorateId);
-  const [regionId, setRegionId] = useState(restaurant.regionId);
-  const [lat, setLat] = useState(restaurant.location.lat);
-  const [lng, setLng] = useState(restaurant.location.lng);
-  const [mapOpen, setMapOpen] = useState(false);
-  const snapshot = useRef({
-    phone,
-    address,
-    governorateId,
-    regionId,
-    lat,
-    lng,
-  });
-
-  const regionChoices = (regions ?? []).filter(
-    (r) => r.governorateId === governorateId,
-  );
-
-  return (
-    <ProfileSection
-      title={t.restaurant.contactInfo}
-      icon={MapPin}
-      editing={editing}
-      t={t}
-      onEdit={() => {
-        snapshot.current = {
-          phone,
-          address,
-          governorateId,
-          regionId,
-          lat,
-          lng,
-        };
-        setEditing(true);
-      }}
-      onSave={() => {
-        save({
-          address,
-          // the region is the district row the API stores; the governorate is
-          // derived from it, so it is not sent separately
-          districtId: regionId || undefined,
-          latitude: lat,
-          longitude: lng,
-          // the social section owns the WhatsApp number, so it is carried
-          // across rather than cleared by writing this section alone
-          phones: phoneRows(phone, restaurant.whatsapp),
-        });
-        setEditing(false);
-      }}
-      onCancel={() => {
-        setPhone(snapshot.current.phone);
-        setAddress(snapshot.current.address);
-        setGovernorateId(snapshot.current.governorateId);
-        setRegionId(snapshot.current.regionId);
-        setLat(snapshot.current.lat);
-        setLng(snapshot.current.lng);
-        setEditing(false);
-      }}
-    >
-      <div className="grid gap-5 md:grid-cols-2">
+      <div className="mt-5 grid gap-5 md:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="p-phone">{t.auth.phoneLabel}</Label>
           <Input
@@ -1246,12 +1234,6 @@ export function BusinessProfile() {
               {t.dashboard.accountInfoTab}
             </TabsTrigger>
             <TabsTrigger
-              value="contact"
-              className="shrink-0 rounded-lg px-6 py-2.5 font-semibold"
-            >
-              {t.restaurant.contactInfo}
-            </TabsTrigger>
-            <TabsTrigger
               value="paymentQr"
               className="shrink-0 rounded-lg px-6 py-2.5 font-semibold"
             >
@@ -1294,14 +1276,6 @@ export function BusinessProfile() {
           <AccountInfoSection
             restaurant={restaurant}
             isStore={isStore}
-            t={t}
-            lang={lang}
-            save={save}
-          />
-        </TabsContent>
-        <TabsContent value="contact">
-          <ContactInfoSection
-            restaurant={restaurant}
             t={t}
             lang={lang}
             save={save}

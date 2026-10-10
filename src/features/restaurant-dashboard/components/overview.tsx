@@ -6,12 +6,16 @@ import { useQuery } from "@tanstack/react-query";
 import {
   Banknote,
   Building2,
+  CalendarDays,
   ChartNoAxesCombined,
+  Crown,
   Eye,
+  Lightbulb,
   QrCode,
   Receipt,
   Settings,
   ShoppingBag,
+  ShoppingCart,
   Table2,
   Tag,
   TrendingUp,
@@ -25,11 +29,14 @@ import {
 import { useAuthStore } from "@/features/auth/store";
 import { StatCard } from "@/features/restaurant-dashboard/components/stat-card";
 import {
+  getBusinessInsights,
   getMyAnalytics,
   getMyOrders,
+  getOverviewStats,
 } from "@/features/restaurant-dashboard/services";
 import { formatPrice } from "@/features/public-menu/lib/format";
 import { fmt, useI18n } from "@/i18n/client";
+import { ApiError } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
 import { Badge } from "@/components/ui/badge";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
@@ -55,6 +62,24 @@ export function DashboardOverview() {
     queryKey: queryKeys.restaurants.orders(RESTAURANT_ID),
     queryFn: getMyOrders,
   });
+
+  // both ride on the plan's `hasStatistics` gate — a 403 here means "not on
+  // this plan", not a real failure, so neither query retries past it
+  const overviewStatsQuery = useQuery({
+    queryKey: queryKeys.statistics.overview,
+    queryFn: getOverviewStats,
+    retry: (count, error) =>
+      !(error instanceof ApiError && error.status === 403) && count < 2,
+  });
+  const insightsQuery = useQuery({
+    queryKey: queryKeys.statistics.insights,
+    queryFn: getBusinessInsights,
+    retry: (count, error) =>
+      !(error instanceof ApiError && error.status === 403) && count < 2,
+  });
+  const statsLocked =
+    overviewStatsQuery.error instanceof ApiError &&
+    overviewStatsQuery.error.status === 403;
 
   if (analyticsQuery.isPending) {
     return <LoadingSpinner />;
@@ -173,6 +198,82 @@ export function DashboardOverview() {
           icon={TrendingUp}
         />
       </div>
+
+      {/* statistics-plan gated: a business without it sees one upgrade
+          nudge instead of two empty-looking cards */}
+      {statsLocked ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-dashed border-primary/30 bg-berry-soft/20 p-5">
+          <div className="flex items-center gap-3">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <Crown className="size-5" />
+            </span>
+            <div>
+              <p className="font-heading text-sm font-bold">
+                {t.dashboard.statisticsLocked}
+              </p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {t.dashboard.upgradeForStatistics}
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <>
+          {(insightsQuery.data?.length ?? 0) > 0 && (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {insightsQuery.data!.map((insight, i) => (
+                <div
+                  key={i}
+                  className="flex items-start gap-3 rounded-2xl border border-border/60 bg-card p-4"
+                >
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-zest-soft text-zest-soft-foreground">
+                    {insight.icon === "calendar" ? (
+                      <CalendarDays className="size-4.5" />
+                    ) : (
+                      <Lightbulb className="size-4.5" />
+                    )}
+                  </span>
+                  <p className="pt-1.5 text-sm font-semibold">
+                    {insight.textAr}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {overviewStatsQuery.data && (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <StatCard
+                label={t.dashboard.mostAddedToCart}
+                value={
+                  overviewStatsQuery.data.mostAddedToCart?.name ??
+                  t.dashboard.noDataYet
+                }
+                icon={ShoppingCart}
+                accent="zest"
+              />
+              <StatCard
+                label={t.dashboard.mostViewedNoPurchase}
+                value={
+                  overviewStatsQuery.data.mostViewedWithoutPurchase?.name ??
+                  t.dashboard.noDataYet
+                }
+                icon={Eye}
+                accent="neutral"
+              />
+              <StatCard
+                label={t.dashboard.subscriptionDaysLeft}
+                value={
+                  overviewStatsQuery.data.daysUntilSubscriptionExpiry !== null
+                    ? String(overviewStatsQuery.data.daysUntilSubscriptionExpiry)
+                    : "—"
+                }
+                icon={CalendarDays}
+              />
+            </div>
+          )}
+        </>
+      )}
 
       <QuickAccess title={t.dashboard.quickAccess} items={quickAccess} />
 

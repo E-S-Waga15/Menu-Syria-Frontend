@@ -28,6 +28,15 @@ export const queryKeys = {
     waiters: ["me", "waiters"] as const,
     branches: ["me", "branches"] as const,
   },
+  statistics: {
+    business: ["statistics", "business"] as const,
+    overview: ["statistics", "overview"] as const,
+    bestSelling: (days?: number) => ["statistics", "best-selling", days] as const,
+    categories: ["statistics", "categories"] as const,
+    peakTimes: ["statistics", "peak-times"] as const,
+    liveActivity: ["statistics", "live-activity"] as const,
+    insights: ["statistics", "insights"] as const,
+  },
   offers: {
     /** everything a business has published, dashboard view */
     byBusiness: (businessId: string) => ["offers", businessId] as const,

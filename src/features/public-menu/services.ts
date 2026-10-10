@@ -113,3 +113,25 @@ export async function placeExternalOrder(
     body: input,
   });
 }
+
+// ---------------------------------------------------------------------------
+// Analytics event tracking — public, no token, fire-and-forget
+// ---------------------------------------------------------------------------
+
+/** A visitor opened this item's details — once per open. */
+export function trackItemView(itemId: string): void {
+  if (IS_MOCK || !itemId) return;
+  void apiFetch(`/public/items/${itemId}/view`, { method: "POST" }).catch(
+    () => {
+      // the stat is lost, not the visitor's action — never surface this
+    },
+  );
+}
+
+/** A visitor pressed "add to cart" for this item. */
+export function trackItemCartAdd(itemId: string): void {
+  if (IS_MOCK || !itemId) return;
+  void apiFetch(`/public/items/${itemId}/cart-add`, { method: "POST" }).catch(
+    () => {},
+  );
+}

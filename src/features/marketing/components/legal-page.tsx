@@ -4,7 +4,7 @@ import { AboutEyebrow } from "@/features/marketing/components/about-eyebrow";
 import type { Dictionary } from "@/i18n/get-dictionary";
 
 /** the address the footer already publishes — one place to change it */
-const CONTACT_EMAIL = "hello@menusyria.com";
+const CONTACT_EMAIL = "menu.syria15@gmail.com";
 
 /** one clause of the document, as the dictionaries store it */
 type LegalSection = {

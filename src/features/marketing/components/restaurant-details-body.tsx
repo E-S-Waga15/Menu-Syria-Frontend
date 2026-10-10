@@ -20,6 +20,7 @@ import { OpeningHours } from "@/features/marketing/components/opening-hours";
 import { ReviewsSection } from "@/features/marketing/components/reviews-section";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/get-dictionary";
+import { recoverBusinessFields } from "@/lib/business-text";
 import type { Business, Review } from "@/lib/types";
 
 /** one card shell for every block on this page, so nothing drifts */
@@ -65,6 +66,16 @@ export function RestaurantDetailsBody({
   menuHref?: string;
 }) {
   const separator = lang === "ar" ? "، " : ", ";
+
+  // a request approved before the backend had dedicated columns for these
+  // left its logo/colors/address/location dumped as text inside
+  // `description` — recovered here so a visitor never sees that raw dump,
+  // and the map falls back to the business's real pin instead of Damascus
+  // -center when the actual `address`/`location` columns were never filled
+  const recovered = recoverBusinessFields(restaurant.description[lang]);
+  const description = recovered.description;
+  const address = restaurant.address[lang] || recovered.address || "";
+  const location = recovered.location ?? restaurant.location;
 
   // the one field that tells a visitor *what* this place sells — a
   // restaurant carries it as `cuisine`, a store as `category`; the shared
@@ -162,9 +173,15 @@ export function RestaurantDetailsBody({
       <div className="mt-10 grid items-start gap-6 pb-6 lg:grid-cols-[1.2fr_1fr]">
         <div className="space-y-6">
           <Panel title={t.restaurant.aboutTitle}>
-            <p className="leading-relaxed text-muted-foreground md:text-lg">
-              {restaurant.description[lang]}
-            </p>
+            {description ? (
+              <p className="leading-relaxed text-muted-foreground md:text-lg">
+                {description}
+              </p>
+            ) : (
+              <p className="text-muted-foreground italic">
+                {t.restaurant.noDescription}
+              </p>
+            )}
           </Panel>
 
           {/* the one action that matters — themed with the business's own colour */}
@@ -247,7 +264,7 @@ export function RestaurantDetailsBody({
             title={t.restaurant.location}
             action={
               <a
-                href={`https://maps.google.com/?q=${restaurant.location.lat},${restaurant.location.lng}`}
+                href={`https://maps.google.com/?q=${location.lat},${location.lng}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
@@ -257,13 +274,13 @@ export function RestaurantDetailsBody({
               </a>
             }
           >
-            <p className="text-sm text-muted-foreground">
-              {restaurant.address[lang]}
-            </p>
+            {address && (
+              <p className="text-sm text-muted-foreground">{address}</p>
+            )}
             <div className="mt-4">
               <MapEmbed
-                lat={restaurant.location.lat}
-                lng={restaurant.location.lng}
+                lat={location.lat}
+                lng={location.lng}
                 label={t.restaurant.location}
               />
             </div>

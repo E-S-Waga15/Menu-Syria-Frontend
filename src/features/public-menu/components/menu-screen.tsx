@@ -16,6 +16,7 @@ import { getLiveOffers } from "@/features/offers/services";
 import { CategoryMenu } from "@/features/public-menu/components/category-menu";
 import { DishCard } from "@/features/public-menu/components/dish-card";
 import { getSupportedFulfillment } from "@/features/public-menu/lib/fulfillment";
+import { trackItemCartAdd } from "@/features/public-menu/services";
 import type { StorefrontCopy } from "@/features/public-menu/lib/format";
 import { useI18n } from "@/i18n/client";
 import { queryKeys } from "@/lib/api/query-keys";
@@ -204,7 +205,10 @@ export function MenuScreen({
     return map;
   }, [filteredItems]);
 
-  const handleAdd = (item: CatalogItem) => addItem(business.id, item);
+  const handleAdd = (item: CatalogItem) => {
+    trackItemCartAdd(item.id);
+    addItem(business.id, item);
+  };
 
   return (
     <div
