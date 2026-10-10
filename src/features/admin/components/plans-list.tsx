@@ -25,6 +25,7 @@ import {
 import { RowActions, type RowAction } from "@/components/shared/row-actions";
 import { formatPrice } from "@/features/public-menu/lib/format";
 import { fmt, useI18n } from "@/i18n/client";
+import { ApiError } from "@/lib/api/client";
 import { toast } from "@/lib/toast";
 import type { Plan } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -107,8 +108,8 @@ export function AdminPlansList({ plans }: { plans: Plan[] }) {
           durationDays: 30,
         });
       }
-    } catch {
-      toast.error(t.common.saveFailed);
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.message : t.common.saveFailed);
       return;
     }
 
@@ -130,8 +131,8 @@ export function AdminPlansList({ plans }: { plans: Plan[] }) {
   const remove = async (plan: Plan) => {
     try {
       await deleteAdminPlan(plan.id);
-    } catch {
-      toast.error(t.common.saveFailed);
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.message : t.common.saveFailed);
       return;
     }
     setRows((prev) => prev.filter((p) => p.id !== plan.id));

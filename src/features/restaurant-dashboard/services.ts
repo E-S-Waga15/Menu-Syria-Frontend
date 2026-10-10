@@ -1,5 +1,6 @@
 import { apiFetch, IS_MOCK, mockDelay } from "@/lib/api/client";
 import {
+  branches,
   diningTables,
   menuCategories,
   menuItems,
@@ -9,7 +10,9 @@ import {
   waiters,
 } from "@/lib/mock/data";
 import type {
+  Branch,
   CatalogOptionGroup,
+  CurrencyCode,
   DiningTable,
   LocalizedText,
   MenuCategory,
@@ -68,6 +71,7 @@ function normalizeItem(raw: Raw, businessId: string): MenuItem {
     name: toLocalized(raw.name),
     description: toLocalized(raw.description),
     price: toNumber(raw.price),
+    currency: raw.currency === "USD" ? "USD" : "SYP",
     imageUrl: gallery[0] ?? String(raw.imageUrl ?? ""),
     images: gallery.length ? gallery : undefined,
     optionGroups: optionGroups?.length ? optionGroups : undefined,
@@ -198,6 +202,7 @@ export interface ItemWriteInput {
   name: string;
   description: string;
   price: number;
+  currency: CurrencyCode;
   images: string[];
   optionGroups?: CatalogOptionGroup[];
   isAvailable?: boolean;
@@ -218,6 +223,7 @@ function toItemBody(input: Partial<ItemWriteInput> & Record<string, unknown>) {
     "name",
     "description",
     "price",
+    "currency",
     "images",
     "isAvailable",
     "sortOrder",
@@ -238,6 +244,7 @@ function mockItem(input: Partial<ItemWriteInput> & { id?: string }): MenuItem {
     name: toLocalized(input.name),
     description: toLocalized(input.description),
     price: input.price ?? 0,
+    currency: input.currency ?? "SYP",
     imageUrl: input.images?.[0] ?? "",
     images: input.images,
     optionGroups: input.optionGroups,
@@ -363,6 +370,10 @@ export interface BusinessProfileInput {
   phones?: { type: string; number: string }[];
   socialLinks?: { platform: string; url: string }[];
   images?: string[];
+  /** Sham Cash QR — a data URL, an already-uploaded image URL, or "" to clear it */
+  paymentQrCode?: string;
+  /** flat delivery charge; 0 (or omitted) means free delivery */
+  deliveryFee?: number | null;
 }
 
 export async function updateBusinessProfile(
@@ -382,3 +393,82 @@ export async function updateBusinessProfile(
   return apiFetch(`/businesses/${businessId}`, { method: "PATCH", body });
 }
 
+// ---------------------------------------------------------------------------
+// Writes — branches
+// ---------------------------------------------------------------------------
+
+function normalizeBranch(raw: Raw): Branch {
+  return {
+    id: String(raw.id),
+    businessId: String(raw.businessId),
+    districtId: String(raw.districtId),
+    name: String(raw.name ?? ""),
+    address: String(raw.address ?? ""),
+    latitude: raw.latitude === null || raw.latitude === undefined ? null : toNumber(raw.latitude),
+    longitude: raw.longitude === null || raw.longitude === undefined ? null : toNumber(raw.longitude),
+    phone: String(raw.phone ?? ""),
+    createdAt: String(raw.createdAt ?? ""),
+    updatedAt: String(raw.updatedAt ?? ""),
+  };
+}
+
+export interface BranchWriteInput {
+  name: string;
+  districtId: string;
+  address?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  phone: string;
+}
+
+export async function getMyBranches(businessId: string): Promise<Branch[]> {
+  if (IS_MOCK)
+    return mockDelay(branches.filter((b) => b.businessId === businessId));
+  const raw = await apiFetch<Raw[]>(`/branches?businessId=${businessId}`);
+  return raw.map(normalizeBranch);
+}
+
+export async function createBranch(
+  input: { businessId: string } & BranchWriteInput,
+): Promise<Branch> {
+  if (IS_MOCK) {
+    return mockDelay({
+      id: `branch-${Date.now()}`,
+      businessId: input.businessId,
+      districtId: input.districtId,
+      name: input.name,
+      address: input.address ?? "",
+      latitude: input.latitude ?? null,
+      longitude: input.longitude ?? null,
+      phone: input.phone,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+  }
+  const raw = await apiFetch<Raw>("/branches", { method: "POST", body: input });
+  return normalizeBranch(raw);
+}
+
+export async function updateBranch(
+  id: string,
+  input: Partial<BranchWriteInput>,
+): Promise<Branch> {
+  if (IS_MOCK) {
+    const existing = branches.find((b) => b.id === id)!;
+    return mockDelay({
+      ...existing,
+      ...input,
+      updatedAt: new Date().toISOString(),
+    } as Branch);
+  }
+  const raw = await apiFetch<Raw>(`/branches/${id}`, {
+    method: "PATCH",
+    body: input,
+  });
+  return normalizeBranch(raw);
+}
+
+export async function deleteBranch(id: string): Promise<void> {
+  if (IS_MOCK) return mockDelay(undefined);
+  await apiFetch<void>(`/branches/${id}`, { method: "DELETE" });
+}

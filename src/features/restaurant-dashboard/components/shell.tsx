@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 
 import {
   Bell,
+  Building2,
   ChartNoAxesCombined,
   LayoutDashboard,
   QrCode,
@@ -59,6 +60,7 @@ export function RestaurantDashboardShell({
     ...(isStore
       ? []
       : [{ href: `${base}/tables`, label: t.dashboard.tables, icon: Table2 }]),
+    { href: `${base}/branches`, label: t.dashboard.branches, icon: Building2 },
     {
       href: `${base}/analytics`,
       label: t.dashboard.analytics,

@@ -55,13 +55,23 @@ export function DashboardShell({
   const { t, lang, dir } = useI18n();
   const pathname = usePathname();
 
+  const isNavActive = (item: DashboardNavItem) =>
+    item.exact ? pathname === item.href : pathname.startsWith(item.href);
+  // the header names whichever section is actually open rather than a fixed
+  // label, falling back to the shell's own title for a page — settings, a
+  // detail view — that isn't one of the sidebar's own entries
+  const activeLabel = navItems.find(isNavActive)?.label ?? title;
+
   return (
     <SidebarProvider>
       {/* `icon`, not `offcanvas`: collapsing should leave a usable rail —
           the mark on top and one icon per section — rather than removing the
           navigation entirely */}
       <Sidebar side={dir === "rtl" ? "right" : "left"} collapsible="icon">
-        <SidebarHeader className="px-4 py-4 group-data-[collapsible=icon]:px-2">
+        {/* h-14 matches the content header's own height exactly, so the
+            logo row and the page-title row sit on the same line across the
+            sidebar/content split */}
+        <SidebarHeader className="h-14 justify-center px-4 group-data-[collapsible=icon]:px-2">
           {/* full lockup when open; the bare mark once there is only a rail */}
           <Logo
             lang={lang}
@@ -75,9 +85,6 @@ export function DashboardShell({
           >
             <LogoMark className="h-7" />
           </Link>
-          <p className="mt-1 text-xs font-semibold text-muted-foreground group-data-[collapsible=icon]:hidden">
-            {title}
-          </p>
         </SidebarHeader>
         <SidebarSeparator />
         <SidebarContent>
@@ -142,7 +149,7 @@ export function DashboardShell({
         <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-border/60 bg-background/85 px-4 backdrop-blur-xl">
           <SidebarTrigger />
           <h1 className="flex-1 truncate font-heading text-base font-bold md:text-lg">
-            {title}
+            {activeLabel}
           </h1>
           {accountMenu ?? (
             <>

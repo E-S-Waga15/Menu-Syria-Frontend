@@ -78,7 +78,7 @@ export function CartSheet({
   const setQuantity = useCartStore((s) => s.setQuantity);
   const removeLine = useCartStore((s) => s.removeLine);
   const clear = useCartStore((s) => s.clear);
-  const total = useCartStore(selectCartTotal);
+  const subtotal = useCartStore(selectCartTotal);
 
   const supportedModes = getSupportedFulfillment(business);
 
@@ -123,12 +123,20 @@ export function CartSheet({
     ],
   });
 
+  // the fee only ever applies to a delivery order — picking it up or eating
+  // in never owes it, whatever the business has it set to
+  const deliveryFee =
+    fulfillmentValue === "delivery" ? (business.deliveryFee ?? 0) : 0;
+  const total = subtotal + deliveryFee;
+
   const whatsappUrl = buildWhatsAppOrderUrl({
     business,
     lines,
     lang,
     copy,
     currency: t.common.currency,
+    subtotal: deliveryFee > 0 ? subtotal : undefined,
+    deliveryFee: deliveryFee > 0 ? deliveryFee : undefined,
     total,
     fulfillment: fulfillmentValue,
     tableNumber:
@@ -490,14 +498,60 @@ export function CartSheet({
               )}
             </div>
 
-            <div className="flex items-center justify-between border-t border-border/70 pt-4">
-              <span className="text-sm font-semibold text-muted-foreground">
-                {copy.cartTotal}
-              </span>
-              <span className="font-heading text-xl font-bold text-[var(--menu-primary)]">
-                {formatPrice(total, t.common.currency)}
-              </span>
+            <div className="space-y-1.5 border-t border-border/70 pt-4">
+              {/* a breakdown only appears once there is a fee to break
+                  out — a single total reads cleaner for pickup/dine-in and
+                  for a business that delivers for free */}
+              {deliveryFee > 0 && (
+                <>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">
+                      {copy.cartSubtotal}
+                    </span>
+                    <span className="font-semibold">
+                      {formatPrice(subtotal, t.common.currency)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">
+                      {copy.cartDeliveryFee}
+                    </span>
+                    <span className="font-semibold">
+                      {formatPrice(deliveryFee, t.common.currency)}
+                    </span>
+                  </div>
+                </>
+              )}
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-muted-foreground">
+                  {copy.cartTotal}
+                </span>
+                <span className="font-heading text-xl font-bold text-[var(--menu-primary)]">
+                  {formatPrice(total, t.common.currency)}
+                </span>
+              </div>
             </div>
+
+            {business.paymentQrCode && (
+              <div className="flex items-center gap-4 rounded-2xl border border-border/70 bg-surface-container-low p-4">
+                <div className="relative size-20 shrink-0 overflow-hidden rounded-xl border border-border/60 bg-white p-1.5">
+                  <Image
+                    src={business.paymentQrCode}
+                    alt=""
+                    fill
+                    sizes="80px"
+                    unoptimized={business.paymentQrCode.startsWith("data:")}
+                    className="object-contain"
+                  />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-bold">{copy.payViaShamCash}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {copy.shamCashHint}
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* the plan decides which routes exist; a business on one channel
                 gets one button, not a second one greyed out */}

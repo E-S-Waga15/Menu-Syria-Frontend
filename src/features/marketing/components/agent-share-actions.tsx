@@ -47,10 +47,14 @@ const CARD = { w: QR_PX + PAD * 2, h: PAD * 2 + QR_PX + CAPTION_H + URL_H };
 export function AgentShareActions({
   agentName,
   agentRole,
+  agentPhotoUrl,
 }: {
   agentName: string;
   /** e.g. "Menu Syria agent in Damascus, Bab Touma" — the share text */
   agentRole: string;
+  /** centred in the code; falls back to the platform mark when the agent
+   * has none */
+  agentPhotoUrl?: string;
 }) {
   const { t, lang } = useI18n();
   const [open, setOpen] = useState(false);
@@ -134,23 +138,37 @@ export function AgentShareActions({
 
   const fileName = `${agentName.replace(/\s+/g, "-")}-qr.png`;
 
+  // a remote photo without CORS headers taints the canvas: it still draws
+  // and displays fine, it just can't be read back for export — so the
+  // download/share actions fail closed with a toast instead of throwing
   const downloadCard = async () => {
     const canvas = await composeCard();
     if (!canvas) return;
-    const link = document.createElement("a");
-    link.download = fileName;
-    link.href = canvas.toDataURL("image/png");
-    link.click();
+    try {
+      const link = document.createElement("a");
+      link.download = fileName;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    } catch {
+      toast.error(t.agentPage.shareFailed);
+    }
   };
 
   const shareCard = async () => {
     const canvas = await composeCard();
     if (!canvas) return;
 
-    const blob = await new Promise<Blob | null>((resolve) =>
-      canvas.toBlob(resolve, "image/png"),
-    );
-    if (!blob) return;
+    const blob = await new Promise<Blob | null>((resolve) => {
+      try {
+        canvas.toBlob(resolve, "image/png");
+      } catch {
+        resolve(null);
+      }
+    });
+    if (!blob) {
+      toast.error(t.agentPage.shareFailed);
+      return;
+    }
 
     const file = new File([blob], fileName, { type: "image/png" });
 
@@ -214,7 +232,7 @@ export function AgentShareActions({
           <div className="mt-1 flex flex-col items-center">
             <div
               ref={qrWrapRef}
-              className="rounded-2xl border border-border/60 bg-white p-3"
+              className="w-full max-w-[200px] rounded-2xl border border-border/60 bg-white p-3"
             >
               <QRCodeCanvas
                 value={url}
@@ -223,14 +241,17 @@ export function AgentShareActions({
                 fgColor="#191c1d"
                 bgColor="#ffffff"
                 // QRCodeCanvas sets an inline style of `size` px, which beats
-                // any class; it spreads a passed style last, so this is the
-                // override that keeps a 440px canvas inside the dialog
-                style={{ width: QR_DISPLAY, height: QR_DISPLAY }}
+                // any class; it spreads a passed style last, so this overrides
+                // it with a responsive size instead of a fixed pixel value —
+                // the 440px canvas stays crisp while scaling to fit any
+                // dialog width down to the smallest phone
+                style={{ width: "100%", height: "100%", aspectRatio: "1 / 1" }}
                 imageSettings={{
-                  src: logoMark.src,
-                  width: 80,
-                  height: 100,
+                  src: agentPhotoUrl || logoMark.src,
+                  width: agentPhotoUrl ? 90 : 80,
+                  height: agentPhotoUrl ? 90 : 100,
                   excavate: true,
+                  ...(agentPhotoUrl ? { crossOrigin: "anonymous" } : {}),
                 }}
               />
             </div>

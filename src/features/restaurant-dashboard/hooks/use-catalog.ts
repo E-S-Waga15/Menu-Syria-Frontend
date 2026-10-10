@@ -12,6 +12,7 @@ import {
   type ItemWriteInput,
 } from "@/features/restaurant-dashboard/services";
 import { useI18n } from "@/i18n/client";
+import { ApiError } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
 import { toast } from "@/lib/toast";
 import type { MenuCategory, MenuItem } from "@/lib/types";
@@ -52,12 +53,12 @@ export function useCategoryMutations(businessId: string) {
   const cache = useCatalogCache();
 
   const onError = (
-    _error: unknown,
+    error: unknown,
     _variables: unknown,
     context?: { previous?: MenuCache },
   ) => {
     cache.restore(context);
-    toast.error(t.common.saveFailed);
+    toast.error(error instanceof ApiError ? error.message : t.common.saveFailed);
   };
   const onSettled = () => cache.refresh();
 
@@ -77,6 +78,7 @@ export function useCategoryMutations(businessId: string) {
           },
         ],
       })),
+    onSuccess: () => toast.success(t.dashboard.categorySaved),
     onError,
     onSettled,
   });
@@ -97,6 +99,11 @@ export function useCategoryMutations(businessId: string) {
             : category,
         ),
       })),
+    // reorder rides this same mutation with no `name` — it has no result
+    // worth announcing, unlike an actual rename
+    onSuccess: (_data, { name }) => {
+      if (name !== undefined) toast.success(t.dashboard.categorySaved);
+    },
     onError,
     onSettled,
   });
@@ -108,6 +115,7 @@ export function useCategoryMutations(businessId: string) {
         ...current,
         categories: current.categories.filter((category) => category.id !== id),
       })),
+    onSuccess: () => toast.success(t.dashboard.categoryDeleted),
     onError,
     onSettled,
   });
@@ -145,6 +153,7 @@ export interface NewItemInput {
   name: string;
   description: string;
   price: number;
+  currency: "SYP" | "USD";
   images: string[];
   optionGroups?: MenuItem["optionGroups"];
 }
@@ -154,12 +163,12 @@ export function useItemMutations(businessId: string) {
   const cache = useCatalogCache();
 
   const onError = (
-    _error: unknown,
+    error: unknown,
     _variables: unknown,
     context?: { previous?: MenuCache },
   ) => {
     cache.restore(context);
-    toast.error(t.common.saveFailed);
+    toast.error(error instanceof ApiError ? error.message : t.common.saveFailed);
   };
   const onSettled = () => cache.refresh();
 
@@ -170,6 +179,7 @@ export function useItemMutations(businessId: string) {
     name: { ar: input.name, en: input.name },
     description: { ar: input.description, en: input.description },
     price: input.price,
+    currency: input.currency,
     imageUrl: input.images[0] ?? "",
     images: input.images.length ? input.images : undefined,
     optionGroups: input.optionGroups,
@@ -185,6 +195,7 @@ export function useItemMutations(businessId: string) {
         ...current,
         items: [...current.items, toItem(input)],
       })),
+    onSuccess: () => toast.success(t.dashboard.itemSaved),
     onError,
     onSettled,
   });
@@ -199,6 +210,12 @@ export function useItemMutations(businessId: string) {
           item.id === id ? { ...item, ...toItemPatch(fields) } : item,
         ),
       })),
+    // this mutation also carries the availability toggle and drag-reorder's
+    // writes, neither of which is a "save" worth announcing — only the
+    // dialog's own save sends a name
+    onSuccess: (_data, variables) => {
+      if (variables.name !== undefined) toast.success(t.dashboard.itemSaved);
+    },
     onError,
     onSettled,
   });
@@ -210,6 +227,7 @@ export function useItemMutations(businessId: string) {
         ...current,
         items: current.items.filter((item) => item.id !== id),
       })),
+    onSuccess: () => toast.success(t.dashboard.itemDeleted),
     onError,
     onSettled,
   });
@@ -270,6 +288,7 @@ function toItemPatch(fields: Partial<ItemWriteInput>) {
   if (fields.description !== undefined)
     patch.description = { ar: fields.description, en: fields.description };
   if (fields.price !== undefined) patch.price = fields.price;
+  if (fields.currency !== undefined) patch.currency = fields.currency;
   if (fields.categoryId !== undefined) patch.categoryId = fields.categoryId;
   if (fields.images !== undefined) {
     patch.images = fields.images.length ? fields.images : undefined;
@@ -281,4 +300,3 @@ function toItemPatch(fields: Partial<ItemWriteInput>) {
   if (fields.sortOrder !== undefined) patch.sortOrder = fields.sortOrder;
   return patch;
 }
-

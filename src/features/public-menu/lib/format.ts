@@ -2,7 +2,7 @@ import { fmt } from "@/i18n/fmt";
 import type { Dictionary } from "@/i18n/client";
 import type { Locale } from "@/i18n/config";
 import { lineUnitPrice, type CartLine } from "@/stores/cart-store";
-import type { Business, FulfillmentMode } from "@/lib/types";
+import type { Business, CurrencyCode, FulfillmentMode } from "@/lib/types";
 
 /**
  * The storefront label pack: the `menu` dictionary section for restaurants,
@@ -25,8 +25,20 @@ const fulfillmentLabel: Record<FulfillmentMode, keyof StorefrontCopy> = {
   delivery: "fulfillmentDelivery",
 };
 
-export function formatPrice(price: number, currency: string): string {
-  return `${price.toLocaleString("en-US")} ${currency}`;
+export function formatPrice(
+  price: number,
+  currency: CurrencyCode | string,
+  lang: "ar" | "en" = "ar",
+): string {
+  const label =
+    currency === "USD"
+      ? lang === "ar"
+        ? "دولار"
+        : "$"
+      : lang === "ar"
+        ? "ل.س"
+        : "SYP";
+  return `${price.toLocaleString("en-US")} ${label}`;
 }
 
 /** Builds the pre-formatted WhatsApp order message and returns a wa.me URL. */
@@ -36,6 +48,8 @@ export function buildWhatsAppOrderUrl({
   lang,
   copy,
   currency,
+  subtotal,
+  deliveryFee,
   total,
   fulfillment,
   tableNumber,
@@ -50,6 +64,11 @@ export function buildWhatsAppOrderUrl({
   lang: Locale;
   copy: StorefrontCopy;
   currency: string;
+  /** items-only total; omit to skip the subtotal/fee breakdown entirely
+   * (no delivery fee in play) */
+  subtotal?: number;
+  deliveryFee?: number;
+  /** what the customer actually owes — subtotal + delivery fee, when both apply */
   total: number;
   fulfillment: FulfillmentMode;
   tableNumber?: string;
@@ -69,15 +88,33 @@ export function buildWhatsAppOrderUrl({
           : "";
       return `• ${line.quantity}× ${line.item.name[lang]}${options} — ${formatPrice(
         lineUnitPrice(line) * line.quantity,
-        currency,
+        line.item.currency ?? currency,
+        lang,
       )}`;
     }),
     "",
-    fmt(copy.whatsappTotal, { total: formatPrice(total, currency) }),
+  ];
+
+  // a breakdown only earns its place when there is something to break down —
+  // a flat total reads cleaner when delivery never entered the picture
+  if (deliveryFee !== undefined && subtotal !== undefined) {
+    parts.push(
+      fmt(copy.whatsappSubtotal, { subtotal: formatPrice(subtotal, currency, lang) }),
+      fmt(copy.whatsappDeliveryFee, {
+        fee:
+          deliveryFee > 0
+            ? formatPrice(deliveryFee, currency, lang)
+            : copy.cartFreeDelivery,
+      }),
+    );
+  }
+
+  parts.push(
+    fmt(copy.whatsappTotal, { total: formatPrice(total, currency, lang) }),
     fmt(copy.whatsappFulfillment, {
       fulfillment: copy[fulfillmentLabel[fulfillment]],
     }),
-  ];
+  );
 
   if (tableNumber) parts.push(fmt(copy.whatsappTable, { table: tableNumber }));
   if (customerName) parts.push(fmt(copy.whatsappName, { name: customerName }));

@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { SafeImage } from "@/components/shared/safe-image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
@@ -23,6 +23,7 @@ import { AdminViewToggle } from "@/features/admin/components/admin-view-toggle";
 import { updateAdminBusinessStatus } from "@/features/admin/services";
 import { daysUntil } from "@/features/notifications/services";
 import { fmt, useI18n } from "@/i18n/client";
+import { ApiError } from "@/lib/api/client";
 import { toast } from "@/lib/toast";
 import type { Business, Governorate, Region } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -116,8 +117,8 @@ export function AdminBusinessesList({
           ? t.admin.accountEnabled
           : t.admin.accountDisabled,
       );
-    } catch {
-      toast.error(t.common.saveFailed);
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.message : t.common.saveFailed);
     }
   };
 
@@ -249,7 +250,7 @@ export function AdminBusinessesList({
                   className="absolute inset-0"
                   aria-label={business.name[lang]}
                 >
-                  <Image
+                  <SafeImage
                     src={business.coverImages[0] ?? business.logoUrl}
                     alt=""
                     fill
@@ -275,7 +276,7 @@ export function AdminBusinessesList({
                   is what keeps the white half of the card short. -mt-1 lifts
                   just its top edge over the photo. */}
               <div className="flex flex-1 items-start gap-2 px-2.5 pt-1.5 pb-2.5">
-                <Image
+                <SafeImage
                   src={business.logoUrl}
                   alt=""
                   width={40}
@@ -315,7 +316,7 @@ export function AdminBusinessesList({
               key={business.id}
               className="flex flex-wrap items-center gap-3 rounded-2xl border border-border/60 bg-card p-3.5"
             >
-              <Image
+              <SafeImage
                 src={business.logoUrl}
                 alt=""
                 width={48}

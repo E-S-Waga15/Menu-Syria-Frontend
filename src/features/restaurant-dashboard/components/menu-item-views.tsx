@@ -1,9 +1,8 @@
 "use client";
 
-import Image from "next/image";
-
 import { GripVertical, ImageOff, Pencil, Trash2 } from "lucide-react";
 
+import { SafeImage } from "@/components/shared/safe-image";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { formatPrice } from "@/features/public-menu/lib/format";
@@ -53,7 +52,7 @@ export function MenuItemRow(props: MenuItemViewProps) {
         <GripVertical className="size-4.5 shrink-0 cursor-grab text-muted-foreground/50" />
       )}
       {item.imageUrl ? (
-        <Image
+        <SafeImage
           src={item.imageUrl}
           alt=""
           width={56}
@@ -71,7 +70,7 @@ export function MenuItemRow(props: MenuItemViewProps) {
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-bold">{item.name[lang]}</p>
         <p className="mt-0.5 text-sm font-semibold text-primary">
-          {formatPrice(item.price, t.common.currency)}
+          {formatPrice(item.price, item.currency ?? "SYP", lang)}
         </p>
       </div>
 
@@ -122,7 +121,7 @@ export function MenuItemCard(props: MenuItemViewProps) {
     >
       <div className="relative aspect-[4/3]">
         {item.imageUrl ? (
-          <Image
+          <SafeImage
             src={item.imageUrl}
             alt=""
             fill
@@ -141,7 +140,7 @@ export function MenuItemCard(props: MenuItemViewProps) {
       <div className="p-3">
         <p className="truncate text-sm font-bold">{item.name[lang]}</p>
         <p className="mt-0.5 text-sm font-semibold text-primary">
-          {formatPrice(item.price, t.common.currency)}
+          {formatPrice(item.price, item.currency ?? "SYP", lang)}
         </p>
         <div className="mt-2.5 flex items-center justify-between">
           <Switch

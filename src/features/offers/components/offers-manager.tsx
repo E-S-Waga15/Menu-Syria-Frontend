@@ -17,7 +17,7 @@ import {
 import { RowActions, type RowAction } from "@/components/shared/row-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
+import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { useAuthStore } from "@/features/auth/store";
 import { OfferCard } from "@/features/offers/components/offer-card";
 import { OfferDialog } from "@/features/offers/components/offer-dialog";
@@ -32,7 +32,6 @@ import {
 import { useBusinessId } from "@/features/restaurant-dashboard/hooks/use-my-business";
 import { fmt, useI18n } from "@/i18n/client";
 import { queryKeys } from "@/lib/api/query-keys";
-import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import type { Offer, OfferBadge } from "@/lib/types";
 
@@ -117,27 +116,20 @@ export function OffersManager() {
     setDialogOpen(true);
   };
 
+  // each mutation's own onSuccess/onError toasts once the server actually
+  // responds — toasting here unconditionally used to say "saved" a beat
+  // before a real validation error could arrive
   const save = (values: OfferValues) => {
     mutations.save(values, editing);
     setDialogOpen(false);
     setEditing(null);
-    toast.success(t.offers.saved);
   };
 
-  const toggleActive = (offer: Offer) => {
-    mutations.toggleActive(offer);
-    toast.success(t.offers.saved);
-  };
+  const toggleActive = (offer: Offer) => mutations.toggleActive(offer);
 
-  const duplicate = (offer: Offer) => {
-    mutations.duplicate(offer);
-    toast.success(t.offers.saved);
-  };
+  const duplicate = (offer: Offer) => mutations.duplicate(offer);
 
-  const remove = (offer: Offer) => {
-    mutations.remove(offer);
-    toast.success(t.offers.deleted);
-  };
+  const remove = (offer: Offer) => mutations.remove(offer);
 
   const actionsFor = (offer: Offer): RowAction[] => [
     {
@@ -191,11 +183,7 @@ export function OffersManager() {
       </div>
 
       {offers === null ? (
-        <ul className="grid gap-4 sm:grid-cols-2 md:gap-5 xl:grid-cols-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="aspect-[16/9] rounded-2xl" />
-          ))}
-        </ul>
+        <LoadingSpinner />
       ) : visible.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border p-12 text-center">
           <span className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-berry-soft text-berry-soft-foreground">

@@ -91,7 +91,20 @@ export function MenuScreen({
 }) {
   const { t, lang } = useI18n();
   const addItem = useCartStore((s) => s.addItem);
+  const clearCart = useCartStore((s) => s.clear);
   const cartCount = useCartStore(selectCartCount);
+
+  // the cart is scoped to a single visit to this storefront: checkout itself
+  // stays on this page (the sheet is an overlay, not a route), so the only
+  // way to "leave" is to navigate elsewhere — at which point a cart left
+  // behind in storage would otherwise resurface, unexplained, whenever the
+  // customer next lands on any menu page
+  useEffect(() => {
+    return () => {
+      if (useCartStore.getState().restaurantId === business.id) clearCart();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [business.id]);
 
   const supportedModes = useMemo(
     () => getSupportedFulfillment(business),

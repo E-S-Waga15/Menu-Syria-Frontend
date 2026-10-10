@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 
-import { Skeleton } from "@/components/ui/skeleton";
+import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { NotificationsList } from "@/features/notifications/components/notifications-list";
 import { buildSubscriptionNotifications } from "@/features/notifications/services";
 import { getMyRestaurant } from "@/features/restaurant-dashboard/services";
@@ -22,7 +22,7 @@ export function BusinessNotifications() {
     queryFn: getMyRestaurant,
   });
 
-  if (!business) return <Skeleton className="h-64 rounded-2xl" />;
+  if (!business) return <LoadingSpinner />;
 
   const notifications = buildSubscriptionNotifications(
     [business],

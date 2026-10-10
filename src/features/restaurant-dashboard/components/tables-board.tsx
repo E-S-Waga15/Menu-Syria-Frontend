@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
+import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { Switch } from "@/components/ui/switch";
 import { useTableMutations } from "@/features/restaurant-dashboard/hooks/use-tables";
 import {
@@ -50,7 +50,7 @@ export function TablesBoard() {
   // optimistically and then reconcile with the server
   const tables = tablesData ?? [];
 
-  if (!tablesData) return <Skeleton className="h-[32rem] rounded-2xl" />;
+  if (!tablesData) return <LoadingSpinner />;
 
   const selected = tables.find((table) => table.id === selectedId) ?? null;
 

@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { SafeImage } from "@/components/shared/safe-image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -14,10 +14,18 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { requestBusinessRenewal } from "@/features/agent-dashboard/services";
 import { getSubscriptionPlans } from "@/features/marketing/services";
 import { daysUntil } from "@/features/notifications/services";
 import { fmt, useI18n } from "@/i18n/client";
+import { ApiError } from "@/lib/api/client";
 import type { Business } from "@/lib/types";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
@@ -91,8 +99,8 @@ export function SubscriptionDetail({
       toast.success(
         kind2 === "upgrade" ? t.agent.upgradeRequested : t.agent.renewRequested,
       );
-    } catch {
-      toast.error(t.common.saveFailed);
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.message : t.common.saveFailed);
     } finally {
       setRequesting(false);
     }
@@ -101,7 +109,7 @@ export function SubscriptionDetail({
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-4">
-        <Image
+        <SafeImage
           src={business.logoUrl}
           alt=""
           width={72}
@@ -202,20 +210,28 @@ export function SubscriptionDetail({
 
         {/* One plan picker serves both actions — the request just carries it */}
         {plans.length > 0 && (
-          <select
+          <Select
             value={selectedPlanId}
-            onChange={(event) => setSelectedPlanId(event.target.value)}
-            className="mt-2 h-10 w-full rounded-md border border-input bg-background px-2 text-sm sm:mt-3 sm:w-auto"
+            onValueChange={(value) => {
+              if (value) setSelectedPlanId(value);
+            }}
           >
-            <option value="">{t.admin.selectPlan}</option>
-            {plans.map((plan) => (
-              <option key={plan.id} value={plan.id}>
-                {plan.name}
-                {" — "}
-                {plan.price}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger
+              className="mt-2 h-10! w-full sm:mt-3 sm:w-auto"
+              aria-label={t.admin.selectPlan}
+            >
+              <SelectValue placeholder={t.admin.selectPlan} />
+            </SelectTrigger>
+            <SelectContent>
+              {plans.map((plan) => (
+                <SelectItem key={plan.id} value={plan.id}>
+                  {plan.name}
+                  {" — "}
+                  {plan.price}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         )}
       </section>
 

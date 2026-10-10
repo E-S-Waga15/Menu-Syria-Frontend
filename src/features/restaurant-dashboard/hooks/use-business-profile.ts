@@ -7,6 +7,7 @@ import {
   type BusinessProfileInput,
 } from "@/features/restaurant-dashboard/services";
 import { useI18n } from "@/i18n/client";
+import { ApiError } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
 import { toast } from "@/lib/toast";
 import type { Restaurant } from "@/lib/types";
@@ -32,11 +33,11 @@ export function useBusinessProfileMutations(businessId: string) {
       if (previous) queryClient.setQueryData<Restaurant>(key, applyInput(previous, input));
       return { previous };
     },
-    onError: (_error, _variables, context) => {
+    onError: (error, _variables, context) => {
       if (context?.previous) queryClient.setQueryData(key, context.previous);
-      toast.error(t.common.saveFailed);
+      toast.error(error instanceof ApiError ? error.message : t.common.saveFailed);
     },
-    onSuccess: () => toast.success(t.common.done),
+    onSuccess: () => toast.success(t.dashboard.settingsSaved),
     onSettled: () => queryClient.invalidateQueries({ queryKey: key }),
   });
 
@@ -80,6 +81,8 @@ function applyInput(business: Restaurant, input: BusinessProfileInput): Restaura
   }
   if (input.logo !== undefined) next.logoUrl = input.logo;
   if (input.images !== undefined) next.coverImages = input.images;
+  if (input.paymentQrCode !== undefined) next.paymentQrCode = input.paymentQrCode;
+  if (input.deliveryFee !== undefined) next.deliveryFee = input.deliveryFee;
 
   const whatsapp = input.phones?.find((phone) => phone.type === "whatsapp");
   const primary = input.phones?.find((phone) => phone.type !== "whatsapp");

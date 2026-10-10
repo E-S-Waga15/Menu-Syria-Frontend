@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useQuery } from "@tanstack/react-query";
 import {
   Banknote,
+  Building2,
   ChartNoAxesCombined,
   Eye,
   QrCode,
@@ -30,8 +31,8 @@ import {
 import { formatPrice } from "@/features/public-menu/lib/format";
 import { fmt, useI18n } from "@/i18n/client";
 import { queryKeys } from "@/lib/api/query-keys";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { LoadingSpinner } from "@/components/shared/loading-spinner";
 
 const RESTAURANT_ID = "r1";
 
@@ -44,22 +45,33 @@ export function DashboardOverview() {
   );
   const base = `/${lang}/dashboard`;
 
-  const { data: analytics } = useQuery({
+  const analyticsQuery = useQuery({
     queryKey: queryKeys.restaurants.analytics(RESTAURANT_ID),
     queryFn: getMyAnalytics,
   });
+  const { data: analytics } = analyticsQuery;
 
   const { data: orders } = useQuery({
     queryKey: queryKeys.restaurants.orders(RESTAURANT_ID),
     queryFn: getMyOrders,
   });
 
+  if (analyticsQuery.isPending) {
+    return <LoadingSpinner />;
+  }
   if (!analytics) {
     return (
-      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-24 rounded-2xl" />
-        ))}
+      <div className="rounded-2xl border border-dashed border-border p-12 text-center">
+        <p className="text-sm text-muted-foreground">
+          {t.account.loadFailed}
+        </p>
+        <button
+          type="button"
+          className="mt-4 rounded-lg border border-border px-4 py-2 text-sm font-semibold transition-colors hover:bg-muted"
+          onClick={() => void analyticsQuery.refetch()}
+        >
+          {t.account.retry}
+        </button>
       </div>
     );
   }
@@ -95,6 +107,12 @@ export function DashboardOverview() {
             icon: Table2,
           },
         ]),
+    {
+      href: `${base}/branches`,
+      label: t.dashboard.branches,
+      hint: t.dashboard.branchesHint,
+      icon: Building2,
+    },
     {
       href: `${base}/analytics`,
       label: t.dashboard.analytics,

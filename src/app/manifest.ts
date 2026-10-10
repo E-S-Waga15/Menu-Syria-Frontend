@@ -1,7 +1,5 @@
 import type { MetadataRoute } from "next";
 
-import { SITE_URL } from "@/lib/seo/site";
-
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "منيو سوريا — Menu Syria",
@@ -14,7 +12,7 @@ export default function manifest(): MetadataRoute.Manifest {
     lang: "ar",
     dir: "rtl",
     scope: "/",
-    id: `${SITE_URL}/ar`,
+    id: "/ar",
     icons: [
       {
         src: "/icon.png",

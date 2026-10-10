@@ -5,6 +5,13 @@ import { Check, Clock3, X } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { AdminPageHeader } from "@/features/admin/components/admin-page-header";
 import {
@@ -13,6 +20,7 @@ import {
     type RegistrationRequest,
 } from "@/features/admin/services";
 import { useI18n } from "@/i18n/client";
+import { ApiError } from "@/lib/api/client";
 import { toast } from "@/lib/toast";
 
 export function RegistrationRequestsList({
@@ -37,8 +45,8 @@ export function RegistrationRequestsList({
             const updated = await updateRegistrationRequestStatus(request.id, status, planId);
             setRequests((current) => current.map((item) => item.id === request.id ? updated : item));
             toast.success(status === "approved" ? t.admin.requestApproved : t.admin.requestRejected);
-        } catch {
-            toast.error(t.common.saveFailed);
+        } catch (error) {
+            toast.error(error instanceof ApiError ? error.message : t.common.saveFailed);
         } finally {
             setSavingId(null);
         }
@@ -62,14 +70,28 @@ export function RegistrationRequestsList({
                                     {request.type} · {new Intl.DateTimeFormat(lang === "ar" ? "ar-SY" : "en-GB").format(new Date(request.createdAt))}
                                 </p>
                                 {request.status === "pending" ? (
-                                    <select
+                                    <Select
                                         value={selectedPlans[request.id] ?? request.planId ?? ""}
-                                        onChange={(event) => setSelectedPlans((current) => ({ ...current, [request.id]: event.target.value }))}
-                                        className="mt-2 h-9 rounded-md border border-input bg-background px-2 text-sm"
+                                        onValueChange={(value) => {
+                                            if (value) {
+                                                setSelectedPlans((current) => ({
+                                                    ...current,
+                                                    [request.id]: value,
+                                                }));
+                                            }
+                                        }}
                                     >
-                                        <option value="">{t.admin.selectPlan}</option>
-                                        {plans.map((plan) => <option key={plan.id} value={plan.id}>{plan.name[lang]}</option>)}
-                                    </select>
+                                        <SelectTrigger className="mt-2 h-9! w-fit min-w-44" aria-label={t.admin.selectPlan}>
+                                            <SelectValue placeholder={t.admin.selectPlan} />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {plans.map((plan) => (
+                                                <SelectItem key={plan.id} value={plan.id}>
+                                                    {plan.name[lang]}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
                                 ) : request.plan ? (
                                     <p className="mt-2 text-sm font-semibold">{request.plan.name}</p>
                                 ) : null}

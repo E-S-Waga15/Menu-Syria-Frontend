@@ -216,7 +216,7 @@ export function DishModal({
         <div className="space-y-5 p-5" dir={dir}>
           <div>
             <p className="text-xl font-bold text-[var(--menu-primary)]">
-              {formatPrice(item.price, t.common.currency)}
+              {formatPrice(item.price, item.currency ?? "SYP", lang)}
             </p>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
               {item.description[lang]}
@@ -292,7 +292,7 @@ export function DishModal({
                         </span>
                         {option.priceDelta > 0 && (
                           <span className="shrink-0 text-xs font-bold text-[var(--menu-primary)]">
-                            +{formatPrice(option.priceDelta, t.common.currency)}
+                            +{formatPrice(option.priceDelta, item.currency ?? "SYP", lang)}
                           </span>
                         )}
                       </button>
@@ -344,7 +344,7 @@ export function DishModal({
             className="flex h-12 flex-1 transform-gpu items-center justify-between gap-2 rounded-full bg-[var(--menu-primary)] px-5 text-sm font-bold text-white transition-[scale] duration-200 ease-smooth hover:scale-[1.01] active:scale-[0.99] disabled:pointer-events-none disabled:opacity-50"
           >
             <span>{copy.addToCart}</span>
-            <span>{formatPrice(unitPrice * quantity, t.common.currency)}</span>
+            <span>{formatPrice(unitPrice * quantity, item.currency ?? "SYP", lang)}</span>
           </button>
         </div>
       </DialogContent>

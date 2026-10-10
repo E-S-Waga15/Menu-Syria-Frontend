@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { SafeImage } from "@/components/shared/safe-image";
 import Link from "next/link";
 
 import {
@@ -165,7 +165,7 @@ export function AdminControlCenter({
                     href={`${base}/${row.kind === "restaurant" ? "restaurants" : "stores"}/${row.business.id}`}
                     className="flex items-center gap-3 rounded-xl border border-border/60 p-2.5 transition-colors hover:border-primary/35"
                   >
-                    <Image
+                    <SafeImage
                       src={row.business.logoUrl}
                       alt=""
                       width={40}

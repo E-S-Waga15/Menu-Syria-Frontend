@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { useQuery } from "@tanstack/react-query";
 
-import { Skeleton } from "@/components/ui/skeleton";
+import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { useAuthStore } from "@/features/auth/store";
 import {
   ALL_CATEGORIES,
@@ -67,14 +67,7 @@ export function MenuManager() {
   const itemMutations = useItemMutations(businessId);
 
   if (!data) {
-    return (
-      <div className="space-y-4">
-        <Skeleton className="h-10 w-96 max-w-full rounded-xl" />
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-20 rounded-2xl" />
-        ))}
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   const itemCountFor = (categoryId: string) =>
@@ -130,10 +123,6 @@ export function MenuManager() {
   const openEdit = (item: MenuItem | null) => {
     // Adding needs a home for the new item. On "All" there is no single
     // answer, so ask rather than guessing a category the user did not choose.
-    if (!item && activeCategory === ALL_CATEGORIES) {
-      toast.warning(t.dashboard.selectCategoryFirst);
-      return;
-    }
     setEditing(item);
     setDialogOpen(true);
   };
@@ -217,6 +206,7 @@ export function MenuManager() {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         editing={editing}
+        categories={categories}
         isStore={isStore}
         onSave={(dish) => {
           // Mapped field by field, not spread: the dialog hands back
@@ -224,21 +214,26 @@ export function MenuManager() {
           // spreading them left the real fields untouched, so renaming an item
           // did nothing while quietly adding junk keys to it.
           const payload = {
+            categoryId: dish.categoryId,
             name: dish.nameText ?? "",
             description: dish.descText ?? "",
             price: dish.price ?? 0,
+            currency: dish.currency,
             optionGroups: dish.optionGroups ?? [],
             // an empty gallery is meaningful: the owner took every photo off
             images: dish.images ?? [],
           };
+          // the mutation's own onSuccess toasts once the server actually
+          // agrees — toasting here unconditionally used to tell the owner
+          // "done" a beat before a real validation error arrived
           if (editing) {
             itemMutations.edit(editing.id, payload);
           } else {
-            // openEdit guarantees a real category before we get here
-            itemMutations.create({ categoryId: activeCategory, ...payload });
+            itemMutations.create({
+              ...payload,
+            });
           }
           setDialogOpen(false);
-          toast.success(t.common.done);
         }}
       />
     </div>

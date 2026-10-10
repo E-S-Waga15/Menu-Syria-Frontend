@@ -39,7 +39,7 @@ export class ApiError extends Error {
  * that calls `apiFetch`. Resolving the shape once here, rather than at each
  * of those call sites, is what keeps that from happening anywhere.
  */
-function extractErrorMessage(
+export function extractErrorMessage(
   status: number,
   rawBody: string,
 ): { message: string; details: string[] } {
@@ -158,8 +158,8 @@ export async function apiFetch<T>(
   return (raw === "" ? undefined : JSON.parse(raw)) as T;
 }
 
-/** Simulates network latency so loading states stay honest during mock mode. */
-export function mockDelay<T>(data: T, ms = 350): Promise<T> {
+/** Keeps mock mode asynchronous without adding noticeable artificial latency. */
+export function mockDelay<T>(data: T, ms = 80): Promise<T> {
   return new Promise((resolve) => setTimeout(() => resolve(data), ms));
 }
 

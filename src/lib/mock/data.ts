@@ -1,5 +1,6 @@
 import type {
   Agent,
+  Branch,
   BusinessSubType,
   DiningTable,
   Governorate,
@@ -121,6 +122,33 @@ export const businessSubTypes: BusinessSubType[] = [
   { id: "bst-22", category: "retail_goods", slug: "supermarket", name: "سوبر ماركت" },
   { id: "bst-23", category: "retail_goods", slug: "furniture", name: "أثاث ومفروشات" },
   { id: "bst-24", category: "retail_goods", slug: "toys", name: "ألعاب أطفال" },
+];
+
+export const branches: Branch[] = [
+  {
+    id: "br1",
+    businessId: "r1",
+    districtId: "bab-touma",
+    name: "الفرع الرئيسي",
+    address: "باب توما، خلف الكنيسة المريمية، دمشق القديمة",
+    latitude: 33.5138,
+    longitude: 36.3117,
+    phone: "+963994931568",
+    createdAt: "2026-01-10T09:00:00.000Z",
+    updatedAt: "2026-01-10T09:00:00.000Z",
+  },
+  {
+    id: "br2",
+    businessId: "r1",
+    districtId: "mazzeh",
+    name: "فرع المزة",
+    address: "المزة، جانب حديقة الجاحظ",
+    latitude: 33.5024,
+    longitude: 36.2554,
+    phone: "+963999111222",
+    createdAt: "2026-03-02T09:00:00.000Z",
+    updatedAt: "2026-03-02T09:00:00.000Z",
+  },
 ];
 
 export const restaurants: Restaurant[] = [

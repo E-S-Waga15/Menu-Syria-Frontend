@@ -8,9 +8,9 @@ import logoMark from "@/assets/logo.png";
 import { cn } from "@/lib/utils";
 
 const sizes = {
-  sm: 56,
-  md: 96,
-  lg: 140,
+  sm: 39,
+  md: 67,
+  lg: 98,
 } as const;
 
 /**
@@ -64,7 +64,7 @@ export function MenuSyriaLoader({
           src={logoMark}
           alt=""
           fill
-          priority
+          sizes={`${px * 0.6}px`}
           className="object-contain"
         />
 

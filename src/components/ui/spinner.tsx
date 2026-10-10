@@ -1,4 +1,6 @@
-import { Loader2 } from "lucide-react";
+"use client";
+
+import { motion } from "motion/react";
 
 import { cn } from "@/lib/utils";
 
@@ -47,9 +49,16 @@ export function Spinner({
 }) {
   return (
     <>
-      <Loader2
+      <motion.span
         aria-hidden
-        className={cn("animate-spin", sizes[size], tones[tone], className)}
+        className={cn(
+          "rounded-full border-2 border-current/25 border-t-current",
+          sizes[size],
+          tones[tone],
+          className,
+        )}
+        animate={{ rotate: 360 }}
+        transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
       />
       {label && (
         <span role="status" className="sr-only">

@@ -5,7 +5,7 @@ import { ChefHat, CircleCheck, Receipt, User } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { useOrderMutations } from "@/features/restaurant-dashboard/hooks/use-orders";
 import { getMyOrders } from "@/features/restaurant-dashboard/services";
 import { formatPrice } from "@/features/public-menu/lib/format";
@@ -29,13 +29,7 @@ export function OrdersKanban() {
   const orders = data ?? [];
 
   if (!data) {
-    return (
-      <div className="grid gap-5 lg:grid-cols-3">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <Skeleton key={i} className="h-80 rounded-2xl" />
-        ))}
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   const columns: {

@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useState } from "react";
 
 import {
@@ -9,6 +8,7 @@ import {
   CarouselItem,
   type CarouselApi,
 } from "@/components/ui/carousel";
+import { SafeImage } from "@/components/shared/safe-image";
 import { OfferCard } from "@/features/offers/components/offer-card";
 import type { FeaturedOffer } from "@/features/offers/services";
 import { useI18n } from "@/i18n/client";
@@ -97,8 +97,9 @@ export function OfferBanner({ offers }: { offers: FeaturedOffer[] }) {
                   footnote={
                     // whose offer it is, directly under its name
                     <span className="flex items-center gap-1.5">
-                      {business.logoUrl && (
-                        <Image
+                      {typeof business.logoUrl === "string" &&
+                        business.logoUrl.trim() && (
+                        <SafeImage
                           src={business.logoUrl}
                           alt=""
                           width={20}

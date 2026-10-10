@@ -13,6 +13,7 @@ import {
     type PendingSubscription,
 } from "@/features/subscription-requests/services";
 import { useI18n } from "@/i18n/client";
+import { ApiError } from "@/lib/api/client";
 import { toast } from "@/lib/toast";
 
 /**
@@ -29,7 +30,9 @@ export function PendingSubscriptionsList() {
     useEffect(() => {
         void getPendingSubscriptions()
             .then(setItems)
-            .catch(() => toast.error(t.common.saveFailed))
+            .catch((error: unknown) =>
+                toast.error(error instanceof ApiError ? error.message : t.common.saveFailed),
+            )
             .finally(() => setLoading(false));
     }, [t.common.saveFailed]);
 
@@ -41,8 +44,8 @@ export function PendingSubscriptionsList() {
                 current.filter((row) => row.id !== updated.id),
             );
             toast.success(t.admin.subscriptionActivated);
-        } catch {
-            toast.error(t.common.saveFailed);
+        } catch (error) {
+            toast.error(error instanceof ApiError ? error.message : t.common.saveFailed);
         } finally {
             setSavingId(null);
         }

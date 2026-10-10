@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { updateOrderStatus } from "@/features/restaurant-dashboard/services";
 import { useI18n } from "@/i18n/client";
+import { ApiError } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
 import { toast } from "@/lib/toast";
 import type { Order, OrderStatus } from "@/lib/types";
@@ -36,9 +37,9 @@ export function useOrderMutations() {
       }
       return { previous };
     },
-    onError: (_error, _variables, context) => {
+    onError: (error, _variables, context) => {
       if (context?.previous) queryClient.setQueryData(key, context.previous);
-      toast.error(t.common.saveFailed);
+      toast.error(error instanceof ApiError ? error.message : t.common.saveFailed);
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: key }),
   });

@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { BellRing, Clock3, MapPin } from "lucide-react";
 
-import { Skeleton } from "@/components/ui/skeleton";
+import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { Switch } from "@/components/ui/switch";
 import { PlacesManager } from "@/features/admin/components/places-manager";
 import { WhatsappOtpCard } from "@/features/admin/components/whatsapp-otp-card";
@@ -64,8 +64,8 @@ export function SystemSettings() {
     },
   ]);
 
-  // both lists feed one panel, so hold the skeleton until both land
-  if (!data || !regionsData) return <Skeleton className="h-96 rounded-2xl" />;
+  // Both lists feed one panel, so keep the content consistent until both land.
+  if (!data || !regionsData) return <LoadingSpinner />;
 
   return (
     <div className="grid items-start gap-6 lg:grid-cols-2">

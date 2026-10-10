@@ -26,6 +26,7 @@ export const queryKeys = {
     orders: ["me", "orders"] as const,
     tables: ["me", "tables"] as const,
     waiters: ["me", "waiters"] as const,
+    branches: ["me", "branches"] as const,
   },
   offers: {
     /** everything a business has published, dashboard view */

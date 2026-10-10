@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { SafeImage } from "@/components/shared/safe-image";
 import Link from "next/link";
 
 import {
@@ -130,7 +130,7 @@ export function SubscribedBusinesses({
                 className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border/60 bg-card transition-colors duration-200 hover:border-primary/35"
               >
                 <div className="relative aspect-[16/9]">
-                  <Image
+                  <SafeImage
                     src={business.coverImages[0] ?? business.logoUrl}
                     alt=""
                     fill
@@ -138,7 +138,7 @@ export function SubscribedBusinesses({
                     className="object-cover"
                   />
                   {/* the logo overlaps the cover, the way the storefront shows it */}
-                  <Image
+                  <SafeImage
                     src={business.logoUrl}
                     alt=""
                     width={48}
@@ -164,7 +164,7 @@ export function SubscribedBusinesses({
                 href={`${base}/subscriptions/${business.id}`}
                 className="flex items-center gap-3 rounded-2xl border border-border/60 bg-card p-3 transition-colors duration-200 hover:border-primary/35"
               >
-                <Image
+                <SafeImage
                   src={business.logoUrl}
                   alt=""
                   width={56}

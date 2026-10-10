@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useRef, useState } from "react";
 
 import { useQuery } from "@tanstack/react-query";
@@ -21,13 +20,17 @@ import {
   QrCode,
   Save,
   Share2,
+  Truck,
   User,
   X,
 } from "lucide-react";
+import { ApiError } from "@/lib/api/client";
 import { toast } from "@/lib/toast";
 
 import { GoogleLocationPicker } from "@/components/shared/google-location-picker";
 import { GovernorateRegionSelect } from "@/components/shared/governorate-region-select";
+import { LoadingSpinner } from "@/components/shared/loading-spinner";
+import { SafeImage } from "@/components/shared/safe-image";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,7 +49,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuthStore } from "@/features/auth/store";
@@ -166,7 +169,7 @@ function ImagePreviewDialog({
         </DialogHeader>
         {src && (
           <div className="relative aspect-square w-full overflow-hidden rounded-xl border border-border/60">
-            <Image src={src} alt="" fill unoptimized className="object-cover" />
+            <SafeImage src={src} alt="" fill unoptimized className="object-cover" />
           </div>
         )}
         <div className="flex gap-2">
@@ -586,8 +589,8 @@ function GallerySection({
       try {
         const { url } = await uploadImage(pendingFile, "businesses");
         setImages((prev) => [...prev, url]);
-      } catch {
-        toast.error(t.common.saveFailed);
+      } catch (error) {
+        toast.error(error instanceof ApiError ? error.message : t.common.saveFailed);
       }
     }
     setPendingImage(null);
@@ -626,7 +629,7 @@ function GallerySection({
             key={`${src}-${i}`}
             className="group relative aspect-square overflow-hidden rounded-xl border border-border/60"
           >
-            <Image
+            <SafeImage
               src={src}
               alt=""
               fill
@@ -675,6 +678,197 @@ function GallerySection({
         onCancel={cancelImage}
         t={t}
       />
+    </ProfileSection>
+  );
+}
+
+/**
+ * The Sham Cash transfer QR shown to customers at checkout. One image, not a
+ * gallery — uploaded straight to `paymentQrCode`, which rides the business's
+ * existing PATCH rather than a route of its own; an empty string clears it.
+ */
+function PaymentQrSection({
+  restaurant,
+  t,
+  save,
+}: {
+  restaurant: Restaurant;
+  t: I18n["t"];
+  save: SaveProfile;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [qrUrl, setQrUrl] = useState(restaurant.paymentQrCode ?? "");
+  const [uploading, setUploading] = useState(false);
+  const snapshot = useRef(qrUrl);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const pickQr = async (file: File | undefined) => {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const { url } = await uploadImage(file, "businesses");
+      setQrUrl(url);
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.message : t.common.saveFailed);
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  };
+
+  return (
+    <ProfileSection
+      title={t.dashboard.paymentQrTitle}
+      icon={QrCode}
+      editing={editing}
+      t={t}
+      onEdit={() => {
+        snapshot.current = qrUrl;
+        setEditing(true);
+      }}
+      onSave={() => {
+        save({ paymentQrCode: qrUrl });
+        setEditing(false);
+      }}
+      onCancel={() => {
+        setQrUrl(snapshot.current);
+        setEditing(false);
+      }}
+    >
+      <p className="text-sm text-muted-foreground">{t.dashboard.paymentQrHint}</p>
+      <div className="mt-4 flex flex-wrap items-center gap-4">
+        {qrUrl ? (
+          <div className="relative size-32 shrink-0 overflow-hidden rounded-xl border border-border/60 bg-white p-2">
+            <SafeImage
+              src={qrUrl}
+              alt=""
+              fill
+              sizes="128px"
+              unoptimized={qrUrl.startsWith("data:")}
+              className="object-contain"
+            />
+            {editing && (
+              <button
+                type="button"
+                aria-label={t.dashboard.removeQrCode}
+                onClick={() => setQrUrl("")}
+                className="absolute top-1 end-1 flex size-6 items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-black/80"
+              >
+                <X className="size-3.5" />
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="flex size-32 shrink-0 items-center justify-center rounded-xl border-2 border-dashed border-border text-muted-foreground">
+            <QrCode className="size-8" />
+          </div>
+        )}
+
+        {editing ? (
+          <div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              loading={uploading}
+              onClick={() => inputRef.current?.click()}
+            >
+              {qrUrl ? t.dashboard.replaceQrCode : t.dashboard.addQrCode}
+            </Button>
+            <input
+              ref={inputRef}
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              onChange={(e) => void pickQr(e.target.files?.[0])}
+            />
+          </div>
+        ) : (
+          !qrUrl && (
+            <p className="text-sm text-muted-foreground">
+              {t.dashboard.noQrCode}
+            </p>
+          )
+        )}
+      </div>
+    </ProfileSection>
+  );
+}
+
+/** A flat delivery charge, added to the cart total for delivery orders only.
+ * The free-delivery switch is just `fee === 0` — there is no separate flag
+ * to keep in sync with the number. */
+function DeliveryFeeSection({
+  restaurant,
+  t,
+  save,
+}: {
+  restaurant: Restaurant;
+  t: I18n["t"];
+  save: SaveProfile;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [fee, setFee] = useState(restaurant.deliveryFee ?? 0);
+  // the amount the switch restores when turned back off — never 0, or
+  // toggling free delivery off would just toggle it straight back on
+  const lastFee = useRef(restaurant.deliveryFee || 5000);
+  const snapshot = useRef(fee);
+
+  return (
+    <ProfileSection
+      title={t.dashboard.deliveryFeeTitle}
+      icon={Truck}
+      editing={editing}
+      t={t}
+      onEdit={() => {
+        snapshot.current = fee;
+        setEditing(true);
+      }}
+      onSave={() => {
+        save({ deliveryFee: fee });
+        setEditing(false);
+      }}
+      onCancel={() => {
+        setFee(snapshot.current);
+        setEditing(false);
+      }}
+    >
+      <p className="text-sm text-muted-foreground">
+        {t.dashboard.deliveryFeeHint}
+      </p>
+      <div className="mt-4 flex flex-wrap items-center gap-4">
+        <label className="flex items-center gap-2.5 text-sm font-semibold">
+          <Switch
+            checked={fee === 0}
+            disabled={!editing}
+            onCheckedChange={(v) => {
+              if (v) {
+                if (fee !== 0) lastFee.current = fee;
+                setFee(0);
+              } else {
+                setFee(lastFee.current);
+              }
+            }}
+          />
+          {t.dashboard.freeDelivery}
+        </label>
+        {fee !== 0 && (
+          <div className="flex items-center gap-2">
+            <Input
+              type="number"
+              inputMode="numeric"
+              dir="ltr"
+              disabled={!editing}
+              value={fee}
+              onChange={(e) => setFee(Number(e.target.value) || 0)}
+              className="h-10 w-32"
+            />
+            <span className="text-sm text-muted-foreground">
+              {t.common.currency}
+            </span>
+          </div>
+        )}
+      </div>
     </ProfileSection>
   );
 }
@@ -800,8 +994,8 @@ function SubscriptionSection({
     try {
       await createSubscriptionRequest({ planId });
       toast.success(t.admin.renewalRequested);
-    } catch {
-      toast.error(t.common.saveFailed);
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.message : t.common.saveFailed);
     } finally {
       setRenewing(false);
     }
@@ -881,7 +1075,7 @@ export function BusinessProfile() {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
-  if (!restaurant) return <Skeleton className="h-96 rounded-2xl" />;
+  if (!restaurant) return <LoadingSpinner />;
 
   const basePath = isStore ? "store" : "menu";
   const publicUrl =
@@ -909,8 +1103,8 @@ export function BusinessProfile() {
       try {
         const { url } = await uploadImage(logoFile, "businesses");
         save({ logo: url });
-      } catch {
-        toast.error(t.common.saveFailed);
+      } catch (error) {
+        toast.error(error instanceof ApiError ? error.message : t.common.saveFailed);
       }
     }
     setLogoPreview(null);
@@ -945,13 +1139,16 @@ export function BusinessProfile() {
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-4">
           <div className="relative shrink-0">
-            <Image
+            <SafeImage
               src={restaurant.logoUrl}
               alt=""
               width={112}
               height={112}
               // a freshly picked logo is a data URL, which next/image cannot optimise
-              unoptimized={restaurant.logoUrl.startsWith("data:")}
+              unoptimized={
+                typeof restaurant.logoUrl === "string" &&
+                restaurant.logoUrl.startsWith("data:")
+              }
               className="size-16 rounded-2xl border border-border object-cover sm:size-24 md:size-28"
             />
             <button
@@ -1055,6 +1252,12 @@ export function BusinessProfile() {
               {t.restaurant.contactInfo}
             </TabsTrigger>
             <TabsTrigger
+              value="payment"
+              className="shrink-0 rounded-lg px-6 py-2.5 font-semibold"
+            >
+              {t.dashboard.paymentTab}
+            </TabsTrigger>
+            <TabsTrigger
               value="social"
               className="shrink-0 rounded-lg px-6 py-2.5 font-semibold"
             >
@@ -1097,6 +1300,10 @@ export function BusinessProfile() {
             lang={lang}
             save={save}
           />
+        </TabsContent>
+        <TabsContent value="payment" className="space-y-6">
+          <PaymentQrSection restaurant={restaurant} t={t} save={save} />
+          <DeliveryFeeSection restaurant={restaurant} t={t} save={save} />
         </TabsContent>
         <TabsContent value="social">
           <SocialMediaSection restaurant={restaurant} t={t} save={save} />

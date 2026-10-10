@@ -27,6 +27,21 @@ export interface Region {
   name: LocalizedText;
 }
 
+/** A physical location of a restaurant/store — the API's `name`, `address`
+ * and `phone` are plain strings, not localized. */
+export interface Branch {
+  id: string;
+  businessId: string;
+  districtId: string;
+  name: string;
+  address: string;
+  latitude: number | null;
+  longitude: number | null;
+  phone: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 /**
  * The backend only returns an Arabic `name` and a coarse `category` — no
  * English translation and no direct RESTAURANT/STORE flag. The slug is
@@ -81,6 +96,12 @@ export interface Business {
    * thing from being closed, and shown differently.
    */
   openingHours?: (DayHours | null)[];
+  /** Sham Cash transfer QR, shown to the customer at checkout. Empty/absent
+   * means the business has not set one up. */
+  paymentQrCode?: string;
+  /** flat delivery charge added to the cart total for delivery orders.
+   * `0`/`null`/absent all mean delivery is free. */
+  deliveryFee?: number | null;
 }
 
 export interface DayHours {
@@ -123,6 +144,7 @@ export interface StoreCategory {
 }
 
 export type DishBadge = "popular" | "new" | "chefSpecial";
+export type CurrencyCode = "SYP" | "USD";
 
 export type OptionSelectionType = "single" | "multiple";
 
@@ -130,6 +152,7 @@ export interface CatalogOption {
   id: string;
   name: LocalizedText;
   priceDelta: number;
+  currency?: CurrencyCode;
 }
 
 /**
@@ -156,6 +179,7 @@ export interface CatalogItem {
   name: LocalizedText;
   description: LocalizedText;
   price: number;
+  currency?: CurrencyCode;
   imageUrl: string;
   /** extra gallery photos for the item modal; falls back to [imageUrl] */
   images?: string[];

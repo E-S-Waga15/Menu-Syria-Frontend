@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useState } from "react";
 
 import { useQuery } from "@tanstack/react-query";
@@ -8,7 +7,8 @@ import { ArrowDownCircle, ArrowUpCircle, Percent, Wallet } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { LoadingSpinner } from "@/components/shared/loading-spinner";
+import { SafeImage } from "@/components/shared/safe-image";
 import {
   getAdminAgentById,
   getAdminAgentLedger,
@@ -35,12 +35,7 @@ export function AdminAgentLedger({ agentId }: { agentId: string }) {
   });
 
   if (isPending || !ledger) {
-    return (
-      <div className="space-y-5">
-        <Skeleton className="h-28 rounded-2xl" />
-        <Skeleton className="h-80 rounded-2xl" />
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (!agent) {
@@ -78,7 +73,7 @@ export function AdminAgentLedger({ agentId }: { agentId: string }) {
     <div className="space-y-6">
       {/* profile strip */}
       <section className="flex flex-wrap items-center gap-4 rounded-2xl border border-border/60 bg-card p-5">
-        <Image
+        <SafeImage
           src={agent.photoUrl}
           alt=""
           width={64}

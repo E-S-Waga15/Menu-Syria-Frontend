@@ -4,7 +4,7 @@
  * `client.ts` because multipart bodies must not be JSON-stringified or given
  * a `Content-Type: application/json` header.
  */
-import { API_BASE_URL, ApiError, getStoredAccessToken } from "./client";
+import { API_BASE_URL, ApiError, extractErrorMessage, getStoredAccessToken } from "./client";
 
 export const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
 
@@ -54,7 +54,11 @@ export async function uploadImage(
   });
 
   if (!response.ok) {
-    throw new ApiError(response.status, await response.text());
+    const { message, details } = extractErrorMessage(
+      response.status,
+      await response.text(),
+    );
+    throw new ApiError(response.status, message, details);
   }
 
   return response.json() as Promise<UploadFileResponse>;
@@ -83,7 +87,11 @@ export async function uploadImages(
   );
 
   if (!response.ok) {
-    throw new ApiError(response.status, await response.text());
+    const { message, details } = extractErrorMessage(
+      response.status,
+      await response.text(),
+    );
+    throw new ApiError(response.status, message, details);
   }
 
   return response.json() as Promise<{
@@ -112,7 +120,11 @@ export async function uploadBase64Image(
   });
 
   if (!response.ok) {
-    throw new ApiError(response.status, await response.text());
+    const { message, details } = extractErrorMessage(
+      response.status,
+      await response.text(),
+    );
+    throw new ApiError(response.status, message, details);
   }
 
   const data = (await response.json()) as { url: string };

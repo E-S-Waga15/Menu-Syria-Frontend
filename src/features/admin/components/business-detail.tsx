@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -19,7 +18,15 @@ import {
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
+import { SafeImage } from "@/components/shared/safe-image";
 import { AdminPageHeader } from "@/features/admin/components/admin-page-header";
 import {
   changeBusinessPlan,
@@ -29,6 +36,7 @@ import {
 } from "@/features/admin/services";
 import { daysUntil } from "@/features/notifications/services";
 import { fmt, useI18n } from "@/i18n/client";
+import { ApiError } from "@/lib/api/client";
 import { toast } from "@/lib/toast";
 import type { Business } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -88,8 +96,8 @@ export function AdminBusinessDetail({
       );
       setEnabled(next);
       toast.success(next ? t.admin.accountEnabled : t.admin.accountDisabled);
-    } catch {
-      toast.error(t.common.saveFailed);
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.message : t.common.saveFailed);
     } finally {
       setSavingStatus(false);
     }
@@ -101,8 +109,8 @@ export function AdminBusinessDetail({
     try {
       await changeBusinessPlan(currentSubscription.id, planId);
       toast.success(t.admin.planChanged);
-    } catch {
-      toast.error(t.common.saveFailed);
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.message : t.common.saveFailed);
     } finally {
       setSavingPlan(false);
     }
@@ -124,7 +132,7 @@ export function AdminBusinessDetail({
       />
 
       <section className="flex flex-wrap items-center gap-4 rounded-2xl border border-border/60 bg-card p-5 md:p-6">
-        <Image
+        <SafeImage
           src={business.logoUrl}
           alt=""
           width={72}
@@ -189,16 +197,26 @@ export function AdminBusinessDetail({
               {t.agent.currentPlan}
             </dt>
             <dd className="mt-1.5 text-sm font-semibold">
-              <select
+              <Select
                 value={currentSubscription?.planId ?? ""}
-                onChange={(event) => void changePlan(event.target.value)}
-                disabled={savingPlan || plans.length === 0 || !currentSubscription}
-                className="h-9 rounded-md border border-border bg-background px-2 text-sm"
+                onValueChange={(value) => {
+                  if (value) void changePlan(value);
+                }}
+                disabled={
+                  savingPlan || plans.length === 0 || !currentSubscription
+                }
               >
-                {plans.map((plan) => (
-                  <option key={plan.id} value={plan.id}>{plan.name[lang]}</option>
-                ))}
-              </select>
+                <SelectTrigger className="h-9! w-fit min-w-44">
+                  <SelectValue placeholder={t.admin.selectPlan} />
+                </SelectTrigger>
+                <SelectContent>
+                  {plans.map((plan) => (
+                    <SelectItem key={plan.id} value={plan.id}>
+                      {plan.name[lang]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </dd>
           </div>
         </dl>

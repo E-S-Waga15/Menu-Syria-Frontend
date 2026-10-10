@@ -180,6 +180,7 @@ export default async function AgentDetailsPage({
                 governorate: governorateName,
                 region: regionName,
               })}
+              agentPhotoUrl={agent.photoUrl}
             />
           </div>
 

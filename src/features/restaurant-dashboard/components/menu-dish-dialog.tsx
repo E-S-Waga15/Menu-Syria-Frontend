@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, X } from "lucide-react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 
 import { FieldError } from "@/components/shared/field-error";
 import { FileDropzone } from "@/components/shared/file-dropzone";
@@ -19,6 +19,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
   dishFormSchema,
@@ -28,6 +35,7 @@ import { useI18n } from "@/i18n/client";
 import { uploadImage } from "@/lib/api/upload";
 import type {
   CatalogOptionGroup,
+  MenuCategory,
   MenuItem,
   OptionSelectionType,
 } from "@/lib/types";
@@ -42,18 +50,22 @@ export function MenuDishDialog({
   open,
   onOpenChange,
   editing,
+  categories,
   isStore,
   onSave,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editing: MenuItem | null;
+  categories: MenuCategory[];
   isStore: boolean;
   onSave: (dish: {
     nameText?: string;
     descText?: string;
     price?: number;
     optionGroups?: CatalogOptionGroup[];
+    categoryId: string;
+    currency: "SYP" | "USD";
     /** gallery, first entry first — the parent maps [0] onto imageUrl */
     images?: string[];
   }) => void;
@@ -61,18 +73,20 @@ export function MenuDishDialog({
   const { t, lang } = useI18n();
 
   const {
+    control,
     register,
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
   } = useForm<DishFormValues>({
     resolver: zodResolver(dishFormSchema(t.validation)),
-    defaultValues: { name: "", desc: "", price: "" },
+    defaultValues: { name: "", desc: "", price: "", currency: "SYP" },
     mode: "onTouched",
   });
 
   const [groups, setGroups] = useState<CatalogOptionGroup[]>([]);
   const [images, setImages] = useState<string[]>([]);
+  const [categoryId, setCategoryId] = useState("");
 
   // Re-seed the fields whenever a different dish is opened (during render, no effect)
   const [seededFor, setSeededFor] = useState<{
@@ -85,8 +99,10 @@ export function MenuDishDialog({
       name: editing?.name[lang] ?? "",
       desc: editing?.description[lang] ?? "",
       price: editing ? String(editing.price) : "",
+      currency: editing?.currency ?? "SYP",
     });
     setGroups(editing?.optionGroups ?? []);
+    setCategoryId(editing?.categoryId ?? categories[0]?.id ?? "");
     // an older item may only have the single imageUrl; treat it as a gallery
     // of one so editing never silently drops it
     setImages(
@@ -99,6 +115,8 @@ export function MenuDishDialog({
       nameText: values.name,
       descText: values.desc,
       price: Number(values.price) || 0,
+      currency: values.currency,
+      categoryId,
       optionGroups: groups,
       images,
     });
@@ -216,14 +234,66 @@ export function MenuDishDialog({
               <FieldError message={errors.name?.message} />
             </div>
             <div className="space-y-1.5">
+              <Label>{t.dashboard.category}</Label>
+              <Select
+                value={categoryId}
+                onValueChange={(value) => {
+                  if (value) setCategoryId(value);
+                }}
+              >
+                <SelectTrigger
+                    className="h-10! w-full"
+                    aria-label={t.dashboard.category}
+                >
+                    <SelectValue placeholder={t.dashboard.category} />
+                </SelectTrigger>
+                <SelectContent>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name[lang]}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
               <Label htmlFor="dish-price">{t.dashboard.dishPrice}</Label>
-              <Input
-                id="dish-price"
-                inputMode="numeric"
-                dir="ltr"
-                aria-invalid={!!errors.price}
-                {...register("price")}
-              />
+              <div className="flex gap-2">
+                <Input
+                    id="dish-price"
+                    inputMode="numeric"
+                    dir="ltr"
+                    aria-invalid={!!errors.price}
+                    {...register("price")}
+                />
+                <Controller
+                    control={control}
+                    name="currency"
+                    render={({ field }) => (
+                      <Select
+                        value={field.value}
+                        onValueChange={(value) => {
+                          if (value) field.onChange(value);
+                        }}
+                      >
+                        <SelectTrigger
+                          className="h-10! w-28"
+                          aria-label={t.dashboard.currency}
+                        >
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="SYP">
+                            {lang === "ar" ? "ل.س" : "SYP"}
+                          </SelectItem>
+                          <SelectItem value="USD">
+                            {lang === "ar" ? "دولار" : "$"}
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                />
+              </div>
               <FieldError message={errors.price?.message} />
             </div>
             <div className="space-y-1.5">
@@ -237,36 +307,36 @@ export function MenuDishDialog({
 
               {images.length > 0 && (
                 <ul className="grid grid-cols-3 gap-2">
-                  {images.map((src, index) => (
-                    <li
-                      key={src}
-                      className="group/img relative aspect-square overflow-hidden rounded-xl border border-border/60"
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element --
-                          object URLs from the picker are not remote patterns
-                          next/image can resolve */}
-                      <img
-                        src={src}
-                        alt=""
-                        className="size-full object-cover"
-                      />
-                      {index === 0 && (
-                        <span className="absolute inset-x-0 bottom-0 bg-black/55 py-0.5 text-center text-[10px] font-bold text-white">
-                          {t.dashboard.mainImage}
-                        </span>
-                      )}
-                      <button
-                        type="button"
-                        aria-label={t.dashboard.removeImage}
-                        onClick={() =>
-                          setImages((prev) => prev.filter((s) => s !== src))
-                        }
-                        className="absolute end-1 top-1 flex size-6 cursor-pointer items-center justify-center rounded-full bg-black/55 text-white transition-colors hover:bg-destructive"
+                    {images.map((src, index) => (
+                      <li
+                        key={src}
+                        className="group/img relative aspect-square overflow-hidden rounded-xl border border-border/60"
                       >
-                        <X className="size-3.5" />
-                      </button>
-                    </li>
-                  ))}
+                        {/* eslint-disable-next-line @next/next/no-img-element --
+                            object URLs from the picker are not remote patterns
+                            next/image can resolve */}
+                        <img
+                          src={src}
+                          alt=""
+                          className="size-full object-cover"
+                        />
+                        {index === 0 && (
+                          <span className="absolute inset-x-0 bottom-0 bg-black/55 py-0.5 text-center text-[10px] font-bold text-white">
+                            {t.dashboard.mainImage}
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          aria-label={t.dashboard.removeImage}
+                          onClick={() =>
+                            setImages((prev) => prev.filter((s) => s !== src))
+                          }
+                          className="absolute end-1 top-1 flex size-6 cursor-pointer items-center justify-center rounded-full bg-black/55 text-white transition-colors hover:bg-destructive"
+                        >
+                          <X className="size-3.5" />
+                        </button>
+                      </li>
+                    ))}
                 </ul>
               )}
 
@@ -274,9 +344,9 @@ export function MenuDishDialog({
                 label={t.dashboard.addPhoto}
                 hint={t.dashboard.imagesHint}
                 onFile={async (file) => {
-                  if (!file) return;
-                  const { url } = await uploadImage(file, "items");
-                  setImages((prev) => [...prev, url]);
+                    if (!file) return;
+                    const { url } = await uploadImage(file, "items");
+                    setImages((prev) => [...prev, url]);
                 }}
               />
             </div>

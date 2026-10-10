@@ -18,7 +18,7 @@ import { toast } from "@/lib/toast";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { formatPrice } from "@/features/public-menu/lib/format";
 import {
   getMyAgentProfile,
@@ -46,13 +46,7 @@ export function AgentEarningsView() {
   });
 
   if (!agent || !transactions) {
-    return (
-      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-24 rounded-2xl" />
-        ))}
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   const base = `/${lang}/agent`;

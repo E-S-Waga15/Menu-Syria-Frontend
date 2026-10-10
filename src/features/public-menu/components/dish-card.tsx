@@ -105,7 +105,7 @@ export function DishCard({
         </h3>
         <div className="mt-3 flex items-center justify-between gap-2">
           <p className="text-sm font-bold text-[var(--menu-primary)] md:text-base">
-            {formatPrice(item.price, t.common.currency)}
+            {formatPrice(item.price, item.currency ?? "SYP", lang)}
           </p>
           <button
             type="button"

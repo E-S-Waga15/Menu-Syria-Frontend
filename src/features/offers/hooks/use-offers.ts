@@ -10,6 +10,7 @@ import {
   type OfferWriteInput,
 } from "@/features/offers/services";
 import { useI18n } from "@/i18n/client";
+import { ApiError } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
 import { toast } from "@/lib/toast";
 import type { LocalizedText, Offer } from "@/lib/types";
@@ -30,12 +31,12 @@ export function useOfferMutations(businessId: string) {
 
   const failure = {
     onError: (
-      _error: unknown,
+      error: unknown,
       _variables: unknown,
       context?: { previous?: Offer[] },
     ) => {
       if (context?.previous) queryClient.setQueryData(key, context.previous);
-      toast.error(t.common.saveFailed);
+      toast.error(error instanceof ApiError ? error.message : t.common.saveFailed);
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: key }),
   };
@@ -70,6 +71,7 @@ export function useOfferMutations(businessId: string) {
           sortOrder: input.sortOrder,
         },
       ]),
+    onSuccess: () => toast.success(t.offers.saved),
     ...failure,
   });
 
@@ -82,12 +84,14 @@ export function useOfferMutations(businessId: string) {
           offer.id === id ? { ...offer, ...toOfferPatch(input) } : offer,
         ),
       ),
+    onSuccess: () => toast.success(t.offers.saved),
     ...failure,
   });
 
   const remove = useMutation({
     mutationFn: (id: string) => deleteOffer(businessId, id),
     onMutate: (id) => patch((current) => current.filter((o) => o.id !== id)),
+    onSuccess: () => toast.success(t.offers.deleted),
     ...failure,
   });
 

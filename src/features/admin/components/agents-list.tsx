@@ -1,12 +1,12 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { Eye, Power, Store } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
+import { SafeImage } from "@/components/shared/safe-image";
 import { AdminFilterBar } from "@/features/admin/components/admin-filter-bar";
 import { AdminPageHeader } from "@/features/admin/components/admin-page-header";
 import { RowActions, type RowAction } from "@/components/shared/row-actions";
@@ -174,7 +174,7 @@ export function AdminAgentsList({
               key={agent.id}
               className="group flex items-start gap-3 rounded-2xl border border-border/60 bg-card p-4 transition-colors duration-200 hover:border-primary/35"
             >
-              <Image
+              <SafeImage
                 src={agent.photoUrl}
                 alt=""
                 width={56}
@@ -209,7 +209,7 @@ export function AdminAgentsList({
               key={agent.id}
               className="flex flex-wrap items-center gap-3 rounded-2xl border border-border/60 bg-card p-3.5"
             >
-              <Image
+              <SafeImage
                 src={agent.photoUrl}
                 alt=""
                 width={48}

@@ -7,7 +7,7 @@ import { Download, FileText } from "lucide-react";
 import { QRCodeCanvas } from "qrcode.react";
 
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { getMyRestaurant } from "@/features/restaurant-dashboard/services";
 import { useI18n } from "@/i18n/client";
 import { queryKeys } from "@/lib/api/query-keys";
@@ -21,7 +21,7 @@ export function QrPanel() {
     queryFn: getMyRestaurant,
   });
 
-  if (!restaurant) return <Skeleton className="h-96 rounded-2xl" />;
+  if (!restaurant) return <LoadingSpinner />;
 
   const menuUrl = `${window.location.origin}/${lang}/menu/${restaurant.slug}`;
 
@@ -79,14 +79,18 @@ export function QrPanel() {
               level="H"
               fgColor="#191c1d"
               bgColor="#ffffff"
-              imageSettings={{
-                src: restaurant.logoUrl,
-                height: 48,
-                width: 48,
-                excavate: true,
-                // without CORS the canvas is tainted and PNG/PDF export throws
-                crossOrigin: "anonymous",
-              }}
+              {...(typeof restaurant.logoUrl === "string" &&
+              restaurant.logoUrl.trim()
+                ? {
+                    imageSettings: {
+                      src: restaurant.logoUrl,
+                      height: 48,
+                      width: 48,
+                      excavate: true,
+                      crossOrigin: "anonymous" as const,
+                    },
+                  }
+                : {})}
             />
           </div>
 

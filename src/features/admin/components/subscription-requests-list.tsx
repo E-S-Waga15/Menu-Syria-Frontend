@@ -13,6 +13,7 @@ import {
     type SubscriptionRequest,
 } from "@/features/subscription-requests/services";
 import { useI18n } from "@/i18n/client";
+import { ApiError } from "@/lib/api/client";
 import { toast } from "@/lib/toast";
 
 /**
@@ -47,8 +48,8 @@ export function SubscriptionRequestsList({
                     ? t.admin.subscriptionRequestApproved
                     : t.admin.requestRejected,
             );
-        } catch {
-            toast.error(t.common.saveFailed);
+        } catch (error) {
+            toast.error(error instanceof ApiError ? error.message : t.common.saveFailed);
         } finally {
             setSavingId(null);
         }

@@ -16,7 +16,7 @@ import {
   YAxis,
 } from "recharts";
 
-import { Skeleton } from "@/components/ui/skeleton";
+import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { getMyAnalytics } from "@/features/restaurant-dashboard/services";
 import { useI18n } from "@/i18n/client";
 import { queryKeys } from "@/lib/api/query-keys";
@@ -76,17 +76,28 @@ const tooltipStyle = {
 export function AnalyticsView() {
   const { t, lang } = useI18n();
 
-  const { data } = useQuery({
+  const analyticsQuery = useQuery({
     queryKey: queryKeys.restaurants.analytics("r1"),
     queryFn: getMyAnalytics,
   });
+  const { data } = analyticsQuery;
 
+  if (analyticsQuery.isPending) {
+    return <LoadingSpinner />;
+  }
   if (!data) {
     return (
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-80 rounded-2xl" />
-        ))}
+      <div className="rounded-2xl border border-dashed border-border p-12 text-center">
+        <p className="text-sm text-muted-foreground">
+          {t.account.loadFailed}
+        </p>
+        <button
+          type="button"
+          className="mt-4 rounded-lg border border-border px-4 py-2 text-sm font-semibold transition-colors hover:bg-muted"
+          onClick={() => void analyticsQuery.refetch()}
+        >
+          {t.account.retry}
+        </button>
       </div>
     );
   }
