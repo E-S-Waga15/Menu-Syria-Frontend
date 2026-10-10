@@ -1252,10 +1252,16 @@ export function BusinessProfile() {
               {t.restaurant.contactInfo}
             </TabsTrigger>
             <TabsTrigger
-              value="payment"
+              value="paymentQr"
               className="shrink-0 rounded-lg px-6 py-2.5 font-semibold"
             >
-              {t.dashboard.paymentTab}
+              {t.dashboard.paymentQrTab}
+            </TabsTrigger>
+            <TabsTrigger
+              value="delivery"
+              className="shrink-0 rounded-lg px-6 py-2.5 font-semibold"
+            >
+              {t.dashboard.deliveryTab}
             </TabsTrigger>
             <TabsTrigger
               value="social"
@@ -1301,8 +1307,10 @@ export function BusinessProfile() {
             save={save}
           />
         </TabsContent>
-        <TabsContent value="payment" className="space-y-6">
+        <TabsContent value="paymentQr">
           <PaymentQrSection restaurant={restaurant} t={t} save={save} />
+        </TabsContent>
+        <TabsContent value="delivery">
           <DeliveryFeeSection restaurant={restaurant} t={t} save={save} />
         </TabsContent>
         <TabsContent value="social">
