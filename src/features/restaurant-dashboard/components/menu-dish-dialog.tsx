@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, X } from "lucide-react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 
 import { FieldError } from "@/components/shared/field-error";
 import { FileDropzone } from "@/components/shared/file-dropzone";
@@ -87,6 +87,18 @@ export function MenuDishDialog({
   const [groups, setGroups] = useState<CatalogOptionGroup[]>([]);
   const [images, setImages] = useState<string[]>([]);
   const [categoryId, setCategoryId] = useState("");
+
+  // the option price-delta fields show this beside each one, so an owner
+  // never has to guess which currency a +2,000 means
+  const currencyValue = useWatch({ control, name: "currency" });
+  const currencySuffix =
+    lang === "ar"
+      ? currencyValue === "USD"
+        ? "دولار"
+        : "ل.س"
+      : currencyValue === "USD"
+        ? "$"
+        : "SYP";
 
   // Re-seed the fields whenever a different dish is opened (during render, no effect)
   const [seededFor, setSeededFor] = useState<{
@@ -223,11 +235,12 @@ export function MenuDishDialog({
         <form onSubmit={handleSubmit(submit)} noValidate>
           <div className="space-y-4 px-4 pb-2">
             <div className="space-y-1.5">
-              <Label htmlFor="dish-name">
-                {isStore ? t.dashboard.productName : t.dashboard.dishName}
-              </Label>
+              {/* "اسم المنتج" covers a dish and a product alike — no need
+                  to branch on isStore for a label that reads fine either way */}
+              <Label htmlFor="dish-name">{t.dashboard.productName}</Label>
               <Input
                 id="dish-name"
+                placeholder={t.dashboard.productNamePlaceholder}
                 aria-invalid={!!errors.name}
                 {...register("name")}
               />
@@ -240,6 +253,12 @@ export function MenuDishDialog({
                 onValueChange={(value) => {
                   if (value) setCategoryId(value);
                 }}
+                // without this, SelectValue has no label to look the id up
+                // against and falls back to printing the raw id — which is
+                // exactly the uuid the owner saw instead of the category name
+                items={Object.fromEntries(
+                  categories.map((category) => [category.id, category.name[lang]]),
+                )}
               >
                 <SelectTrigger
                     className="h-10! w-full"
@@ -258,47 +277,59 @@ export function MenuDishDialog({
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="dish-price">{t.dashboard.dishPrice}</Label>
-              <div className="flex gap-2">
-                <Input
-                    id="dish-price"
-                    inputMode="numeric"
-                    dir="ltr"
-                    aria-invalid={!!errors.price}
-                    {...register("price")}
-                />
-                <Controller
-                    control={control}
-                    name="currency"
-                    render={({ field }) => (
-                      <Select
-                        value={field.value}
-                        onValueChange={(value) => {
-                          if (value) field.onChange(value);
-                        }}
-                      >
-                        <SelectTrigger
-                          className="h-10! w-28"
-                          aria-label={t.dashboard.currency}
-                        >
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="SYP">
-                            {lang === "ar" ? "ل.س" : "SYP"}
-                          </SelectItem>
-                          <SelectItem value="USD">
-                            {lang === "ar" ? "دولار" : "$"}
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    )}
-                />
-              </div>
+              <Input
+                  id="dish-price"
+                  inputMode="numeric"
+                  dir="ltr"
+                  placeholder={t.dashboard.dishPricePlaceholder}
+                  aria-invalid={!!errors.price}
+                  {...register("price")}
+              />
               <FieldError message={errors.price?.message} />
             </div>
             <div className="space-y-1.5">
+              <Label htmlFor="dish-currency">{t.dashboard.currency}</Label>
+              <Controller
+                  control={control}
+                  name="currency"
+                  render={({ field }) => (
+                    <Select
+                      value={field.value}
+                      onValueChange={(value) => {
+                        if (value) field.onChange(value);
+                      }}
+                      items={{
+                        SYP: lang === "ar" ? "ل.س" : "SYP",
+                        USD: lang === "ar" ? "دولار" : "$",
+                      }}
+                    >
+                      <SelectTrigger
+                        id="dish-currency"
+                        className="h-10! w-full"
+                        aria-label={t.dashboard.currency}
+                      >
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="SYP">
+                          {lang === "ar" ? "ل.س" : "SYP"}
+                        </SelectItem>
+                        <SelectItem value="USD">
+                          {lang === "ar" ? "دولار" : "$"}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+              />
+            </div>
+            <div className="space-y-1.5">
               <Label htmlFor="dish-desc">{t.dashboard.dishDesc}</Label>
-              <Textarea id="dish-desc" rows={2} {...register("desc")} />
+              <Textarea
+                id="dish-desc"
+                rows={2}
+                placeholder={t.dashboard.dishDescPlaceholder}
+                {...register("desc")}
+              />
             </div>
             <div className="space-y-1.5">
               <Label>
@@ -368,7 +399,7 @@ export function MenuDishDialog({
                           name: { ar: e.target.value, en: e.target.value },
                         })
                       }
-                      placeholder={t.dashboard.optionGroupName}
+                      placeholder={t.dashboard.optionGroupNamePlaceholder}
                       className="h-9 flex-1"
                     />
                     <Button
@@ -428,21 +459,28 @@ export function MenuDishDialog({
                               name: e.target.value,
                             })
                           }
-                          placeholder={t.dashboard.optionName}
+                          placeholder={t.dashboard.optionNamePlaceholder}
                           className="h-8 flex-1"
                         />
                         <Input
                           type="number"
                           dir="ltr"
-                          value={option.priceDelta}
+                          // blank rather than a sitting "0" — the owner types
+                          // the actual difference instead of clearing a value
+                          // that was never theirs
+                          value={option.priceDelta === 0 ? "" : option.priceDelta}
                           onChange={(e) =>
                             updateOption(group.id, option.id, {
-                              priceDelta: Number(e.target.value) || 0,
+                              priceDelta:
+                                e.target.value === "" ? 0 : Number(e.target.value),
                             })
                           }
-                          placeholder={t.dashboard.optionPriceDelta}
-                          className="h-8 w-24"
+                          placeholder="0"
+                          className="h-8 w-20 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                         />
+                        <span className="text-xs font-semibold whitespace-nowrap text-muted-foreground">
+                          {currencySuffix}
+                        </span>
                         <Button
                           type="button"
                           variant="ghost"

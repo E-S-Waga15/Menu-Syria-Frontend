@@ -95,17 +95,23 @@ export async function getAgents(): Promise<Agent[]> {
   return apiFetch("/agents");
 }
 
-export async function getAgentById(id: string): Promise<Agent | undefined> {
-  if (IS_MOCK) return mockDelay(agents.find((a) => a.id === id), 150);
-  return apiGetOrUndefined(`/agents/${id}`);
+/**
+ * Looks an agent up by their public referral code (`AGENT-XXXXXX`), not their
+ * internal uuid `id` — the code is what's in the public profile URL and the
+ * referral link, so that's what this endpoint takes.
+ */
+export async function getAgentByCode(code: string): Promise<Agent | undefined> {
+  if (IS_MOCK)
+    return mockDelay(agents.find((a) => a.referralCode === code), 150);
+  return apiGetOrUndefined(`/public/agents/${code}`);
 }
 
-/** Restaurants subscribed through this agent */
+/** Restaurants subscribed through this agent — looked up by the same public code. */
 export async function getAgentRestaurants(
-  agentId: string,
+  referralCode: string,
 ): Promise<Restaurant[]> {
   if (IS_MOCK) {
-    const agent = agents.find((a) => a.id === agentId);
+    const agent = agents.find((a) => a.referralCode === referralCode);
     if (!agent) return mockDelay([]);
     // agent's governorate first, then the rest — keeps the section full
     const local = restaurants.filter(
@@ -116,7 +122,7 @@ export async function getAgentRestaurants(
     );
     return mockDelay([...local, ...others], 200);
   }
-  return apiFetch(`/agents/${agentId}/restaurants`);
+  return apiFetch(`/public/agents/${referralCode}/businesses`);
 }
 
 export async function getAgentsByGovernorate(

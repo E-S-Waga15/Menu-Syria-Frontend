@@ -49,6 +49,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       ...localized(`/menu/${r.slug}`, 0.7, "daily"),
     ]),
     ...stores.flatMap((s) => [...localized(`/store/${s.slug}`, 0.8, "daily")]),
-    ...agents.flatMap((a) => localized(`/agents/${a.id}`, 0.6, "monthly")),
+    ...agents.flatMap((a) =>
+      localized(`/agents/${a.referralCode}`, 0.6, "monthly"),
+    ),
   ];
 }

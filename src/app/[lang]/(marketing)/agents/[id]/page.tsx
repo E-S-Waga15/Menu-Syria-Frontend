@@ -12,7 +12,7 @@ import {
 import { AgentRestaurants } from "@/features/marketing/components/agent-restaurants";
 import { AgentShareActions } from "@/features/marketing/components/agent-share-actions";
 import {
-  getAgentById,
+  getAgentByCode,
   getAgentRestaurants,
   getGovernorates,
   getRegions,
@@ -33,12 +33,14 @@ import { alternatesFor } from "@/lib/seo/site";
 export async function generateMetadata({
   params,
 }: PageProps<"/[lang]/agents/[id]">): Promise<Metadata> {
-  const { lang, id } = await params;
+  // the dynamic segment is still folder-named [id], but it carries the
+  // agent's public referral code now, not their internal uuid
+  const { lang, id: code } = await params;
   if (!isLocale(lang)) return {};
 
   const [t, agent, governorates, regions] = await Promise.all([
     getDictionary(lang),
-    getAgentById(id),
+    getAgentByCode(code),
     getGovernorates(),
     getRegions(),
   ]);
@@ -55,7 +57,7 @@ export async function generateMetadata({
   return {
     title: fmt(t.agentPage.metaTitle, values),
     description,
-    alternates: alternatesFor(lang, `/agents/${agent.id}`),
+    alternates: alternatesFor(lang, `/agents/${agent.referralCode}`),
     openGraph: {
       type: "profile",
       title: fmt(t.agentPage.metaOgTitle, values),
@@ -84,18 +86,18 @@ export async function generateMetadata({
 export default async function AgentDetailsPage({
   params,
 }: PageProps<"/[lang]/agents/[id]">) {
-  const { lang, id } = await params;
+  const { lang, id: code } = await params;
   if (!isLocale(lang)) notFound();
 
   const [t, agent, governorates, regions] = await Promise.all([
     getDictionary(lang),
-    getAgentById(id),
+    getAgentByCode(code),
     getGovernorates(),
     getRegions(),
   ]);
   if (!agent) notFound();
 
-  const agentRestaurants = await getAgentRestaurants(agent.id);
+  const agentRestaurants = await getAgentRestaurants(agent.referralCode);
 
   const governorateName =
     governorates.find((g) => g.id === agent.governorateId)?.name[lang] ?? "";

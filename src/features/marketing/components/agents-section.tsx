@@ -76,7 +76,7 @@ export function AgentsSection({
               <div className="absolute inset-y-0 start-0 w-1 bg-gradient-to-b from-primary to-zest" />
 
               <Link
-                href={`/${lang}/agents/${agent.id}`}
+                href={`/${lang}/agents/${agent.referralCode}`}
                 className="flex items-center gap-4 outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
               >
                 {agent.photoUrl ? (
@@ -113,7 +113,7 @@ export function AgentsSection({
                 variant="outline"
                 size="sm"
                 className="mt-5 w-full border-[1.5px] group-hover:border-primary/40 group-hover:text-primary"
-                render={<Link href={`/${lang}/agents/${agent.id}`} />}
+                render={<Link href={`/${lang}/agents/${agent.referralCode}`} />}
               >
                 {t.home.agentViewDetails}
               </Button>

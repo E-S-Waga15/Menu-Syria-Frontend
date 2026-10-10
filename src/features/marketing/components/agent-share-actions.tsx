@@ -228,8 +228,11 @@ export function AgentShareActions({
             </DialogTitle>
           </DialogHeader>
 
-          {/* mirrors the exported card: code, caption, link */}
-          <div className="mt-1 flex flex-col items-center">
+          {/* mirrors the exported card: code, caption, link. min-w-0 keeps
+              every child free to shrink below its own content width — without
+              it, the unbreakable URL below forces this column wider than the
+              dialog and spills past its edges instead of wrapping */}
+          <div className="mt-1 flex w-full min-w-0 flex-col items-center">
             <div
               ref={qrWrapRef}
               className="w-full max-w-[200px] rounded-2xl border border-border/60 bg-white p-3"
@@ -257,8 +260,13 @@ export function AgentShareActions({
             </div>
 
             <p className="mt-4 text-center text-sm font-bold">{caption}</p>
+            {/* break-all over truncate: a wa.me/agents link is one unbroken
+                token with nowhere to wrap, so it either breaks mid-word or
+                it overflows — wrapping onto a second line beats both an
+                ellipsis that hides the link and a line that spills outside
+                the card */}
             <p
-              className="mt-2 max-w-full truncate rounded-full bg-surface-container px-3.5 py-1.5 text-xs text-muted-foreground"
+              className="mt-2 w-full max-w-full rounded-xl bg-surface-container px-3.5 py-2 text-center text-xs break-all text-muted-foreground"
               dir="ltr"
             >
               {url}
